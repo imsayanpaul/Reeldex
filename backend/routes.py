@@ -151,7 +151,8 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
         if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN:
             # Find user token for magic link
             user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
-            vault_url = f"https://birthday-leone-hair-spoke.trycloudflare.com/?token={user.auth_token}" if user else "https://birthday-leone-hair-spoke.trycloudflare.com"
+            frontend_base = (settings.FRONTEND_URL or "https://reeldex-one.vercel.app").rstrip("/")
+            vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
 
             # Ultra-clean, minimal DM response
             summary_msg = f"✨ Saved to your ReelDex! 🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"

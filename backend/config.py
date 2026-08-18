@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     
+    # Frontend & Deployment
+    FRONTEND_URL: str = "https://reeldex-one.vercel.app"
+    
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./instam.db"
     AUDIO_DIR: str = "./downloads/audio"
