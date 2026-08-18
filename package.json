@@ -1,0 +1,9 @@
+{
+  "name": "reeldex-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run --prefix frontend build",
+    "install-frontend": "npm install --prefix frontend"
+  }
+}
