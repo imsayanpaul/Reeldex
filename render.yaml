@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: reeldex-io
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: INSTAGRAM_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: META_VERIFY_TOKEN
+        value: instam_secret_verify_token_2026
+      - key: PORT
+        value: 8000

@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Environment & Secrets
+.env
+.env.local
+
+# Node modules & build artifacts
+frontend/node_modules/
+frontend/dist/
+.tempmediaStorage/
+
+# Database & Downloads
+instam.db
+downloads/
+temp_audio/
+*.log
+
+# Cloudflared binary
+cloudflared.exe

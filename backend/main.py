@@ -1,0 +1,82 @@
+import os
+import sys
+
+# Ensure UTF-8 output encoding on Windows consoles
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='backslashreplace')
+except Exception:
+    pass
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from backend.config import settings
+from backend.database import engine, Base
+from backend.routes import router as api_router
+
+# Create Database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="InstaM - Instagram Reel Transcription & DM Automation Engine",
+    description="Extracts audio, transcribes Instagram Reels with Whisper, and handles Meta DM Webhooks.",
+    version="1.0.0"
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include API Router
+app.include_router(api_router, prefix="/api")
+
+@app.get("/privacy")
+def privacy_policy():
+    return {
+        "title": "Privacy Policy for InstaM Transcriber",
+        "description": "InstaM processes Instagram reels and messages solely to provide audio transcriptions. We do not store personal data or sell information to third parties.",
+        "contact": "support@instam.ai"
+    }
+
+@app.get("/terms")
+def terms_of_service():
+    return {
+        "title": "Terms of Service for InstaM Transcriber",
+        "description": "By using InstaM, you agree to transcribe public media for personal use.",
+        "contact": "support@instam.ai"
+    }
+
+# Serve Frontend static build if present
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(frontend_dist):
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+    
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        index_path = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        return {"message": "InstaM API is running. Build frontend for UI."}
+else:
+    @app.get("/")
+    def root():
+        return {
+            "status": "online",
+            "service": "InstaM Transcriber Engine",
+            "api_docs": "/docs",
+            "webhook_endpoint": "/api/webhook/instagram"
+        }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
