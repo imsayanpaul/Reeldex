@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     
     # Frontend & Deployment
-    FRONTEND_URL: str = "https://reeldex-one.vercel.app"
+    FRONTEND_URL: str = "https://reeldex-io.vercel.app"
     
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./instam.db"
