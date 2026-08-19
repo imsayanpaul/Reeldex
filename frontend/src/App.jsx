@@ -2202,170 +2202,62 @@ export default function App() {
       {/* ======================================================== */}
       {/* INSTAGRAM PAIRING MODAL */}
       {/* ======================================================== */}
-      {/* ======================================================== */}
-      {/* INSTAGRAM PAIRING MODAL */}
-      {/* ======================================================== */}
       {showPairModal && (
         <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
-          <div
-            className="modal-sheet"
-            onClick={e => e.stopPropagation()}
-            style={{
-              maxWidth: '460px',
-              padding: '24px',
-              background: '#181c1f',
-              borderRadius: '20px',
-              border: '1px solid #282f34',
-              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85)'
-            }}
-          >
-            {/* Header: Vibrant Instagram Gradient Badge + Titles + Close Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 18px rgba(221, 42, 123, 0.35)',
-                  flexShrink: 0
-                }}>
-                  <InstagramIcon size={22} color="#ffffff" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.18rem', fontWeight: '700', color: '#f8fafa', margin: '0 0 2px', letterSpacing: '-0.01em' }}>
-                    Link Your Instagram
-                  </h3>
-                  <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
-                    Sync reels via Direct Message in 10 seconds
-                  </p>
-                </div>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px', padding: '22px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.08rem', fontWeight: '600', color: '#f8fafa', margin: '0 0 3px', letterSpacing: '-0.01em' }}>
+                  Link Your Instagram
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
+                  Sync reels via Instagram DM in 10 seconds
+                </p>
               </div>
-
               <button
                 type="button"
                 onClick={() => setShowPairModal(false)}
                 style={{
-                  background: '#121518',
-                  border: '1px solid #282f34',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
+                  background: 'none',
+                  border: 'none',
                   color: '#8e8e8e',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
                 title="Close"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Linking Code Showcase Card */}
-            <div style={{
-              background: '#121518',
-              border: '1px solid #282f34',
-              borderRadius: '14px',
-              padding: '18px 16px',
-              textAlign: 'center',
-              marginBottom: '16px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '6px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-                <span style={{ fontSize: '0.72rem', fontWeight: '600', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Your Unique Linking Code
-                </span>
-              </div>
-              <div style={{
-                fontSize: '2rem',
-                fontWeight: '800',
-                fontFamily: 'monospace',
-                letterSpacing: '0.12em',
-                color: '#f8fafa',
-                margin: '4px 0 12px'
-              }}>
+            <div style={{ background: '#181c1f', border: '1px solid #282f34', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '600', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Your Unique Linking Code
+              </span>
+              <div style={{ fontSize: '2rem', fontWeight: '700', fontFamily: 'monospace', letterSpacing: '0.12em', color: '#f8fafa', margin: '6px 0' }}>
                 {pairingCode || 'MIND-849201'}
               </div>
-              <button
-                type="button"
-                onClick={() => copyText(pairingCode)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: copied ? 'rgba(16, 185, 129, 0.15)' : '#181c1f',
-                  border: copied ? '1px solid #10b981' : '1px solid #282f34',
-                  color: copied ? '#10b981' : '#f8fafa',
-                  borderRadius: '8px',
-                  padding: '6px 14px',
-                  fontSize: '0.82rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                <span>{copied ? 'Copied to clipboard' : 'Copy Code'}</span>
+              <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.78rem' }}>
+                {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />} Copy Code
               </button>
             </div>
 
-            {/* 3 Step Visual Guide */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: '#121518', border: '1px solid #282f34', borderRadius: '10px' }}>
-                <span style={{ minWidth: '22px', height: '22px', borderRadius: '6px', background: '#1f2429', color: '#90a4f2', fontSize: '0.72rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  01
-                </span>
-                <span style={{ fontSize: '0.85rem', color: '#f8fafa', lineHeight: '1.45' }}>
-                  Open Instagram Direct & message <strong style={{ color: '#90a4f2' }}>@reeldex.io</strong>
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: '#121518', border: '1px solid #282f34', borderRadius: '10px' }}>
-                <span style={{ minWidth: '22px', height: '22px', borderRadius: '6px', background: '#1f2429', color: '#90a4f2', fontSize: '0.72rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  02
-                </span>
-                <span style={{ fontSize: '0.85rem', color: '#f8fafa', lineHeight: '1.45' }}>
-                  Send your code: <strong style={{ color: '#90a4f2', fontFamily: 'monospace' }}>{pairingCode}</strong>
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: '#121518', border: '1px solid #282f34', borderRadius: '10px' }}>
-                <span style={{ minWidth: '22px', height: '22px', borderRadius: '6px', background: '#1f2429', color: '#10b981', fontSize: '0.72rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  03
-                </span>
-                <span style={{ fontSize: '0.85rem', color: '#f8fafa', lineHeight: '1.45' }}>
-                  Any Reel you share in DM will automatically transcribe & save here!
-                </span>
-              </div>
+            <div style={{ fontSize: '0.84rem', color: '#f8fafa', lineHeight: '1.6', marginBottom: '20px' }}>
+              <ol style={{ paddingLeft: '18px', margin: 0 }}>
+                <li style={{ marginBottom: '4px' }}>Open Instagram Direct and message <strong style={{ color: '#90a4f2' }}>@reeldex.io</strong>.</li>
+                <li style={{ marginBottom: '4px' }}>Send your code: <code style={{ color: '#90a4f2', background: '#121518', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>{pairingCode}</code></li>
+                <li>Done! Any Reel you share in DM will automatically transcribe and save here.</li>
+              </ol>
             </div>
 
-            {/* Primary Action Button */}
             <a
               href="https://ig.me/m/reeldex.io"
               target="_blank"
               rel="noreferrer"
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '12px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%)',
-                color: '#ffffff',
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                textDecoration: 'none',
-                boxShadow: '0 4px 20px rgba(221, 42, 123, 0.35)',
-                boxSizing: 'border-box',
-                transition: 'transform 0.15s ease, opacity 0.15s ease'
-              }}
+              className="btn-blue"
+              style={{ width: '100%', justifyContent: 'center', padding: '10px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.88rem' }}
             >
               <span>Open Instagram DM</span>
               <ExternalLink size={14} />
