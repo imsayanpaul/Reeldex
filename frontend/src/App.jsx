@@ -697,7 +697,7 @@ export default function App() {
               <div style={{ marginBottom: '28px' }}>
                 {activeViewFilter === 'All' && (
                   <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.98rem', fontWeight: '600', color: '#ffffff' }}>
+                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#ffffff' }}>
                       Collections
                     </h2>
                     <button
@@ -805,7 +805,7 @@ export default function App() {
               <div>
                 {!isManageMode && (
                   <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#ffffff' }}>
                       {selectedCollection ? `${selectedCollection.name} (${reels.length})` : 'Reels and posts'}
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
