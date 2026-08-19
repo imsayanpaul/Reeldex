@@ -520,6 +520,13 @@ export default function App() {
     return matchingReel?.thumbnail_url || null;
   };
 
+  const getCollectionThumbnails = (collectionId) => {
+    return reels
+      .filter(r => r.collection_id === collectionId && r.thumbnail_url)
+      .slice(0, 4)
+      .map(r => r.thumbnail_url);
+  };
+
   return (
     <div className="ig-app-wrapper">
       {/* ======================================================== */}
@@ -686,31 +693,34 @@ export default function App() {
             {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
             {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
-                <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
-                    Collections
-                  </h2>
-                  <button
-                    onClick={() => setActiveViewFilter('Collections')}
-                    style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.84rem', cursor: 'pointer' }}
-                  >
-                    See all
-                  </button>
-                </div>
+                {activeViewFilter === 'All' && (
+                  <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+                      Collections
+                    </h2>
+                    <button
+                      onClick={() => setActiveViewFilter('Collections')}
+                      style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.84rem', cursor: 'pointer' }}
+                    >
+                      See all
+                    </button>
+                  </div>
+                )}
 
                 {collections.length === 0 ? (
                   <div style={{
-                    padding: '20px',
-                    borderRadius: 'var(--radius-lg)',
-                    background: 'var(--bg-card)',
+                    padding: '24px 20px',
+                    borderRadius: '14px',
+                    background: '#1c1c1e',
                     border: '1px solid var(--border-light)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    margin: '0 16px'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-heading)' }}>Organize with Collections</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Group your transcribed reels by theme, work, or project.</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#ffffff' }}>Organize with Collections</div>
+                      <div style={{ fontSize: '0.78rem', color: '#8e8e8e', marginTop: '2px' }}>Group your saved reels by theme, work, or project.</div>
                     </div>
                     <button onClick={() => setShowCreateCollectionModal(true)} className="btn-coral" style={{ fontSize: '0.78rem' }}>
                       <Plus size={13} /> Create
@@ -719,28 +729,34 @@ export default function App() {
                 ) : (
                   <div className="ig-collections-grid">
                     {collections.map(col => {
-                      const coverImg = getCollectionCover(col.id);
+                      const thumbs = getCollectionThumbnails(col.id);
                       return (
                         <div
                           key={col.id}
                           className="ig-collection-card"
                           onClick={() => setSelectedCollection(col)}
                         >
-                          <div className="ig-collection-cover">
-                            {coverImg ? (
-                              <img src={coverImg} alt={col.name} />
+                          <div className="ig-collection-cover-square">
+                            {thumbs.length >= 4 ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', width: '100%', height: '100%', gap: '1px' }}>
+                                {thumbs.map((img, idx) => (
+                                  <img key={idx} src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ))}
+                              </div>
+                            ) : thumbs.length > 0 ? (
+                              <img src={thumbs[0]} alt={col.name} />
                             ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a' }}>
-                                <Folder size={22} color="#ffffff" opacity={0.6} />
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1c1e' }}>
+                                <Folder size={32} color="#71717a" />
                               </div>
                             )}
                           </div>
-                          <div className="ig-collection-info">
-                            <div className="ig-collection-title">
+                          <div className="ig-collection-title-block">
+                            <div className="ig-collection-title-text">
                               {col.name}
                             </div>
-                            <div className="ig-collection-meta">
-                              <Lock size={10} /> Private
+                            <div className="ig-collection-meta-text">
+                              <Lock size={11} /> <span>Private</span>
                             </div>
                           </div>
                         </div>
