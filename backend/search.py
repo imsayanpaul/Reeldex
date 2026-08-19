@@ -224,12 +224,11 @@ Provide a direct, clear answer with specific citations."""
         }
 
     models_to_try = [
-        "llama-3.3-70b-versatile",
-        "llama3-70b-8192",
-        "llama3-8b-8192",
-        "mixtral-8x7b-32768",
-        "gemma2-9b-it",
-        "llama-3.1-8b-instant"
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b",
+        "groq/compound",
+        "groq/compound-mini"
     ]
 
     answer = None

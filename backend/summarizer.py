@@ -97,7 +97,7 @@ Do NOT output any intro or outro markdown, only the JSON block."""
         from groq import Groq
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": "You are a precise JSON-only metadata extraction assistant. Output strictly valid JSON."},
                 {"role": "user", "content": prompt}
@@ -122,12 +122,12 @@ Do NOT output any intro or outro markdown, only the JSON block."""
             return data
 
     except Exception as e:
-        print(f"[Summarizer Groq LLaMA-70b Error]: {e}, trying fallback model...")
+        print(f"[Summarizer Groq GPT-OSS Error]: {e}, trying fallback model...")
         try:
             from groq import Groq
             client = Groq(api_key=api_key)
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": "Extract insights strictly in JSON."},
                     {"role": "user", "content": prompt}
