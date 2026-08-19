@@ -701,39 +701,6 @@ export default function App() {
             </button>
           </div>
         </header>
-      ) : activeTab === 'chat' ? (
-        <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button
-              onClick={() => setActiveTab('vault')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '2px' }}
-              title="Back to Vault"
-            >
-              <ArrowLeft size={24} strokeWidth={2.2} />
-            </button>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
-              Ask AI Copilot
-            </h1>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={() => {
-                setChatMessages([
-                  {
-                    role: 'assistant',
-                    content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
-                  }
-                ]);
-              }}
-              className="ig-filter-pill"
-              style={{ fontSize: '0.8rem', padding: '5px 12px' }}
-              title="Start a new chat"
-            >
-              New chat
-            </button>
-          </div>
-        </header>
       ) : selectedCollection ? (
         <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -1519,34 +1486,80 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: ASK AI COPILOT (FULL PAGE PINNED LAYOUT) */}
+        {/* TAB 2: ASK AI COPILOT (DEDICATED FIXED APP VIEW) */}
         {activeTab === 'chat' && (
           <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            background: '#0c0f14',
             display: 'flex',
             flexDirection: 'column',
-            height: '100%',
-            maxWidth: '820px',
-            width: '100%',
-            margin: '0 auto',
-            padding: '8px 0 4px',
             overflow: 'hidden'
           }}>
-            {/* Chat Messages Stream */}
+            {/* Top Fixed Header */}
+            <header style={{
+              minHeight: '60px',
+              height: '60px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 16px',
+              background: 'rgba(12, 15, 20, 0.98)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              flexShrink: 0,
+              zIndex: 10
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <button
+                  onClick={() => setActiveTab('vault')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '4px' }}
+                  title="Back to Vault"
+                >
+                  <ArrowLeft size={24} strokeWidth={2.2} />
+                </button>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
+                  Ask AI Copilot
+                </h1>
+              </div>
+
+              <button
+                onClick={() => {
+                  setChatMessages([
+                    {
+                      role: 'assistant',
+                      content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+                    }
+                  ]);
+                }}
+                className="ig-filter-pill"
+                style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+                title="Start a new chat"
+              >
+                New chat
+              </button>
+            </header>
+
+            {/* Middle Message Stream (Scrollable Only Here) */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
-              padding: '6px 2px 14px',
-              scrollbarWidth: 'none'
+              padding: '12px 16px',
+              maxWidth: '820px',
+              width: '100%',
+              margin: '0 auto',
+              boxSizing: 'border-box'
             }}>
               {chatMessages.map((msg, idx) => (
                 <div
                   key={idx}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '82%',
+                    maxWidth: '85%',
                     padding: msg.role === 'user' ? '10px 16px' : '14px 18px',
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     background: msg.role === 'user' ? '#3797f0' : '#181c1f',
@@ -1586,10 +1599,17 @@ export default function App() {
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Bottom Actions & Input Container */}
-            <div style={{ paddingTop: '8px' }}>
+            {/* Pinned Bottom Input Container */}
+            <div style={{
+              maxWidth: '820px',
+              width: '100%',
+              margin: '0 auto',
+              padding: '8px 16px 16px',
+              flexShrink: 0,
+              boxSizing: 'border-box'
+            }}>
               {/* Suggested Prompt Chips */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                 {[
                   "What tools or promo codes were mentioned?",
                   "Summarize all career advice I saved",
@@ -1600,7 +1620,7 @@ export default function App() {
                     onClick={() => setChatQuestion(prompt)}
                     style={{
                       fontSize: '0.8rem',
-                      padding: '7px 14px',
+                      padding: '6px 12px',
                       borderRadius: '20px',
                       background: '#181c1f',
                       border: '1px solid #282f34',
@@ -1615,7 +1635,7 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Chat Input Bar (Native Instagram Rounded Pill Bar) */}
+              {/* Chat Input Bar */}
               <form onSubmit={handleAskAI} style={{
                 display: 'flex',
                 alignItems: 'center',
