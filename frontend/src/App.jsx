@@ -792,13 +792,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Highlighted Broadened Ask AI Button */}
+            {/* Highlighted Ask AI Button */}
             <button
               onClick={() => setActiveTab('chat')}
               className="ig-ask-ai-center-btn"
               title="Ask AI across your saved reels"
             >
-              <Sparkles size={14} color="#90a4f2" strokeWidth={2.2} />
               <span>Ask AI</span>
             </button>
           </div>
