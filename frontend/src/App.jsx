@@ -127,6 +127,12 @@ export default function App() {
   const [creatingCollection, setCreatingCollection] = useState(false);
   const [openCollectionPickerId, setOpenCollectionPickerId] = useState(null);
 
+  // Manage / Multi-Select Mode State (Instagram-native)
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [selectedReelIds, setSelectedReelIds] = useState(new Set());
+  const [showBatchCollectionModal, setShowBatchCollectionModal] = useState(false);
+  const [batchActionLoading, setBatchActionLoading] = useState(false);
+
   // On-Demand Translation State
   const [translating, setTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
@@ -360,6 +366,84 @@ export default function App() {
     }
   };
 
+  // Manage / Batch Operations Handlers
+  const toggleSelectReel = (reelId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedReelIds(prev => {
+      const next = new Set(prev);
+      if (next.has(reelId)) next.delete(reelId);
+      else next.add(reelId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedReelIds.size === reels.length) {
+      setSelectedReelIds(new Set());
+    } else {
+      setSelectedReelIds(new Set(reels.map(r => r.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedReelIds.size === 0) return;
+    if (!window.confirm(`Unsave and remove ${selectedReelIds.size} selected reel(s)?`)) return;
+    setBatchActionLoading(true);
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const ids = Array.from(selectedReelIds);
+      const res = await fetch(`${API_BASE}/reels/batch/delete?token=${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reel_ids: ids })
+      });
+      if (res.ok) {
+        setReels(prev => prev.filter(r => !selectedReelIds.has(r.id)));
+        setSelectedReelIds(new Set());
+        setIsManageMode(false);
+      }
+    } catch (err) {
+      console.error('Batch delete error:', err);
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
+  const handleBatchAssign = async (collectionId) => {
+    if (selectedReelIds.size === 0) return;
+    setBatchActionLoading(true);
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const ids = Array.from(selectedReelIds);
+      const res = await fetch(`${API_BASE}/reels/batch/assign?token=${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reel_ids: ids, collection_id: collectionId })
+      });
+      if (res.ok) {
+        const targetCollection = collections.find(c => c.id === collectionId);
+        setReels(prev => prev.map(r => {
+          if (selectedReelIds.has(r.id)) {
+            return {
+              ...r,
+              collection_id: collectionId,
+              collection_name: targetCollection ? targetCollection.name : null
+            };
+          }
+          return r;
+        }));
+        fetchCollections();
+        setShowBatchCollectionModal(false);
+        setSelectedReelIds(new Set());
+        setIsManageMode(false);
+      }
+    } catch (err) {
+      console.error('Batch assign error:', err);
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
   const openReelDetail = async (reel) => {
     try {
       const idToFetch = reel.id || reel.reel_id;
@@ -441,109 +525,143 @@ export default function App() {
       {/* ======================================================== */}
       {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
       {/* ======================================================== */}
-      <header className="ig-top-navbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {selectedCollection ? (
+      {isManageMode ? (
+        <header className="ig-top-navbar" style={{ background: 'rgba(18, 18, 18, 0.95)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <button
-              onClick={() => setSelectedCollection(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-heading)', fontWeight: '700', fontSize: '0.95rem' }}
+              onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-heading)', padding: '4px', display: 'flex', alignItems: 'center' }}
+              title="Cancel"
             >
-              <ArrowLeft size={18} />
-              <span>{selectedCollection.name}</span>
+              <X size={22} />
             </button>
-          ) : (
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
-              ReelDex
+            <h1 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
+              {selectedReelIds.size} selected
             </h1>
-          )}
-        </div>
+          </div>
 
-        {/* Center: Search Box */}
-        <div style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
-            <input
-              type="text"
-              placeholder="Search transcripts & tools..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '7px 32px 7px 34px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-input)',
-                fontSize: '0.84rem',
-                outline: 'none',
-                color: 'var(--text-main)'
-              }}
-            />
-            {searchQuery && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={handleSelectAll}
+              className="ig-filter-pill"
+              style={{ fontSize: '0.8rem', fontWeight: '700' }}
+            >
+              {selectedReelIds.size === reels.length ? 'Deselect all' : 'Select all'}
+            </button>
+            <button
+              onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
+              className="btn-white"
+              style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+            >
+              Done
+            </button>
+          </div>
+        </header>
+      ) : (
+        <header className="ig-top-navbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {selectedCollection ? (
               <button
-                onClick={() => setSearchQuery('')}
-                style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                onClick={() => setSelectedCollection(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-heading)', fontWeight: '700', fontSize: '0.95rem' }}
               >
-                <X size={13} />
+                <ArrowLeft size={18} />
+                <span>{selectedCollection.name}</span>
               </button>
+            ) : (
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
+                ReelDex
+              </h1>
             )}
           </div>
-        </div>
 
-        {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Ask AI Tab Toggle */}
-          <button
-            onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
-            className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
-            title="Ask AI across your saved reels"
-          >
-            Ask AI
-          </button>
+          {/* Center: Search Box */}
+          <div style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+              <input
+                type="text"
+                placeholder="Search transcripts & tools..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '7px 32px 7px 34px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-input)',
+                  fontSize: '0.84rem',
+                  outline: 'none',
+                  color: 'var(--text-main)'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
 
-          {/* User / Instagram Status Capsule */}
-          <button
-            onClick={handleGeneratePairingCode}
-            className="ig-filter-pill"
-            title="Instagram Connection Status - Click to Pair"
-          >
-            <span style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: session.is_instagram_linked ? '#10b981' : '#f59e0b'
-            }} />
-            <span>{session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}</span>
-          </button>
+          {/* Right Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Ask AI Tab Toggle */}
+            <button
+              onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
+              className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
+              title="Ask AI across your saved reels"
+            >
+              Ask AI
+            </button>
 
-          {/* + New Collection Icon Only */}
-          <button
-            onClick={() => setShowCreateCollectionModal(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '6px',
-              color: 'var(--text-heading)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              transition: 'background 0.15s ease'
-            }}
-            title="Create New Collection"
-          >
-            <Plus size={22} strokeWidth={2.2} />
-          </button>
-        </div>
-      </header>
+            {/* User / Instagram Status Capsule */}
+            <button
+              onClick={handleGeneratePairingCode}
+              className="ig-filter-pill"
+              title="Instagram Connection Status - Click to Pair"
+            >
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: session.is_instagram_linked ? '#10b981' : '#f59e0b'
+              }} />
+              <span>{session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}</span>
+            </button>
+
+            {/* + New Collection Icon Only */}
+            <button
+              onClick={() => setShowCreateCollectionModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '6px',
+                color: 'var(--text-heading)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                transition: 'background 0.15s ease'
+              }}
+              title="Create New Collection"
+            >
+              <Plus size={22} strokeWidth={2.2} />
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* ======================================================== */}
       {/* MAIN CONTENT AREA */}
       {/* ======================================================== */}
-      <div className="ig-content-container">
+      <div className="ig-content-container" style={{ paddingBottom: isManageMode ? '100px' : '60px' }}>
 
         {/* Filter Pills (Clean Wrapping Category Strip) */}
-        {activeTab === 'vault' && !selectedCollection && (
+        {activeTab === 'vault' && !selectedCollection && !isManageMode && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '22px' }}>
             <button
               onClick={() => setActiveViewFilter('All')}
@@ -573,7 +691,7 @@ export default function App() {
         {activeTab === 'vault' && (
           <div>
             {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
-            {(!selectedCollection && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
+            {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
@@ -645,14 +763,24 @@ export default function App() {
                   <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
                     {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
                   </h2>
-                  {selectedCollection && (
-                    <button
-                      onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
-                    >
-                      Delete Collection
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {reels.length > 0 && !isManageMode && (
+                      <button
+                        onClick={() => setIsManageMode(true)}
+                        style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.86rem', cursor: 'pointer' }}
+                      >
+                        Manage
+                      </button>
+                    )}
+                    {selectedCollection && (
+                      <button
+                        onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                      >
+                        Delete Collection
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {initialLoading ? (
@@ -711,16 +839,30 @@ export default function App() {
                       <div
                         key={reel.id}
                         className="modern-reel-card"
-                        onClick={() => { setShowTranslated(false); openReelDetail(reel); }}
+                        onClick={(e) => {
+                          if (isManageMode) {
+                            toggleSelectReel(reel.id, e);
+                          } else {
+                            setShowTranslated(false);
+                            openReelDetail(reel);
+                          }
+                        }}
+                        style={{
+                          opacity: (isManageMode && selectedReelIds.size > 0 && !selectedReelIds.has(reel.id)) ? 0.5 : 1,
+                          position: 'relative',
+                          cursor: 'pointer'
+                        }}
                       >
                         {/* Video Thumbnail Box */}
                         {reel.thumbnail_url ? (
                           <div className="modern-card-thumbnail-box">
                             <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
                             <div className="modern-card-overlay">
-                              <div className="play-circle-badge">
-                                <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
-                              </div>
+                              {!isManageMode && (
+                                <div className="play-circle-badge">
+                                  <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
+                                </div>
+                              )}
                             </div>
 
                             {/* Top Floating Badges */}
@@ -741,6 +883,27 @@ export default function App() {
                                 </span>
                               )}
                             </div>
+
+                            {/* Manage Mode Multi-Select Checkbox Overlay (Instagram Native) */}
+                            {isManageMode && (
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '10px',
+                                right: '10px',
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '4px',
+                                background: selectedReelIds.has(reel.id) ? '#ffffff' : 'rgba(0, 0, 0, 0.65)',
+                                border: selectedReelIds.has(reel.id) ? '2px solid #ffffff' : '2px solid rgba(255, 255, 255, 0.7)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 10,
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
+                              }}>
+                                {selectedReelIds.has(reel.id) && <Check size={16} color="#000000" strokeWidth={3.5} />}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div style={{ height: '140px', background: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1060,6 +1223,150 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* ======================================================== */}
+      {/* MANAGE MODE STICKY BOTTOM ACTION BAR (Instagram Native) */}
+      {/* ======================================================== */}
+      {isManageMode && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '72px',
+          background: 'rgba(18, 18, 18, 0.95)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderTop: '1px solid var(--border-light)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '14px',
+          padding: '0 20px',
+          zIndex: 100,
+          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.6)'
+        }}>
+          {/* Unsave Button */}
+          <button
+            onClick={handleBatchDelete}
+            disabled={selectedReelIds.size === 0 || batchActionLoading}
+            style={{
+              flex: 1,
+              maxWidth: '240px',
+              padding: '11px 18px',
+              borderRadius: 'var(--radius-md)',
+              background: '#27272a',
+              color: selectedReelIds.size > 0 ? '#ef4444' : 'var(--text-muted)',
+              border: '1px solid var(--border-light)',
+              fontWeight: '700',
+              fontSize: '0.86rem',
+              cursor: selectedReelIds.size > 0 ? 'pointer' : 'not-allowed',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Trash2 size={15} />
+            <span>Unsave {selectedReelIds.size > 0 ? `(${selectedReelIds.size})` : ''}</span>
+          </button>
+
+          {/* Add to Collection Button */}
+          <button
+            onClick={() => setShowBatchCollectionModal(true)}
+            disabled={selectedReelIds.size === 0 || batchActionLoading}
+            style={{
+              flex: 1,
+              maxWidth: '240px',
+              padding: '11px 18px',
+              borderRadius: 'var(--radius-md)',
+              background: selectedReelIds.size > 0 ? '#ffffff' : '#27272a',
+              color: selectedReelIds.size > 0 ? '#000000' : 'var(--text-muted)',
+              border: 'none',
+              fontWeight: '700',
+              fontSize: '0.86rem',
+              cursor: selectedReelIds.size > 0 ? 'pointer' : 'not-allowed',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <FolderPlus size={15} />
+            <span>Add to collection {selectedReelIds.size > 0 ? `(${selectedReelIds.size})` : ''}</span>
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* BATCH ADD TO COLLECTION MODAL (Instagram Screenshot 3) */}
+      {/* ======================================================== */}
+      {showBatchCollectionModal && (
+        <div className="modal-overlay" onClick={() => setShowBatchCollectionModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div style={{ width: '36px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+                Add to collection
+              </h3>
+              <button
+                onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-heading)', padding: '4px' }}
+                title="Create New Collection"
+              >
+                <Plus size={22} />
+              </button>
+            </div>
+
+            {collections.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  No collections yet. Create your first collection to group these reels!
+                </p>
+                <button
+                  onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
+                  className="btn-primary"
+                >
+                  <Plus size={14} /> Create New Collection
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', maxHeight: '340px', overflowY: 'auto', padding: '4px' }}>
+                {collections.map(col => {
+                  const coverImg = getCollectionCover(col.id);
+                  return (
+                    <div
+                      key={col.id}
+                      onClick={() => handleBatchAssign(col.id)}
+                      className="ig-collection-card"
+                      style={{ cursor: 'pointer', textAlign: 'center' }}
+                    >
+                      <div className="ig-collection-cover" style={{ marginBottom: '8px' }}>
+                        {coverImg ? (
+                          <img src={coverImg} alt={col.name} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #18181b, #27272a)' }}>
+                            <Folder size={32} color="#ffffff" opacity={0.6} />
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {col.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {col.count} {col.count === 1 ? 'item' : 'items'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* CREATE COLLECTION MODAL */}

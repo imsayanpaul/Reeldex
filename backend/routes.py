@@ -460,6 +460,36 @@ def assign_reel_collection(reel_id: int, req: AssignCollectionRequest, token: Op
     }
 
 
+class BatchAssignRequest(BaseModel):
+    reel_ids: List[int]
+    collection_id: Optional[int] = None
+
+class BatchDeleteRequest(BaseModel):
+    reel_ids: List[int]
+
+@router.post("/reels/batch/assign")
+def batch_assign_reels(req: BatchAssignRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Assigns multiple reels to a collection in a single batch operation."""
+    user = get_or_create_user(db, auth_token=token)
+    if req.collection_id is not None:
+        c = db.query(Collection).filter(Collection.id == req.collection_id, Collection.user_id == user.id).first()
+        if not c:
+            raise HTTPException(status_code=400, detail="Collection not found")
+        db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": c.id}, synchronize_session=False)
+    else:
+        db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": None}, synchronize_session=False)
+    db.commit()
+    return {"success": True, "count": len(req.reel_ids)}
+
+@router.post("/reels/batch/delete")
+def batch_delete_reels(req: BatchDeleteRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Deletes multiple reels in a single batch operation."""
+    user = get_or_create_user(db, auth_token=token)
+    db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).delete(synchronize_session=False)
+    db.commit()
+    return {"success": True, "count": len(req.reel_ids)}
+
+
 # --- On-Demand Audio Translation Endpoint ---
 
 @router.post("/reels/{reel_id}/translate")
