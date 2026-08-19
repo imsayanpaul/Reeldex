@@ -620,7 +620,7 @@ export default function App() {
             {/* User / Instagram Status Capsule */}
             <button
               onClick={handleGeneratePairingCode}
-              className="ig-filter-pill"
+              className="ig-filter-pill ig-user-pill"
               title="Instagram Connection Status - Click to Pair"
             >
               <span style={{
@@ -873,20 +873,13 @@ export default function App() {
                               )}
                             </div>
 
-                            {/* Top Floating Badges */}
-                            <div className="modern-card-badges" style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {/* Top Floating Badges (Desktop) */}
+                            <div className="modern-card-badges">
                               <span className="pill-category-badge">
                                 {reel.category || 'General'}
                               </span>
                               {reel.duration && (
-                                <span style={{
-                                  background: 'rgba(0, 0, 0, 0.75)',
-                                  color: '#ffffff',
-                                  fontSize: '0.68rem',
-                                  fontWeight: '700',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px'
-                                }}>
+                                <span className="pill-duration-badge">
                                   {Math.round(reel.duration)}s
                                 </span>
                               )}

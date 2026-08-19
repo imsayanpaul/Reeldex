@@ -345,14 +345,14 @@ body {
   gap: 4px;
 }
 
-/* Instagram Buttons */
-.btn-coral, .btn-primary {
-  background: #ffffff;
-  color: #000000;
-  border: none;
-  padding: 7px 16px;
-  border-radius: var(--radius-sm);
+/* Primary Action Buttons */
+.btn-primary {
+  background: var(--accent-instagram);
+  color: #ffffff;
   font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  border: none;
   font-size: 0.84rem;
   cursor: pointer;
   display: inline-flex;
@@ -362,17 +362,38 @@ body {
   transition: all 0.15s ease;
   text-decoration: none;
 }
-.btn-coral:hover, .btn-primary:hover {
-  background: #e4e4e7;
+.btn-primary:hover {
+  background: var(--accent-instagram-hover);
+  transform: translateY(-1px);
+}
+
+.btn-coral {
+  background: var(--accent-coral);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  border: none;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.btn-coral:hover {
+  background: #e11d48;
 }
 
 .btn-blue {
-  background: #0095f6;
+  background: var(--accent-blue);
   color: #ffffff;
-  border: none;
-  padding: 7px 16px;
-  border-radius: var(--radius-sm);
   font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  border: none;
   font-size: 0.84rem;
   cursor: pointer;
   display: inline-flex;
@@ -383,28 +404,21 @@ body {
   text-decoration: none;
 }
 .btn-blue:hover {
-  background: #1877f2;
+  background: #0284c7;
 }
 
 .btn-white {
-  background: #18181b;
-  color: #f4f4f5;
+  background: var(--bg-card);
+  color: var(--text-main);
   border: 1px solid var(--border-light);
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
   font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
   font-size: 0.82rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-  text-decoration: none;
-}
-.btn-white:hover {
-  background: #27272a;
-  border-color: #52525b;
 }
 
 /* Markdown Rendering in Chat */
@@ -473,19 +487,24 @@ body {
 @media (max-width: 768px) {
   .ig-top-navbar {
     padding: 10px 14px;
-    height: 54px;
+    height: 52px;
+  }
+
+  .ig-navbar-search {
+    display: none !important;
+  }
+
+  .ig-user-pill {
+    display: none !important;
   }
   
   .ig-content-container {
-    padding: 12px 10px 60px;
+    padding: 12px 12px 60px;
     max-width: 100%;
+    overflow-x: hidden;
   }
 
   .ig-categories-strip {
-    margin-left: -10px;
-    margin-right: -10px;
-    padding-left: 10px;
-    padding-right: 10px;
     margin-bottom: 20px;
     gap: 6px;
   }
@@ -493,6 +512,7 @@ body {
   .ig-filter-pill {
     padding: 6px 14px;
     font-size: 0.82rem;
+    flex-shrink: 0;
   }
 
   .ig-collections-grid {
@@ -525,8 +545,7 @@ body {
   .ig-reels-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 2px;
-    margin-left: -10px;
-    margin-right: -10px;
+    width: 100%;
   }
 
   .modern-reel-card {
@@ -542,11 +561,11 @@ body {
   }
 
   .modern-card-overlay {
-    display: none;
+    display: none !important;
   }
 
   .modern-card-badges {
-    display: none;
+    display: none !important;
   }
 
   .ig-reel-media-badge {
@@ -555,11 +574,14 @@ body {
     top: 6px;
     right: 6px;
     z-index: 5;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 3px;
+    border-radius: 3px;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
   }
 
   .modern-card-body {
-    display: none;
+    display: none !important;
   }
 
   .modal-overlay {
