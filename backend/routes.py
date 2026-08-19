@@ -10,16 +10,36 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc
 
 from backend.database import get_db, engine, Base
-from backend.models import ReelItem, Transcript, User, PairingCode
+from backend.models import ReelItem, Transcript, User, PairingCode, Collection
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import extract_reel_insights, CATEGORIES
 from backend.search import rank_reels_search, ask_reels_ai
 from backend.instagram_bot import send_instagram_dm, parse_webhook_payload
 from backend.config import settings
+from sqlalchemy import text
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
+
+# Auto-migration safety patches for existing PostgreSQL / SQLite databases
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE reels ADD COLUMN IF NOT EXISTS collection_id INTEGER REFERENCES collections(id);"))
+except Exception:
+    pass
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS translated_text TEXT;"))
+except Exception:
+    pass
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS translated_summary TEXT;"))
+except Exception:
+    pass
 
 router = APIRouter()
 
@@ -298,6 +318,13 @@ class AskChatRequest(BaseModel):
 class AuthSessionRequest(BaseModel):
     token: Optional[str] = None
 
+class CreateCollectionRequest(BaseModel):
+    name: str
+    emoji: Optional[str] = "📁"
+
+class AssignCollectionRequest(BaseModel):
+    collection_id: Optional[int] = None
+
 
 # --- Authentication & Pairing Endpoints ---
 
@@ -340,6 +367,173 @@ def generate_pairing_code(req: AuthSessionRequest, db: Session = Depends(get_db)
     }
 
 
+# --- Custom Collections & Folders Endpoints ---
+
+@router.get("/collections")
+def list_collections(token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Lists all user-created collections with reel counts."""
+    user = get_or_create_user(db, auth_token=token)
+    colls = db.query(Collection).filter(Collection.user_id == user.id).order_by(Collection.id.desc()).all()
+    results = []
+    for c in colls:
+        count = db.query(ReelItem).filter(ReelItem.collection_id == c.id).count()
+        results.append({
+            "id": c.id,
+            "name": c.name,
+            "emoji": c.emoji or "📁",
+            "count": count,
+            "created_at": c.created_at.isoformat() if c.created_at else ""
+        })
+    return results
+
+@router.post("/collections")
+def create_collection(req: CreateCollectionRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Creates a new custom collection / folder."""
+    user = get_or_create_user(db, auth_token=token)
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Collection name cannot be empty")
+
+    c = Collection(user_id=user.id, name=name, emoji=req.emoji or "📁")
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    return {
+        "success": True,
+        "id": c.id,
+        "name": c.name,
+        "emoji": c.emoji or "📁",
+        "count": 0
+    }
+
+@router.delete("/collections/{collection_id}")
+def delete_collection(collection_id: int, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Deletes a collection and unassigns its reels."""
+    user = get_or_create_user(db, auth_token=token)
+    c = db.query(Collection).filter(Collection.id == collection_id, Collection.user_id == user.id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    
+    # Unassign reels
+    db.query(ReelItem).filter(ReelItem.collection_id == c.id).update({"collection_id": None})
+    db.delete(c)
+    db.commit()
+    return {"success": True}
+
+@router.patch("/reels/{reel_id}/collection")
+def assign_reel_collection(reel_id: int, req: AssignCollectionRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Assigns or moves a reel to a specific collection (or None to unassign)."""
+    user = get_or_create_user(db, auth_token=token)
+    reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
+    if not reel:
+        raise HTTPException(status_code=404, detail="Reel not found")
+
+    if req.collection_id is not None:
+        c = db.query(Collection).filter(Collection.id == req.collection_id, Collection.user_id == user.id).first()
+        if not c:
+            raise HTTPException(status_code=400, detail="Collection not found")
+        reel.collection_id = c.id
+        collection_name = c.name
+        collection_emoji = c.emoji
+    else:
+        reel.collection_id = None
+        collection_name = None
+        collection_emoji = None
+
+    db.commit()
+    return {
+        "success": True, 
+        "collection_id": reel.collection_id,
+        "collection_name": collection_name,
+        "collection_emoji": collection_emoji
+    }
+
+
+# --- On-Demand Audio Translation Endpoint ---
+
+@router.post("/reels/{reel_id}/translate")
+async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
+    """Translates reel transcript and summary into English on-demand with 0-token caching."""
+    reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
+    if not reel or not reel.transcript:
+        raise HTTPException(status_code=404, detail="Reel transcript not found")
+
+    t = reel.transcript
+
+    # 1. Zero-Token Cache Hit
+    if t.translated_text and t.translated_summary:
+        print(f"[Translation Cache HIT] Reusing cached English translation for Reel #{reel_id} (0 tokens)")
+        return {
+            "success": True,
+            "translated_text": t.translated_text,
+            "translated_summary": t.translated_summary,
+            "cached": True
+        }
+
+    # 2. Perform translation via Groq
+    if not settings.GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=settings.GROQ_API_KEY)
+        prompt = (
+            "You are a professional audio translator. Translate the following transcript and summary into natural, fluent English. "
+            "Respond ONLY with a valid JSON object matching this exact schema:\n"
+            '{"translated_summary": "English summary text", "translated_text": "Full word-for-word English transcript"}\n\n'
+            f"Original Summary:\n{t.summary or ''}\n\n"
+            f"Original Transcript:\n{t.full_text[:4000]}"
+        )
+        resp = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+            max_tokens=2000
+        )
+        parsed = json.loads(resp.choices[0].message.content)
+        t.translated_text = parsed.get("translated_text") or t.full_text
+        t.translated_summary = parsed.get("translated_summary") or t.summary
+        db.commit()
+        return {
+            "success": True,
+            "translated_text": t.translated_text,
+            "translated_summary": t.translated_summary,
+            "cached": False
+        }
+    except Exception as e:
+        print(f"[Translation Error]: {e}")
+        # Fallback to general model
+        try:
+            from groq import Groq
+            client = Groq(api_key=settings.GROQ_API_KEY)
+            resp = client.chat.completions.create(
+                model="qwen/qwen3.6-27b",
+                messages=[
+                    {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,
+                max_tokens=2000
+            )
+            parsed = json.loads(resp.choices[0].message.content)
+            t.translated_text = parsed.get("translated_text") or t.full_text
+            t.translated_summary = parsed.get("translated_summary") or t.summary
+            db.commit()
+            return {
+                "success": True,
+                "translated_text": t.translated_text,
+                "translated_summary": t.translated_summary,
+                "cached": False
+            }
+        except Exception as e2:
+            raise HTTPException(status_code=500, detail=f"Translation failed: {str(e2)}")
+
+
 # --- Core Reels & Search Endpoints ---
 
 @router.get("/categories")
@@ -352,6 +546,7 @@ def list_reels(
     token: Optional[str] = None,
     q: Optional[str] = Query(None),
     category: Optional[str] = Query("All"),
+    collection_id: Optional[int] = Query(None),
     tag: Optional[str] = Query(None),
     source: Optional[str] = Query(None),
     db: Session = Depends(get_db)
@@ -370,6 +565,9 @@ def list_reels(
     if source:
         query_builder = query_builder.filter(ReelItem.source == source)
 
+    if collection_id is not None:
+        query_builder = query_builder.filter(ReelItem.collection_id == collection_id)
+
     reels_db = query_builder.order_by(desc(ReelItem.created_at)).all()
     
     # Format objects for search and frontend
@@ -384,6 +582,9 @@ def list_reels(
             "author": r.author,
             "thumbnail_url": r.thumbnail_url or (f"https://www.instagram.com/p/{r.shortcode}/media/?size=l" if r.shortcode else None),
             "duration": r.duration,
+            "collection_id": r.collection_id,
+            "collection_name": r.collection.name if r.collection else None,
+            "collection_emoji": r.collection.emoji if r.collection else None,
             "source": r.source,
             "sender_id": r.sender_id,
             "sender_username": r.sender_username,
@@ -395,9 +596,12 @@ def list_reels(
             "dm_replied": r.dm_replied,
             "created_at": r.created_at.isoformat() if r.created_at else "",
             "has_transcript": bool(t),
+            "language": t.language if t else "en",
             "preview_text": t.full_text[:140] if t and t.full_text else "",
             "full_text": t.full_text if t else "",
-            "summary": t.summary if t else ""
+            "summary": t.summary if t else "",
+            "translated_text": t.translated_text if t else None,
+            "translated_summary": t.translated_summary if t else None
         })
 
     # Apply hybrid semantic ranking & category filter
@@ -435,6 +639,9 @@ def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
         "author": reel.author,
         "thumbnail_url": reel.thumbnail_url or (f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None),
         "duration": reel.duration,
+        "collection_id": reel.collection_id,
+        "collection_name": reel.collection.name if reel.collection else None,
+        "collection_emoji": reel.collection.emoji if reel.collection else None,
         "source": reel.source,
         "sender_id": reel.sender_id,
         "sender_username": reel.sender_username,
@@ -447,10 +654,12 @@ def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
         "created_at": reel.created_at.isoformat() if reel.created_at else "",
         "transcript": {
             "full_text": full_text_val,
-            "language": t.language,
-            "summary": t.summary,
+            "language": t.language if t else "en",
+            "summary": t.summary if t else "",
             "key_points": t.key_points or [],
-            "segments": segments_data
+            "segments": segments_data,
+            "translated_text": t.translated_text if t else None,
+            "translated_summary": t.translated_summary if t else None
         } if t else None
     }
 

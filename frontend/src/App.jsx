@@ -13,6 +13,11 @@ import {
   Send,
   ArrowRight,
   FolderOpen,
+  Folder,
+  FolderPlus,
+  Languages,
+  Globe,
+  Plus,
   X,
   Play,
   Zap,
@@ -116,6 +121,18 @@ export default function App() {
   const [recentSearches, setRecentSearches] = useState(['AI Tools', 'Career Advice', 'Fitness']);
   const [selectedReel, setSelectedReel] = useState(null);
 
+  // Custom Collections / Folders State
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState(null);
+  const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionEmoji, setNewCollectionEmoji] = useState('📁');
+  const [openCollectionPickerId, setOpenCollectionPickerId] = useState(null);
+
+  // On-Demand Translation State
+  const [translating, setTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+
   // Ask AI Chat State
   const [chatQuestion, setChatQuestion] = useState('');
   const [chatMessages, setChatMessages] = useState([
@@ -149,15 +166,126 @@ export default function App() {
       .catch(err => console.error('Session error:', err));
 
     fetchCategories();
+    fetchCollections(currentToken);
     fetchReels(currentToken);
   }, []);
 
-  // 2. Fetch Reels when Category or Search Query Changes
+  // 2. Fetch Reels when Category, Collection or Search Query Changes
   useEffect(() => {
     fetchReels();
     const interval = setInterval(fetchReels, 4000);
     return () => clearInterval(interval);
-  }, [session?.auth_token, selectedCategory, searchQuery]);
+  }, [session?.auth_token, selectedCategory, selectedCollection, searchQuery]);
+
+  const fetchCollections = async (overrideToken) => {
+    try {
+      const token = overrideToken !== undefined ? overrideToken : (session?.auth_token || getSafeStorage('reelmind_token') || '');
+      const res = await fetch(`${API_BASE}/collections?token=${token}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCollections(data || []);
+      }
+    } catch (e) {
+      console.error('Error fetching collections:', e);
+    }
+  };
+
+  const handleCreateCollection = async (e) => {
+    if (e) e.preventDefault();
+    if (!newCollectionName.trim()) return;
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/collections?token=${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCollectionName.trim(), emoji: newCollectionEmoji })
+      });
+      if (res.ok) {
+        const newCol = await res.json();
+        setNewCollectionName('');
+        setShowCreateCollectionModal(false);
+        fetchCollections(token);
+        setSelectedCollection(newCol);
+      }
+    } catch (err) {
+      console.error('Error creating collection:', err);
+    }
+  };
+
+  const handleDeleteCollection = async (collectionId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Delete this collection? (Reels inside will not be deleted)')) return;
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/collections/${collectionId}?token=${token}`, { method: 'DELETE' });
+      if (res.ok) {
+        if (selectedCollection?.id === collectionId) setSelectedCollection(null);
+        fetchCollections(token);
+        fetchReels();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAssignCollection = async (reelId, collectionId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/reels/${reelId}/collection?token=${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_id: collectionId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReels(prev => prev.map(r => r.id === reelId ? { 
+          ...r, 
+          collection_id: data.collection_id, 
+          collection_name: data.collection_name, 
+          collection_emoji: data.collection_emoji 
+        } : r));
+        if (selectedReel?.id === reelId) {
+          setSelectedReel(prev => ({ 
+            ...prev, 
+            collection_id: data.collection_id, 
+            collection_name: data.collection_name, 
+            collection_emoji: data.collection_emoji 
+          }));
+        }
+        setOpenCollectionPickerId(null);
+        fetchCollections(token);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleTranslateReel = async (reelId) => {
+    if (translating) return;
+    setTranslating(true);
+    try {
+      const res = await fetch(`${API_BASE}/reels/${reelId}/translate`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSelectedReel(prev => ({
+            ...prev,
+            transcript: {
+              ...prev.transcript,
+              translated_text: data.translated_text,
+              translated_summary: data.translated_summary
+            }
+          }));
+          setShowTranslated(true);
+        }
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'chat' && chatBottomRef.current) {
@@ -181,6 +309,9 @@ export default function App() {
     try {
       const token = overrideToken !== undefined ? overrideToken : (session?.auth_token || getSafeStorage('reelmind_token') || '');
       let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(selectedCategory)}`;
+      if (selectedCollection?.id) {
+        url += `&collection_id=${selectedCollection.id}`;
+      }
       if (searchQuery.trim()) {
         url += `&q=${encodeURIComponent(searchQuery.trim())}`;
       }
@@ -555,11 +686,60 @@ export default function App() {
               </div>
             </div>
 
+            {/* Custom Collections / Folders Strip */}
+            <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '12px 16px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <Folder size={14} color="#ff5722" /> Custom Collections
+                </div>
+                <button
+                  onClick={() => setShowCreateCollectionModal(true)}
+                  className="btn-white"
+                  style={{ fontSize: '0.76rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px', color: '#ff5722', fontWeight: '700' }}
+                >
+                  <Plus size={13} /> New Collection
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }} className="no-scrollbar">
+                <button
+                  onClick={() => setSelectedCollection(null)}
+                  className={`trending-chip ${selectedCollection === null ? 'active' : ''}`}
+                  style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                >
+                  📁 All Reels
+                </button>
+
+                {collections.map((col) => (
+                  <div key={col.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <button
+                      onClick={() => setSelectedCollection(selectedCollection?.id === col.id ? null : col)}
+                      className={`trending-chip ${selectedCollection?.id === col.id ? 'active' : ''}`}
+                      style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <span>{col.emoji || '📁'}</span>
+                      <span>{col.name}</span>
+                      <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>({col.count})</span>
+                    </button>
+                    {selectedCollection?.id === col.id && (
+                      <button
+                        onClick={(e) => handleDeleteCollection(col.id, e)}
+                        style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
+                        title="Delete Collection"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Results Title Bar & Categories Filter */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
-                  {selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory}
+                  {selectedCollection ? `${selectedCollection.emoji} ${selectedCollection.name}` : (selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory)}
                 </h2>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'} stored in your personal vault
@@ -598,10 +778,12 @@ export default function App() {
                 </div>
                 
                 <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
-                  Your Knowledge Vault is Ready
+                  {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'Your Knowledge Vault is Ready'}
                 </h3>
                 <p style={{ color: 'var(--text-body)', fontSize: '0.88rem', lineHeight: '1.6', marginBottom: '24px', maxWidth: '440px', margin: '0 auto 24px' }}>
-                  Send any Instagram Reel in DM to <strong>@reeldex.io</strong>. Our AI engine will transcribe speech, extract tools, and file it here automatically!
+                  {selectedCollection 
+                    ? 'Assign reels to this collection using the folder icon on any reel card!' 
+                    : 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine will transcribe speech, extract tools, and file it here automatically!'}
                 </p>
 
                 <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ padding: '10px 24px' }}>
@@ -614,8 +796,8 @@ export default function App() {
                   <div
                     key={reel.id}
                     className="clean-card clean-card-hover"
-                    style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                    onClick={() => openReelDetail(reel)}
+                    style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}
+                    onClick={() => { setShowTranslated(false); openReelDetail(reel); }}
                   >
                     <div>
                       {/* Video Thumbnail Cover */}
@@ -675,19 +857,112 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Top Header: Category & Timestamp */}
+                      {/* Top Header: Category, Collection Tag & Actions */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span className="pill-category">
-                          {reel.category || 'General'}
-                        </span>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '600' }}>
-                            {reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span className="pill-category">
+                            {reel.category || 'General'}
                           </span>
+                          {reel.collection_name && (
+                            <span style={{
+                              fontSize: '0.72rem',
+                              background: 'rgba(255, 87, 34, 0.08)',
+                              color: '#ff5722',
+                              fontWeight: '700',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {reel.collection_emoji || '📁'} {reel.collection_name}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+                          {/* Assign to Collection Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
+                            }}
+                            style={{ background: 'none', border: 'none', color: reel.collection_name ? '#ff5722' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                            title="Assign to Collection"
+                          >
+                            <Folder size={14} />
+                          </button>
+
+                          {/* Collection Picker Popover */}
+                          {openCollectionPickerId === reel.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                position: 'absolute',
+                                top: '24px',
+                                right: '0',
+                                width: '180px',
+                                background: '#ffffff',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                                border: '1px solid var(--border-light)',
+                                padding: '8px',
+                                zIndex: 100
+                              }}
+                            >
+                              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', padding: '4px 6px', textTransform: 'uppercase' }}>
+                                Move to Collection:
+                              </div>
+                              {collections.map((col) => (
+                                <button
+                                  key={col.id}
+                                  onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 8px',
+                                    borderRadius: '6px',
+                                    background: reel.collection_id === col.id ? 'rgba(255, 87, 34, 0.1)' : 'transparent',
+                                    border: 'none',
+                                    fontSize: '0.78rem',
+                                    fontWeight: '600',
+                                    color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                  }}
+                                >
+                                  <span>{col.emoji || '📁'}</span>
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
+                                </button>
+                              ))}
+                              {reel.collection_id && (
+                                <button
+                                  onClick={(e) => handleAssignCollection(reel.id, null, e)}
+                                  style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 8px',
+                                    borderRadius: '6px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderTop: '1px solid var(--border-light)',
+                                    fontSize: '0.74rem',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    marginTop: '4px'
+                                  }}
+                                >
+                                  ✕ Remove from collection
+                                </button>
+                              )}
+                            </div>
+                          )}
+
                           <button
                             onClick={(e) => handleDeleteReel(reel.id, e)}
-                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px' }}
                             title="Delete"
                           >
                             <Trash2 size={14} />
@@ -761,7 +1036,7 @@ export default function App() {
                       fontSize: '0.78rem'
                     }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff5722', fontWeight: '700' }}>
-                        <Clock size={13} /> View Transcript
+                        <Clock size={13} /> View Transcript & Insights
                       </span>
                       <ArrowRight size={14} color="#ff5722" />
                     </div>
@@ -774,80 +1049,55 @@ export default function App() {
 
         {/* TAB 2: ASK AI CONVERSATION */}
         {activeTab === 'chat' && (
-          <div style={{ maxWidth: '780px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)' }}>
-            
-            {/* Messages Feed */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '6px', marginBottom: '16px' }}>
-              {chatMessages.map((msg, index) => (
+          <div className="clean-card" style={{ padding: '24px', minHeight: '620px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Bot size={22} color="#ff5722" /> Ask AI Across All Saved Reels
+                </h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Grounded BM25 Knowledge Retrieval across your full personal library
+                </p>
+              </div>
+            </div>
+
+            {/* Chat Conversation Stream */}
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {chatMessages.map((msg, idx) => (
                 <div
-                  key={index}
+                  key={idx}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: msg.role === 'user' ? '80%' : '100%',
-                    padding: msg.role === 'user' ? '12px 18px' : '18px 22px',
-                    borderRadius: '18px',
-                    background: msg.role === 'user' ? '#0f172a' : '#ffffff',
-                    boxShadow: 'var(--shadow-md)',
-                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
+                    maxWidth: '85%',
+                    padding: '14px 18px',
+                    borderRadius: '16px',
+                    background: msg.role === 'user' ? 'linear-gradient(135deg, #ff5722, #f43f5e)' : '#f8fafc',
                     color: msg.role === 'user' ? '#ffffff' : 'var(--text-dark)',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-sm)',
                     fontSize: '0.9rem',
                     lineHeight: '1.6'
                   }}
                 >
                   {msg.role === 'user' ? (
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                    msg.content
                   ) : (
-                    <div className="markdown-content">
+                    <div className="markdown-prose">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  )}
-
-                  {/* Referenced Citations */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#ff5722', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Referenced Reels:
-                      </span>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                        {msg.citations.map((c, i) => (
-                          <button
-                            key={i}
-                            onClick={() => openReelDetail(c)}
-                            className="btn-white"
-                            style={{ fontSize: '0.76rem', padding: '4px 10px' }}
-                          >
-                            🎬 {c.title || `Reel #${c.reel_id || c.id}`}
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>
               ))}
-
               {chatLoading && (
-                <div style={{
-                  alignSelf: 'flex-start',
-                  padding: '12px 18px',
-                  borderRadius: '14px',
-                  background: '#ffffff',
-                  boxShadow: 'var(--shadow-sm)',
-                  border: '1px solid var(--border-light)',
-                  fontSize: '0.86rem',
-                  color: '#ff5722',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Sparkles size={16} className="animate-spin" /> Synthesizing across your saved Reels...
+                <div style={{ alignSelf: 'flex-start', padding: '12px 18px', borderRadius: '16px', background: '#f8fafc', border: '1px solid var(--border-light)', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={16} color="#ff5722" className="animate-spin" /> Searching your reels and synthesizing answer...
                 </div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Suggested Inquiries */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+            {/* Suggested Prompt Chips */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
               {[
                 "What tools or promo codes were mentioned?",
                 "Summarize all career advice I saved",
@@ -897,6 +1147,82 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* ======================================================== */}
+      {/* CREATE COLLECTION MODAL */}
+      {/* ======================================================== */}
+      {showCreateCollectionModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FolderPlus size={20} color="#ff5722" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-heading)' }}>Create Collection</h3>
+              </div>
+              <button onClick={() => setShowCreateCollectionModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleCreateCollection}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  CHOOSE EMOJI ICON
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['📁', '🚀', '💡', '🤖', '💪', '📚', '💼', '🍳', '🎨', '🔥', '⚡', '🎬'].map((em) => (
+                    <button
+                      type="button"
+                      key={em}
+                      onClick={() => setNewCollectionEmoji(em)}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        fontSize: '1.1rem',
+                        border: newCollectionEmoji === em ? '2px solid #ff5722' : '1px solid var(--border-light)',
+                        background: newCollectionEmoji === em ? 'rgba(255, 87, 34, 0.1)' : '#ffffff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '22px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  COLLECTION NAME
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Startup Ideas, Gym Workouts..."
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-light)',
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowCreateCollectionModal(false)} className="btn-white">Cancel</button>
+                <button type="submit" disabled={!newCollectionName.trim()} className="btn-coral" style={{ padding: '8px 20px' }}>
+                  Create Collection
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* INSTAGRAM PAIRING MODAL */}
@@ -958,11 +1284,28 @@ export default function App() {
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
             
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <span className="pill-category">
-                  {selectedReel.category || 'General'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className="pill-category">
+                    {selectedReel.category || 'General'}
+                  </span>
+                  {selectedReel.collection_name && (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      background: 'rgba(255, 87, 34, 0.08)',
+                      color: '#ff5722',
+                      fontWeight: '700',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      {selectedReel.collection_emoji || '📁'} {selectedReel.collection_name}
+                    </span>
+                  )}
+                </div>
                 <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-heading)', marginTop: '8px', letterSpacing: '-0.02em' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
@@ -974,7 +1317,11 @@ export default function App() {
               {/* Actions */}
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
-                  onClick={() => copyText(selectedReel.transcript?.full_text || selectedReel.preview_text || '')}
+                  onClick={() => copyText(
+                    showTranslated 
+                      ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
+                      : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
+                  )}
                   className="btn-white"
                   title="Copy Transcript"
                 >
@@ -1012,7 +1359,7 @@ export default function App() {
                 height: '190px',
                 borderRadius: '16px',
                 overflow: 'hidden',
-                marginBottom: '18px',
+                marginBottom: '16px',
                 backgroundColor: '#0f172a'
               }}>
                 <img
@@ -1055,6 +1402,111 @@ export default function App() {
               </div>
             )}
 
+            {/* Collection Selector & On-Demand Translation Bar */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#f8fafc',
+              border: '1px solid var(--border-light)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              marginBottom: '16px',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              {/* Collection Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '700' }}>
+                  📁 Collection:
+                </span>
+                <select
+                  value={selectedReel.collection_id || ''}
+                  onChange={(e) => handleAssignCollection(selectedReel.id, e.target.value ? parseInt(e.target.value) : null)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-light)',
+                    fontSize: '0.8rem',
+                    background: '#ffffff',
+                    fontWeight: '600',
+                    color: 'var(--text-heading)',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="">(None - Unassigned)</option>
+                  {collections.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.emoji || '📁'} {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* On-Demand Audio Translation Button */}
+              {selectedReel.transcript && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {selectedReel.transcript.translated_text ? (
+                    <button
+                      onClick={() => setShowTranslated(!showTranslated)}
+                      className="btn-white"
+                      style={{
+                        fontSize: '0.78rem',
+                        padding: '5px 12px',
+                        background: showTranslated ? 'rgba(59, 130, 246, 0.1)' : '#ffffff',
+                        borderColor: showTranslated ? '#3b82f6' : 'var(--border-light)',
+                        color: showTranslated ? '#2563eb' : 'var(--text-heading)',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Globe size={14} color={showTranslated ? "#2563eb" : "#ff5722"} />
+                      {showTranslated ? '🌐 Viewing English Translation' : '🌐 Translate to English'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleTranslateReel(selectedReel.id)}
+                      disabled={translating}
+                      className="btn-white"
+                      style={{
+                        fontSize: '0.78rem',
+                        padding: '5px 12px',
+                        color: '#ff5722',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Languages size={14} />
+                      {translating ? 'Translating with Groq AI...' : '🌐 Translate to English'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Translation Active Notice */}
+            {showTranslated && (
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '0.78rem',
+                color: '#1d4ed8',
+                fontWeight: '600',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <Sparkles size={14} /> English translation generated & cached in DB (0 tokens used on future views)
+              </div>
+            )}
+
             {/* Unified AI Summary & Key Takeaways Box */}
             {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
               <div style={{
@@ -1070,11 +1522,11 @@ export default function App() {
 
                 {selectedReel.transcript?.summary && (
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '12px' : '0' }}>
-                    {formatSummary(selectedReel.transcript.summary)}
+                    {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
                   </p>
                 )}
 
-                {selectedReel.transcript?.key_points?.length > 0 && (
+                {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
                   <ul style={{ paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
                       <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
@@ -1114,8 +1566,13 @@ export default function App() {
 
             {/* Word-For-Word Transcript */}
             <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
-                FULL WORD-FOR-WORD TRANSCRIPT
+              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>FULL WORD-FOR-WORD TRANSCRIPT</span>
+                {showTranslated && (
+                  <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: '700' }}>
+                    ENGLISH TRANSLATION
+                  </span>
+                )}
               </div>
               <div style={{
                 maxHeight: '260px',
@@ -1128,7 +1585,9 @@ export default function App() {
                 lineHeight: '1.7',
                 whiteSpace: 'pre-wrap'
               }}>
-                {selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...'}
+                {showTranslated 
+                  ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || 'No translation available.')
+                  : (selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...')}
               </div>
             </div>
           </div>

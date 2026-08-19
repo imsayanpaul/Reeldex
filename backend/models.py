@@ -18,6 +18,22 @@ class User(Base):
     # Relationships
     reels = relationship("ReelItem", back_populates="user", cascade="all, delete-orphan")
     pairing_codes = relationship("PairingCode", back_populates="user", cascade="all, delete-orphan")
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
+
+
+class Collection(Base):
+    """User-created custom collection / folder (e.g. 'Startup Ideas', 'Fitness')."""
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    emoji = Column(String(20), default="📁")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="collections")
+    reels = relationship("ReelItem", back_populates="collection")
 
 
 class PairingCode(Base):
@@ -40,6 +56,7 @@ class ReelItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=True, index=True)
     reel_url = Column(String(500), nullable=False)
     shortcode = Column(String(100), index=True)
     title = Column(String(300), nullable=True)
@@ -67,6 +84,7 @@ class ReelItem(Base):
 
     # Relationships
     user = relationship("User", back_populates="reels")
+    collection = relationship("Collection", back_populates="reels")
     transcript = relationship("Transcript", back_populates="reel", uselist=False, cascade="all, delete-orphan")
 
 
@@ -82,6 +100,8 @@ class Transcript(Base):
     summary = Column(Text, nullable=True)
     key_points = Column(JSON, default=list)
     segments = Column(JSON, default=list)  # [{"start": 0.0, "end": 2.5, "text": "..."}]
+    translated_text = Column(Text, nullable=True)
+    translated_summary = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
