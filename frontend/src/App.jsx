@@ -702,7 +702,7 @@ export default function App() {
                     </h2>
                     <button
                       onClick={() => setActiveViewFilter('Collections')}
-                      style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
                     >
                       See all
                     </button>
@@ -812,7 +812,7 @@ export default function App() {
                       {reels.length > 0 && (
                         <button
                           onClick={() => setIsManageMode(true)}
-                          style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.86rem', cursor: 'pointer' }}
+                          style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
                         >
                           Manage
                         </button>
@@ -1007,8 +1007,8 @@ export default function App() {
                             <span style={{ color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                               {reel.collection_name ? (
                                 <>
-                                  <Folder size={12} color="#0095f6" strokeWidth={2.2} />
-                                  <span style={{ color: '#0095f6' }}>{reel.collection_name}</span>
+                                  <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
+                                  <span style={{ color: '#90a4f2' }}>{reel.collection_name}</span>
                                 </>
                               ) : (
                                 reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Saved'
@@ -1022,7 +1022,7 @@ export default function App() {
                                   e.stopPropagation();
                                   setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
                                 }}
-                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#0095f6' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#90a4f2' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
                                 title="Move to Collection"
                               >
                                 <Folder size={14} />
@@ -1086,7 +1086,7 @@ export default function App() {
                                             border: 'none',
                                             fontSize: '0.78rem',
                                             fontWeight: '600',
-                                            color: reel.collection_id === col.id ? '#0095f6' : 'var(--text-body)',
+                                            color: reel.collection_id === col.id ? '#90a4f2' : 'var(--text-body)',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1094,7 +1094,7 @@ export default function App() {
                                             marginBottom: '2px'
                                           }}
                                         >
-                                          <Folder size={12} color={reel.collection_id === col.id ? "#0095f6" : "currentColor"} />
+                                          <Folder size={12} color={reel.collection_id === col.id ? "#90a4f2" : "currentColor"} />
                                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
                                         </button>
                                       ))}
@@ -1115,7 +1115,7 @@ export default function App() {
                                           borderTop: '1px solid var(--border-light)',
                                           fontSize: '0.74rem',
                                           fontWeight: '700',
-                                          color: '#0095f6',
+                                          color: '#90a4f2',
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
@@ -1218,7 +1218,7 @@ export default function App() {
               ))}
               {chatLoading && (
                 <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#1c1c1e', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={15} color="#0095f6" className="animate-spin" /> Synthesizing answer across your video transcripts...
+                  <Sparkles size={15} color="#90a4f2" className="animate-spin" /> Synthesizing answer across your video transcripts...
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -1412,7 +1412,7 @@ export default function App() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: newCollectionName.trim() ? '#0095f6' : '#52525b',
+                  color: newCollectionName.trim() ? '#90a4f2' : '#52525b',
                   fontSize: '0.96rem',
                   fontWeight: '700',
                   cursor: newCollectionName.trim() ? 'pointer' : 'not-allowed',
@@ -1537,8 +1537,8 @@ export default function App() {
                     {selectedReel.category || 'General'}
                   </span>
                   {selectedReel.collection_name && (
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#0095f6', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Folder size={12} color="#0095f6" strokeWidth={2.2} />
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
                       <span>{selectedReel.collection_name}</span>
                     </span>
                   )}
@@ -1692,13 +1692,13 @@ export default function App() {
                       style={{
                         fontSize: '0.76rem',
                         padding: '4px 10px',
-                        background: showTranslated ? 'rgba(0, 149, 246, 0.15)' : '#18181b',
-                        borderColor: showTranslated ? '#0095f6' : 'var(--border-light)',
-                        color: showTranslated ? '#0095f6' : '#f4f4f5',
+                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : 'var(--bg-card)',
+                        borderColor: showTranslated ? '#90a4f2' : 'var(--border-light)',
+                        color: showTranslated ? '#90a4f2' : '#f4f4f5',
                         fontWeight: '700'
                       }}
                     >
-                      <Globe size={13} color={showTranslated ? "#0095f6" : "#ffffff"} />
+                      <Globe size={13} color={showTranslated ? "#90a4f2" : "#ffffff"} />
                       {showTranslated ? 'Viewing English Translation' : 'Translate to English'}
                     </button>
                   ) : (
@@ -1724,7 +1724,7 @@ export default function App() {
                 borderRadius: '8px',
                 padding: '7px 12px',
                 fontSize: '0.76rem',
-                color: '#0095f6',
+                color: '#90a4f2',
                 fontWeight: '600',
                 marginBottom: '14px',
                 display: 'flex',
@@ -1745,7 +1745,7 @@ export default function App() {
                 marginBottom: '16px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
-                  <Sparkles size={14} color="#0095f6" /> AI SUMMARY & KEY TAKEAWAYS
+                  <Sparkles size={14} color="#90a4f2" /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
 
                 {selectedReel.transcript?.summary && (
@@ -1797,7 +1797,7 @@ export default function App() {
               <div style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>FULL WORD-FOR-WORD TRANSCRIPT</span>
                 {showTranslated && (
-                  <span style={{ fontSize: '0.7rem', color: '#0095f6', fontWeight: '700' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#90a4f2', fontWeight: '700' }}>
                     ENGLISH TRANSLATION
                   </span>
                 )}
