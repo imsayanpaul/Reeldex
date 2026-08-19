@@ -500,7 +500,7 @@ export default function App() {
             className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
             style={{ padding: '6px 14px', fontSize: '0.82rem' }}
           >
-            <Sparkles size={14} color={activeTab === 'chat' ? '#ff5722' : 'currentColor'} />
+            <Sparkles size={14} color={activeTab === 'chat' ? '#0095f6' : 'currentColor'} />
             <span>Ask AI</span>
           </button>
 
@@ -678,7 +678,7 @@ export default function App() {
                     maxWidth: '460px',
                     margin: '30px auto'
                   }}>
-                    <Bookmark size={28} color="#ff5722" style={{ margin: '0 auto 12px' }} />
+                    <Bookmark size={28} color="#000000" style={{ margin: '0 auto 12px' }} />
                     <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#000000', marginBottom: '6px' }}>
                       {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'No Saved Reels Found'}
                     </h3>
@@ -695,11 +695,11 @@ export default function App() {
                         Browse All Reels
                       </button>
                     ) : session.is_instagram_linked ? (
-                      <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-coral" style={{ margin: '0 auto' }}>
+                      <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-primary" style={{ margin: '0 auto' }}>
                         <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
                       </a>
                     ) : (
-                      <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ margin: '0 auto' }}>
+                      <button onClick={handleGeneratePairingCode} className="btn-blue" style={{ margin: '0 auto' }}>
                         <InstagramIcon size={14} /> Link Instagram Account
                       </button>
                     )}
@@ -718,18 +718,18 @@ export default function App() {
                             <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
                             <div className="modern-card-overlay">
                               <div className="play-circle-badge">
-                                <Play size={15} color="#0f172a" style={{ fill: '#0f172a', marginLeft: '2px' }} />
+                                <Play size={15} color="#000000" style={{ fill: '#000000', marginLeft: '2px' }} />
                               </div>
                             </div>
 
                             {/* Top Floating Badges */}
                             <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span className="pill-category-badge" style={{ background: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', border: 'none' }}>
+                              <span className="pill-category-badge">
                                 {reel.category || 'General'}
                               </span>
                               {reel.duration && (
                                 <span style={{
-                                  background: 'rgba(15, 23, 42, 0.75)',
+                                  background: 'rgba(0, 0, 0, 0.75)',
                                   color: '#ffffff',
                                   fontSize: '0.68rem',
                                   fontWeight: '700',
@@ -742,8 +742,8 @@ export default function App() {
                             </div>
                           </div>
                         ) : (
-                          <div style={{ height: '140px', background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Play size={24} color="#ff5722" />
+                          <div style={{ height: '140px', background: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Play size={24} color="#ffffff" />
                           </div>
                         )}
 
@@ -819,7 +819,7 @@ export default function App() {
                                   e.stopPropagation();
                                   setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
                                 }}
-                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#ff5722' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#0095f6' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
                                 title="Move to Collection"
                               >
                                 <Folder size={14} />
@@ -857,7 +857,7 @@ export default function App() {
                                           setOpenCollectionPickerId(null);
                                           setShowCreateCollectionModal(true);
                                         }}
-                                        className="btn-coral"
+                                        className="btn-primary"
                                         style={{
                                           width: '100%',
                                           fontSize: '0.74rem',
@@ -883,7 +883,7 @@ export default function App() {
                                             border: 'none',
                                             fontSize: '0.78rem',
                                             fontWeight: '600',
-                                            color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
+                                            color: reel.collection_id === col.id ? '#0095f6' : 'var(--text-body)',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -891,7 +891,7 @@ export default function App() {
                                             marginBottom: '2px'
                                           }}
                                         >
-                                          <Folder size={12} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
+                                          <Folder size={12} color={reel.collection_id === col.id ? "#0095f6" : "currentColor"} />
                                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
                                         </button>
                                       ))}
@@ -912,7 +912,7 @@ export default function App() {
                                           borderTop: '1px solid var(--border-light)',
                                           fontSize: '0.74rem',
                                           fontWeight: '700',
-                                          color: '#ff5722',
+                                          color: '#0095f6',
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
@@ -979,7 +979,7 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bot size={20} color="#ff5722" /> Ask AI Copilot
+                  <Bot size={20} color="#000000" /> Ask AI Copilot
                 </h2>
                 <p style={{ fontSize: '0.8rem', color: '#8e8e8e' }}>
                   High-density Grounded Knowledge Search across all your saved Instagram Reels
@@ -1014,7 +1014,7 @@ export default function App() {
               ))}
               {chatLoading && (
                 <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#f4f4f5', fontSize: '0.82rem', color: '#8e8e8e', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={15} color="#ff5722" className="animate-spin" /> Synthesizing answer across your video transcripts...
+                  <Sparkles size={15} color="#0095f6" className="animate-spin" /> Synthesizing answer across your video transcripts...
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -1063,7 +1063,7 @@ export default function App() {
                   fontSize: '0.88rem'
                 }}
               />
-              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-coral" style={{ padding: '0 20px' }}>
+              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-primary" style={{ padding: '0 20px' }}>
                 <Send size={15} />
               </button>
             </form>
@@ -1109,7 +1109,7 @@ export default function App() {
 
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowCreateCollectionModal(false)} className="btn-white">Cancel</button>
-                <button type="submit" disabled={!newCollectionName.trim() || creatingCollection} className="btn-coral">
+                <button type="submit" disabled={!newCollectionName.trim() || creatingCollection} className="btn-primary">
                   {creatingCollection ? 'Creating...' : 'Create'}
                 </button>
               </div>
@@ -1139,7 +1139,7 @@ export default function App() {
               <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Your Unique Linking Code
               </span>
-              <div style={{ fontSize: '2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ff5722', margin: '6px 0' }}>
+              <div style={{ fontSize: '2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#000000', margin: '6px 0' }}>
                 {pairingCode || 'MIND-849201'}
               </div>
               <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.78rem' }}>
@@ -1150,7 +1150,7 @@ export default function App() {
             <div style={{ fontSize: '0.84rem', color: '#262626', lineHeight: '1.6', marginBottom: '20px' }}>
               <ol style={{ paddingLeft: '18px' }}>
                 <li>Open Instagram Direct and message <strong>@reeldex.io</strong>.</li>
-                <li>Send your code: <code style={{ color: '#ff5722', fontWeight: '700' }}>{pairingCode}</code></li>
+                <li>Send your code: <code style={{ color: '#000000', background: '#f4f4f5', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>{pairingCode}</code></li>
                 <li>Done! Any Reel you share in DM will automatically transcribe and save here.</li>
               </ol>
             </div>
@@ -1159,7 +1159,7 @@ export default function App() {
               href="https://ig.me/m/reeldex.io"
               target="_blank"
               rel="noreferrer"
-              className="btn-coral"
+              className="btn-blue"
               style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
             >
               Open Instagram DM <ExternalLink size={14} />
@@ -1179,11 +1179,11 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span className="ig-reel-badge" style={{ background: '#000000', color: '#ffffff' }}>
+                  <span className="pill-category-badge">
                     {selectedReel.category || 'General'}
                   </span>
                   {selectedReel.collection_name && (
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#ff5722', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#0095f6', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       📁 {selectedReel.collection_name}
                     </span>
                   )}
@@ -1341,7 +1341,7 @@ export default function App() {
                         fontWeight: '700'
                       }}
                     >
-                      <Globe size={13} color={showTranslated ? "#0095f6" : "#ff5722"} />
+                      <Globe size={13} color={showTranslated ? "#0095f6" : "#000000"} />
                       {showTranslated ? 'Viewing English Translation' : 'Translate to English'}
                     </button>
                   ) : (
@@ -1349,7 +1349,7 @@ export default function App() {
                       onClick={() => handleTranslateReel(selectedReel.id)}
                       disabled={translating}
                       className="btn-white"
-                      style={{ fontSize: '0.76rem', padding: '4px 10px', color: '#ff5722', fontWeight: '700' }}
+                      style={{ fontSize: '0.76rem', padding: '4px 10px', color: '#000000', fontWeight: '700' }}
                     >
                       <Languages size={13} />
                       {translating ? 'Translating with Groq AI...' : 'Translate to English'}
@@ -1383,12 +1383,12 @@ export default function App() {
               <div style={{
                 padding: '18px',
                 borderRadius: 'var(--radius-md)',
-                background: 'rgba(255, 87, 34, 0.04)',
-                border: '1px solid rgba(255, 87, 34, 0.15)',
+                background: '#f8fafc',
+                border: '1px solid var(--border-light)',
                 marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: '#ff5722', marginBottom: '8px' }}>
-                  <Sparkles size={14} /> AI SUMMARY & KEY TAKEAWAYS
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: '#000000', marginBottom: '8px' }}>
+                  <Sparkles size={14} color="#0095f6" /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
 
                 {selectedReel.transcript?.summary && (
@@ -1417,9 +1417,9 @@ export default function App() {
                     <div style={{
                       marginTop: '10px',
                       paddingTop: '10px',
-                      borderTop: '1px solid rgba(255, 87, 34, 0.12)'
+                      borderTop: '1px solid var(--border-light)'
                     }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '4px' }}>
                         🛠️ Extracted Tools & Action Steps:
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
