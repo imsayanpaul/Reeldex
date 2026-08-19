@@ -2146,7 +2146,7 @@ export default function App() {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Top Sticky Header (Spacious & Clean) */}
+          {/* Top Sticky Header (Seamless, No Divider) */}
           <header style={{
             position: 'sticky',
             top: 0,
@@ -2154,12 +2154,12 @@ export default function App() {
             background: 'rgba(12, 15, 20, 0.96)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid #282f34',
-            minHeight: '68px',
+            borderBottom: 'none',
+            minHeight: '64px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '14px 20px',
+            padding: '12px 20px',
             boxSizing: 'border-box'
           }}>
             {/* Left: Back Button */}
@@ -2198,29 +2198,37 @@ export default function App() {
             maxWidth: '820px',
             width: '100%',
             margin: '0 auto',
-            padding: '20px 16px 80px',
+            padding: '12px 16px 80px',
             display: 'flex',
             flexDirection: 'column',
             gap: '18px'
           }}>
-            {/* Header: Title, Category & Author */}
+            {/* Header: Clean Editorial Title & Category Eyebrow */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <span className="pill-category-badge" style={{ background: '#181c1f', border: '1px solid #282f34', color: '#f8fafa', padding: '4px 12px', fontSize: '0.76rem', borderRadius: '14px' }}>
-                  {selectedReel.category || 'General'}
-                </span>
-                {selectedReel.collection_name && (
-                  <span style={{ fontSize: '0.78rem', fontWeight: '500', color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(144, 164, 242, 0.1)', padding: '4px 10px', borderRadius: '14px' }}>
-                    <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
-                    <span>{selectedReel.collection_name}</span>
-                  </span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.74rem',
+                fontWeight: '500',
+                color: '#8e8e8e',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                marginBottom: '6px'
+              }}>
+                <span>{selectedReel.category || 'General'}</span>
+                {selectedReel.duration && (
+                  <>
+                    <span>•</span>
+                    <span>{Math.round(selectedReel.duration)}s</span>
+                  </>
                 )}
               </div>
-              <h1 style={{ fontSize: '1.45rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: '0 0 6px' }}>
+              <h1 style={{ fontSize: '1.35rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: '0 0 4px', lineHeight: '1.35' }}>
                 {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
               </h1>
-              <p style={{ fontSize: '0.84rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
-                by @{selectedReel.author || selectedReel.sender_username || 'Creator'} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
+              <p style={{ fontSize: '0.85rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
+                by @{selectedReel.author || selectedReel.sender_username || 'Creator'}
               </p>
             </div>
 
