@@ -316,13 +316,14 @@ export default function App() {
       if (res.ok) {
         const newCol = await res.json();
         setNewCollectionName('');
+        // Instantly transition into "Add from saved" without exposing empty background
         setShowCreateCollectionModal(false);
-        await fetchCollections(token);
         setSelectedCollection(newCol);
-        // Automatically open "Add from saved" picker!
-        await fetchAllVaultReels();
         setSelectedReelIdsForAdd(new Set());
         setShowAddToThisCollectionModal(true);
+        // Background fetch data
+        fetchAllVaultReels(newCol);
+        fetchCollections(token);
       }
     } catch (err) {
       console.error('Error creating collection:', err);
@@ -347,7 +348,8 @@ export default function App() {
     }
   };
 
-  const fetchAllVaultReels = async () => {
+  const fetchAllVaultReels = async (targetCollection) => {
+    const col = targetCollection !== undefined ? targetCollection : selectedCollection;
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
       const res = await fetch(`${API_BASE}/reels?token=${token}&category=All`);
@@ -355,10 +357,10 @@ export default function App() {
         const data = await res.json();
         setAllVaultReels(data || []);
         // Pre-select reels already in this collection
-        if (selectedCollection) {
+        if (col) {
           const currentIds = new Set(
             (data || [])
-              .filter(r => String(r.collection_id) === String(selectedCollection.id))
+              .filter(r => String(r.collection_id) === String(col.id))
               .map(r => r.id)
           );
           setSelectedReelIdsForAdd(currentIds);
@@ -1934,7 +1936,12 @@ export default function App() {
 
             {/* Scrollable 3-Column Square Grid with Top-Left Checkboxes */}
             <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', padding: '1px' }}>
-              {allVaultReels.map(reel => {
+              {allVaultReels.length === 0 ? (
+                [1, 2, 3, 4, 5, 6].map(n => (
+                  <div key={n} className="skeleton-shimmer" style={{ aspectRatio: '1 / 1', background: '#181c1f' }} />
+                ))
+              ) : (
+                allVaultReels.map(reel => {
                 const isSelected = selectedReelIdsForAdd.has(reel.id);
                 return (
                   <div
@@ -1981,7 +1988,7 @@ export default function App() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
         </div>
