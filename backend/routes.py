@@ -492,10 +492,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     db.query(ReelItem).filter(ReelItem.sender_id == sender_id).update({"user_id": target_user.id})
 
                     target_user.instagram_sender_id = sender_id
-                    p_code.is_used = True
-                    db.commit()
-
-                    vault_url = f"https://birthday-leone-hair-spoke.trycloudflare.com/?token={target_user.auth_token}"
+                    frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
+                    vault_url = f"{frontend_base}/?token={target_user.auth_token}"
                     confirm_msg = (
                         f"🎉 Your Instagram is now CONNECTED to ReelDex!\n\n"
                         f"Any Reel you send here will be automatically transcribed, categorized, and searchable in your personal library.\n\n"
