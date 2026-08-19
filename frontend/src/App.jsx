@@ -526,17 +526,17 @@ export default function App() {
       {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
       {/* ======================================================== */}
       {isManageMode ? (
-        <header className="ig-top-navbar" style={{ background: 'rgba(18, 18, 18, 0.95)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <header className="ig-top-navbar ig-manage-navbar" style={{ background: 'rgba(0, 0, 0, 0.95)', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
               onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-heading)', padding: '4px', display: 'flex', alignItems: 'center' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
               title="Cancel"
             >
-              <X size={22} />
+              <X size={24} strokeWidth={2.2} />
             </button>
-            <h1 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
-              {selectedReelIds.size} selected
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
+              {selectedReelIds.size > 0 ? `${selectedReelIds.size} selected` : 'All Posts'}
             </h1>
           </div>
 
@@ -544,16 +544,9 @@ export default function App() {
             <button
               onClick={handleSelectAll}
               className="ig-filter-pill"
-              style={{ fontSize: '0.8rem', fontWeight: '700' }}
+              style={{ fontSize: '0.82rem', fontWeight: '700', padding: '6px 14px' }}
             >
               {selectedReelIds.size === reels.length ? 'Deselect all' : 'Select all'}
-            </button>
-            <button
-              onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
-              className="btn-white"
-              style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-            >
-              Done
             </button>
           </div>
         </header>
@@ -761,29 +754,31 @@ export default function App() {
             {/* 2. REELS AND POSTS SECTION (9:16 Vertical Instagram Cards Grid) */}
             {activeViewFilter !== 'Collections' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
-                    {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
-                  </h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {reels.length > 0 && !isManageMode && (
-                      <button
-                        onClick={() => setIsManageMode(true)}
-                        style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.86rem', cursor: 'pointer' }}
-                      >
-                        Manage
-                      </button>
-                    )}
-                    {selectedCollection && (
-                      <button
-                        onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
-                      >
-                        Delete Collection
-                      </button>
-                    )}
+                {!isManageMode && (
+                  <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+                      {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {reels.length > 0 && (
+                        <button
+                          onClick={() => setIsManageMode(true)}
+                          style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.86rem', cursor: 'pointer' }}
+                        >
+                          Manage
+                        </button>
+                      )}
+                      {selectedCollection && (
+                        <button
+                          onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          Delete Collection
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {initialLoading ? (
                   <div className="ig-reels-grid">
@@ -1236,74 +1231,25 @@ export default function App() {
       {/* MANAGE MODE STICKY BOTTOM ACTION BAR (Instagram Native) */}
       {/* ======================================================== */}
       {isManageMode && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '72px',
-          background: 'rgba(18, 18, 18, 0.95)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderTop: '1px solid var(--border-light)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '14px',
-          padding: '0 20px',
-          zIndex: 100,
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.6)'
-        }}>
+        <div className="ig-manage-bottom-bar">
           {/* Unsave Button */}
           <button
             onClick={handleBatchDelete}
             disabled={selectedReelIds.size === 0 || batchActionLoading}
-            style={{
-              flex: 1,
-              maxWidth: '240px',
-              padding: '11px 18px',
-              borderRadius: 'var(--radius-md)',
-              background: '#27272a',
-              color: selectedReelIds.size > 0 ? '#ef4444' : 'var(--text-muted)',
-              border: '1px solid var(--border-light)',
-              fontWeight: '700',
-              fontSize: '0.86rem',
-              cursor: selectedReelIds.size > 0 ? 'pointer' : 'not-allowed',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease'
-            }}
+            className="ig-manage-bottom-btn"
+            style={{ color: selectedReelIds.size > 0 ? '#ef4444' : '#71717a' }}
           >
-            <Trash2 size={15} />
-            <span>Unsave {selectedReelIds.size > 0 ? `(${selectedReelIds.size})` : ''}</span>
+            Unsave
           </button>
 
           {/* Add to Collection Button */}
           <button
             onClick={() => setShowBatchCollectionModal(true)}
             disabled={selectedReelIds.size === 0 || batchActionLoading}
-            style={{
-              flex: 1,
-              maxWidth: '240px',
-              padding: '11px 18px',
-              borderRadius: 'var(--radius-md)',
-              background: selectedReelIds.size > 0 ? '#ffffff' : '#27272a',
-              color: selectedReelIds.size > 0 ? '#000000' : 'var(--text-muted)',
-              border: 'none',
-              fontWeight: '700',
-              fontSize: '0.86rem',
-              cursor: selectedReelIds.size > 0 ? 'pointer' : 'not-allowed',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease'
-            }}
+            className="ig-manage-bottom-btn"
+            style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
           >
-            <FolderPlus size={15} />
-            <span>Add to collection {selectedReelIds.size > 0 ? `(${selectedReelIds.size})` : ''}</span>
+            Add to collection
           </button>
         </div>
       )}

@@ -483,6 +483,65 @@ body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Manage Mode Bottom Bar */
+.ig-manage-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  background: #121212;
+  border-top: 1px solid #262626;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.7);
+}
+
+.ig-manage-bottom-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 8px;
+  background: #262626;
+  border: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ig-manage-bottom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ig-manage-bottom-btn:hover:not(:disabled) {
+  background: #323236;
+}
+
+.ig-manage-checkbox {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.ig-manage-checkbox.selected {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
 /* Mobile Responsive (< 768px) - Exact Instagram Native Saved App Layout */
 @media (max-width: 768px) {
   .ig-top-navbar {
@@ -499,13 +558,14 @@ body {
   }
   
   .ig-content-container {
-    padding: 12px 12px 60px;
+    padding: 10px 0 70px 0;
     max-width: 100%;
     overflow-x: hidden;
   }
 
   .ig-categories-strip {
-    margin-bottom: 20px;
+    padding: 0 12px;
+    margin-bottom: 18px;
     gap: 6px;
   }
 
@@ -516,9 +576,10 @@ body {
   }
 
   .ig-collections-grid {
+    padding: 0 12px;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px 10px;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
   }
 
   .ig-collection-card {
@@ -541,23 +602,38 @@ body {
     font-size: 0.7rem;
   }
 
+  .ig-reels-header {
+    padding: 0 12px;
+    margin-bottom: 12px;
+  }
+
   /* Instagram Native 3-Column Reels Grid */
   .ig-reels-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+    gap: 1.5px;
     width: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .modern-reel-card {
     border-radius: 0;
     border: none;
-    background: transparent;
+    background: #18181b;
     box-shadow: none;
   }
 
   .modern-card-thumbnail-box {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5; /* Exact vertical 4:5 native Instagram Reels crop */
+    width: 100%;
+    height: 100%;
     border-radius: 0;
+  }
+
+  .modern-card-thumbnail-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .modern-card-overlay {
