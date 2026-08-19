@@ -2146,7 +2146,7 @@ export default function App() {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Top Sticky Header */}
+          {/* Top Sticky Header (Spacious & Clean) */}
           <header style={{
             position: 'sticky',
             top: 0,
@@ -2155,11 +2155,11 @@ export default function App() {
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
             borderBottom: '1px solid #282f34',
-            height: '56px',
+            height: '62px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 16px'
+            padding: '0 20px'
           }}>
             {/* Left: Back Button */}
             <button
@@ -2170,51 +2170,26 @@ export default function App() {
                 color: '#f8fafa',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '10px',
                 cursor: 'pointer',
-                padding: '6px 8px 6px 0',
-                fontSize: '0.95rem',
+                padding: '8px 12px 8px 0',
+                fontSize: '1rem',
                 fontWeight: '500'
               }}
             >
-              <ArrowLeft size={22} strokeWidth={2.2} />
+              <ArrowLeft size={24} strokeWidth={2.2} />
               <span>Back</span>
             </button>
 
             {/* Center: Author info */}
-            <div style={{ textAlign: 'center', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>
+            <div style={{ textAlign: 'center', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.94rem', fontWeight: '500', color: '#f8fafa' }}>
                 @{selectedReel.author || selectedReel.sender_username || 'Creator'}
               </span>
             </div>
 
-            {/* Right: Quick Action Buttons (Uncramped & Clean) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={() => copyText(
-                  showTranslated 
-                    ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
-                    : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
-                )}
-                style={{
-                  background: '#181c1f',
-                  border: '1px solid #282f34',
-                  color: '#f8fafa',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.84rem',
-                  fontWeight: '500'
-                }}
-                title="Copy Transcript"
-              >
-                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-
+            {/* Right: Instagram Link Action Button */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               {selectedReel.reel_url && (
                 <a
                   href={selectedReel.reel_url}
@@ -2224,8 +2199,8 @@ export default function App() {
                     background: '#181c1f',
                     border: '1px solid #282f34',
                     color: '#f8fafa',
-                    borderRadius: '8px',
-                    padding: '7px 12px',
+                    borderRadius: '10px',
+                    padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2233,7 +2208,7 @@ export default function App() {
                   }}
                   title="Open on Instagram"
                 >
-                  <ExternalLink size={15} />
+                  <ExternalLink size={16} />
                 </a>
               )}
             </div>
@@ -2584,16 +2559,49 @@ export default function App() {
               border: '1px solid #282f34',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px'
+              gap: '14px'
             }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>Word-for-Word Transcript</span>
-                {showTranslated && (
-                  <span style={{ fontSize: '0.74rem', color: '#90a4f2', fontWeight: '500' }}>
-                    English Translation
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>
+                    Word-for-Word Transcript
                   </span>
-                )}
+                  {showTranslated && (
+                    <span style={{ marginLeft: '8px', fontSize: '0.74rem', color: '#90a4f2', fontWeight: '500' }}>
+                      (English Translation)
+                    </span>
+                  )}
+                </div>
+
+                {/* Clean Copy Button in Transcription Area */}
+                <button
+                  type="button"
+                  onClick={() => copyText(
+                    showTranslated 
+                      ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
+                      : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
+                  )}
+                  style={{
+                    background: '#121518',
+                    border: '1px solid #282f34',
+                    color: copied ? '#10b981' : '#f8fafa',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Copy full transcript"
+                >
+                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </button>
               </div>
+
               <div style={{
                 maxHeight: '380px',
                 overflowY: 'auto',
