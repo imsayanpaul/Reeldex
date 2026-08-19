@@ -277,7 +277,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
-      content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+      content: 'I am your **Dex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"Summarize all job interview tips"*, *"List all design & AI tools mentioned"*, or *"Find workout & communication advice"*.'
     }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -1740,7 +1740,7 @@ export default function App() {
                   setChatMessages([
                     {
                       role: 'assistant',
-                      content: 'I am your **Dex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+                      content: 'I am your **Dex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"Summarize all job interview tips"*, *"List all design & AI tools mentioned"*, or *"Find workout & communication advice"*.'
                     }
                   ]);
                 }}
@@ -1855,9 +1855,10 @@ export default function App() {
               {/* Suggested Prompt Chips */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                 {[
-                  "What tools or promo codes were mentioned?",
-                  "Summarize all career advice I saved",
-                  "List all fitness routines"
+                  "Summarize all job interview tips from my reels",
+                  "What AI & design tools were mentioned?",
+                  "List all workout and fitness routines",
+                  "Summarize all career & communication advice"
                 ].map((prompt, idx) => (
                   <button
                     key={idx}
