@@ -959,8 +959,15 @@ export default function App() {
                             borderTop: '1px solid var(--border-light)',
                             fontSize: '0.74rem'
                           }}>
-                            <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>
-                              {reel.collection_name ? `📁 ${reel.collection_name}` : (reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Saved')}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              {reel.collection_name ? (
+                                <>
+                                  <Folder size={12} color="#0095f6" strokeWidth={2.2} />
+                                  <span style={{ color: '#0095f6' }}>{reel.collection_name}</span>
+                                </>
+                              ) : (
+                                reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Saved'
+                              )}
                             </span>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
@@ -985,7 +992,7 @@ export default function App() {
                                     bottom: '26px',
                                     right: '0',
                                     width: '190px',
-                                    background: '#ffffff',
+                                    background: 'var(--bg-card)',
                                     borderRadius: '10px',
                                     boxShadow: 'var(--shadow-lg)',
                                     border: '1px solid var(--border-light)',
@@ -1483,7 +1490,8 @@ export default function App() {
                   </span>
                   {selectedReel.collection_name && (
                     <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#0095f6', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      📁 {selectedReel.collection_name}
+                      <Folder size={12} color="#0095f6" strokeWidth={2.2} />
+                      <span>{selectedReel.collection_name}</span>
                     </span>
                   )}
                 </div>
