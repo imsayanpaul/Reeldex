@@ -102,12 +102,19 @@ export default function App() {
 
   // User & Pairing State
   const initialToken = getInitialToken();
-  const [session, setSession] = useState({ auth_token: initialToken, display_name: 'ReelDex Explorer' });
+  const cachedName = getSafeStorage('reelmind_display_name') || 'User #3832';
+  const cachedLinked = getSafeStorage('reelmind_is_linked') === 'true';
+  const [session, setSession] = useState({ 
+    auth_token: initialToken, 
+    display_name: cachedName,
+    is_instagram_linked: cachedLinked
+  });
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairingCode, setPairingCode] = useState(null);
 
   // Vault, Collections & Search State
   const [reels, setReels] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState(['All']);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
@@ -152,6 +159,8 @@ export default function App() {
         if (data && data.auth_token) {
           setSession(data);
           setSafeStorage('reelmind_token', data.auth_token);
+          if (data.display_name) setSafeStorage('reelmind_display_name', data.display_name);
+          if (data.is_instagram_linked !== undefined) setSafeStorage('reelmind_is_linked', String(data.is_instagram_linked));
         }
       })
       .catch(err => console.error('Session error:', err));
@@ -217,6 +226,8 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error fetching reels:', err);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -643,7 +654,21 @@ export default function App() {
                   )}
                 </div>
 
-                {reels.length === 0 ? (
+                {initialLoading ? (
+                  <div className="ig-reels-grid">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="modern-reel-card" style={{ opacity: 0.85 }}>
+                        <div className="modern-card-thumbnail-box skeleton-shimmer" style={{ minHeight: '190px' }} />
+                        <div className="modern-card-body">
+                          <div className="skeleton-shimmer" style={{ width: '35%', height: '12px', borderRadius: '4px', marginBottom: '8px' }} />
+                          <div className="skeleton-shimmer" style={{ width: '80%', height: '18px', borderRadius: '4px', marginBottom: '10px' }} />
+                          <div className="skeleton-shimmer" style={{ width: '100%', height: '36px', borderRadius: '4px', marginBottom: '12px' }} />
+                          <div className="skeleton-shimmer" style={{ width: '50%', height: '12px', borderRadius: '4px' }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : reels.length === 0 ? (
                   <div style={{
                     padding: '48px 24px',
                     textAlign: 'center',
