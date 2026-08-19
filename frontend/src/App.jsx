@@ -2132,81 +2132,173 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* REEL DETAIL & FULL TRANSCRIPT MODAL */}
+      {/* REEL DETAIL FULL-PAGE VIEW (INSTAGRAM NATIVE) */}
       {/* ======================================================== */}
       {selectedReel && (
-        <div className="modal-overlay" onClick={() => setSelectedReel(null)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-            
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span className="pill-category-badge">
-                    {selectedReel.category || 'General'}
-                  </span>
-                  {selectedReel.collection_name && (
-                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
-                      <span>{selectedReel.collection_name}</span>
-                    </span>
-                  )}
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', marginTop: '6px', letterSpacing: '-0.02em' }}>
-                  {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '400' }}>
-                  by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
-                </p>
-              </div>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 1000,
+          background: '#0c0f14',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Top Sticky Header */}
+          <header style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 30,
+            background: 'rgba(12, 15, 20, 0.96)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderBottom: '1px solid #282f34',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 16px'
+          }}>
+            {/* Left: Back Button */}
+            <button
+              onClick={() => setSelectedReel(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#f8fafa',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                padding: '6px 8px 6px 0',
+                fontSize: '0.95rem',
+                fontWeight: '500'
+              }}
+            >
+              <ArrowLeft size={22} strokeWidth={2.2} />
+              <span>Back</span>
+            </button>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  onClick={() => copyText(
-                    showTranslated 
-                      ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
-                      : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
-                  )}
-                  className="btn-white"
-                  title="Copy Transcript"
-                >
-                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                </button>
-                {selectedReel.transcript && (
-                  <button
-                    onClick={() => downloadSRT(selectedReel)}
-                    className="btn-white"
-                    title="Download .SRT"
-                  >
-                    <Download size={14} /> .SRT
-                  </button>
-                )}
-                {selectedReel.reel_url && (
-                  <a
-                    href={selectedReel.reel_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-white"
-                    title="Open on Instagram"
-                  >
-                    <ExternalLink size={14} />
-                  </a>
-                )}
-                <button onClick={() => setSelectedReel(null)} className="btn-white">✕</button>
-              </div>
+            {/* Center: Author info */}
+            <div style={{ textAlign: 'center', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>
+                @{selectedReel.author || selectedReel.sender_username || 'Creator'}
+              </span>
             </div>
 
-            {/* Modal Video Thumbnail Preview */}
+            {/* Right: Quick Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => copyText(
+                  showTranslated 
+                    ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
+                    : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
+                )}
+                style={{
+                  background: '#181c1f',
+                  border: '1px solid #282f34',
+                  color: '#f8fafa',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '0.8rem'
+                }}
+                title="Copy Transcript"
+              >
+                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                <span className="hidden sm:inline">Copy</span>
+              </button>
+
+              {selectedReel.transcript && (
+                <button
+                  onClick={() => downloadSRT(selectedReel)}
+                  style={{
+                    background: '#181c1f',
+                    border: '1px solid #282f34',
+                    color: '#f8fafa',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.8rem'
+                  }}
+                  title="Download .SRT Subtitles"
+                >
+                  <Download size={14} />
+                  <span>.SRT</span>
+                </button>
+              )}
+
+              {selectedReel.reel_url && (
+                <a
+                  href={selectedReel.reel_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    background: '#181c1f',
+                    border: '1px solid #282f34',
+                    color: '#f8fafa',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    textDecoration: 'none'
+                  }}
+                  title="Open on Instagram"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+            </div>
+          </header>
+
+          {/* Main Full-Page Content */}
+          <div style={{
+            maxWidth: '820px',
+            width: '100%',
+            margin: '0 auto',
+            padding: '20px 16px 80px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px'
+          }}>
+            {/* Header: Title, Category & Author */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span className="pill-category-badge" style={{ background: '#181c1f', border: '1px solid #282f34', color: '#f8fafa', padding: '4px 12px', fontSize: '0.76rem', borderRadius: '14px' }}>
+                  {selectedReel.category || 'General'}
+                </span>
+                {selectedReel.collection_name && (
+                  <span style={{ fontSize: '0.78rem', fontWeight: '500', color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(144, 164, 242, 0.1)', padding: '4px 10px', borderRadius: '14px' }}>
+                    <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
+                    <span>{selectedReel.collection_name}</span>
+                  </span>
+                )}
+              </div>
+              <h1 style={{ fontSize: '1.45rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: '0 0 6px' }}>
+                {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
+              </h1>
+              <p style={{ fontSize: '0.84rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
+                by @{selectedReel.author || selectedReel.sender_username || 'Creator'} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
+              </p>
+            </div>
+
+            {/* Video Thumbnail Preview Banner */}
             {selectedReel.thumbnail_url && (
               <div style={{
                 position: 'relative',
                 width: '100%',
-                height: '180px',
-                borderRadius: 'var(--radius-md)',
+                maxHeight: '340px',
+                aspectRatio: '16 / 9',
+                borderRadius: '16px',
                 overflow: 'hidden',
-                marginBottom: '16px',
-                backgroundColor: '#000000'
+                backgroundColor: '#000000',
+                border: '1px solid #282f34'
               }}>
                 <img
                   src={selectedReel.thumbnail_url}
@@ -2222,7 +2314,7 @@ export default function App() {
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 60%)',
+                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 60%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -2232,53 +2324,55 @@ export default function App() {
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '7px 16px',
-                      borderRadius: 'var(--radius-full)',
-                      background: 'rgba(0, 0, 0, 0.8)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      gap: '8px',
+                      padding: '10px 22px',
+                      borderRadius: '24px',
+                      background: 'rgba(0, 0, 0, 0.82)',
+                      backdropFilter: 'blur(10px)',
+                      WebkitBackdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                       color: '#ffffff',
-                      fontWeight: '700',
-                      fontSize: '0.8rem',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.5)'
+                      fontWeight: '600',
+                      fontSize: '0.86rem',
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.6)'
                     }}>
-                      <Play size={13} color="#ffffff" style={{ fill: '#ffffff' }} /> Play on Instagram <ExternalLink size={11} />
+                      <Play size={14} color="#ffffff" style={{ fill: '#ffffff' }} />
+                      <span>Watch on Instagram</span>
+                      <ExternalLink size={12} />
                     </div>
                   </a>
                 )}
               </div>
             )}
 
-            {/* Folder Move & Translation Toolbar */}
+            {/* Folder Move & Translation Row */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: '#1c1c1e',
-              border: '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '8px 12px',
-              marginBottom: '16px',
+              background: '#181c1f',
+              border: '1px solid #282f34',
+              borderRadius: '12px',
+              padding: '10px 14px',
               flexWrap: 'wrap',
-              gap: '8px'
+              gap: '10px'
             }}>
               {/* Folder Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: '700' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: '#8e8e8e', fontWeight: '500' }}>
                   Folder:
                 </span>
                 <select
                   value={selectedReel.collection_id || ''}
                   onChange={(e) => handleAssignCollection(selectedReel.id, e.target.value ? parseInt(e.target.value) : null)}
                   style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-light)',
-                    fontSize: '0.78rem',
-                    background: 'var(--bg-input)',
-                    fontWeight: '600',
-                    color: 'var(--text-main)',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #282f34',
+                    fontSize: '0.82rem',
+                    background: '#121518',
+                    fontWeight: '500',
+                    color: '#f8fafa',
                     outline: 'none'
                   }}
                 >
@@ -2297,28 +2391,43 @@ export default function App() {
                   {selectedReel.transcript.translated_text ? (
                     <button
                       onClick={() => setShowTranslated(!showTranslated)}
-                      className="btn-white"
                       style={{
-                        fontSize: '0.76rem',
-                        padding: '4px 10px',
-                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : 'var(--bg-card)',
-                        borderColor: showTranslated ? '#90a4f2' : 'var(--border-light)',
-                        color: showTranslated ? '#90a4f2' : '#f4f4f5',
-                        fontWeight: '700'
+                        fontSize: '0.8rem',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : '#121518',
+                        border: showTranslated ? '1px solid #90a4f2' : '1px solid #282f34',
+                        color: showTranslated ? '#90a4f2' : '#f8fafa',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
                       }}
                     >
-                      <Globe size={13} color={showTranslated ? "#90a4f2" : "#ffffff"} />
-                      {showTranslated ? 'Viewing English Translation' : 'Translate to English'}
+                      <Globe size={14} color={showTranslated ? "#90a4f2" : "#f8fafa"} />
+                      <span>{showTranslated ? 'Viewing English' : 'Translate to English'}</span>
                     </button>
                   ) : (
                     <button
                       onClick={() => handleTranslateReel(selectedReel.id)}
                       disabled={translating}
-                      className="btn-white"
-                      style={{ fontSize: '0.76rem', padding: '4px 10px', color: '#ffffff', fontWeight: '700' }}
+                      style={{
+                        fontSize: '0.8rem',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        background: '#121518',
+                        border: '1px solid #282f34',
+                        color: '#f8fafa',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
                     >
-                      <Languages size={13} />
-                      {translating ? 'Translating with Groq AI...' : 'Translate to English'}
+                      <Languages size={14} />
+                      <span>{translating ? 'Translating with AI...' : 'Translate to English'}</span>
                     </button>
                   )}
                 </div>
@@ -2328,45 +2437,47 @@ export default function App() {
             {/* Translation Active Alert */}
             {showTranslated && (
               <div style={{
-                background: 'rgba(0, 149, 246, 0.12)',
-                border: '1px solid rgba(0, 149, 246, 0.3)',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.76rem',
+                background: 'rgba(0, 149, 246, 0.08)',
+                border: '1px solid rgba(0, 149, 246, 0.25)',
+                borderRadius: '10px',
+                padding: '9px 14px',
+                fontSize: '0.8rem',
                 color: '#90a4f2',
-                fontWeight: '600',
-                marginBottom: '14px',
+                fontWeight: '400',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '8px'
               }}>
-                <Sparkles size={13} /> English translation cached permanently (0 tokens used on future views)
+                <Globe size={14} />
+                <span>English translation active (cached permanently)</span>
               </div>
             )}
 
-            {/* Unified AI Summary & Key Takeaways Card */}
+            {/* AI Summary & Key Takeaways Card */}
             {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
               <div style={{
-                padding: '18px',
-                borderRadius: 'var(--radius-md)',
-                background: '#18181b',
-                border: '1px solid var(--border-light)',
-                marginBottom: '16px'
+                padding: '20px',
+                borderRadius: '16px',
+                background: '#181c1f',
+                border: '1px solid #282f34',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
-                  <Sparkles size={14} color="#90a4f2" /> AI SUMMARY & KEY TAKEAWAYS
+                <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa' }}>
+                  AI Summary & Key Takeaways
                 </div>
 
                 {selectedReel.transcript?.summary && (
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '10px' : '0' }}>
+                  <p style={{ fontSize: '0.92rem', color: '#f8fafa', lineHeight: '1.65', margin: 0, fontWeight: '400' }}>
                     {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
                   </p>
                 )}
 
                 {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
-                  <ul style={{ paddingLeft: '18px', fontSize: '0.84rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.88rem', color: '#d4d4d8', lineHeight: '1.65', margin: 0 }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '3px' }}>{formatSummary(pt)}</li>
+                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
                     ))}
                   </ul>
                 )}
@@ -2381,17 +2492,18 @@ export default function App() {
 
                   return (
                     <div style={{
-                      marginTop: '10px',
-                      paddingTop: '10px',
-                      borderTop: '1px solid var(--border-light)'
+                      marginTop: '6px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #282f34'
                     }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-heading)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '4px' }}>
-                        🛠️ Extracted Tools & Action Steps:
+                      <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
+                        Extracted Tools & Action Steps:
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {validActions.map((act, i) => (
-                          <div key={i} style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>
-                            • {act}
+                          <div key={i} style={{ fontSize: '0.86rem', color: '#f8fafa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#90a4f2' }}>•</span>
+                            <span>{act}</span>
                           </div>
                         ))}
                       </div>
@@ -2401,27 +2513,36 @@ export default function App() {
               </div>
             )}
 
-            {/* Word-For-Word Transcript */}
-            <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>FULL WORD-FOR-WORD TRANSCRIPT</span>
+            {/* Word-For-Word Full Transcript Card */}
+            <div style={{
+              padding: '20px',
+              borderRadius: '16px',
+              background: '#181c1f',
+              border: '1px solid #282f34',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Word-for-Word Transcript</span>
                 {showTranslated && (
-                  <span style={{ fontSize: '0.7rem', color: '#90a4f2', fontWeight: '700' }}>
-                    ENGLISH TRANSLATION
+                  <span style={{ fontSize: '0.74rem', color: '#90a4f2', fontWeight: '500' }}>
+                    English Translation
                   </span>
                 )}
               </div>
               <div style={{
-                maxHeight: '220px',
+                maxHeight: '380px',
                 overflowY: 'auto',
-                padding: '14px',
-                borderRadius: 'var(--radius-sm)',
-                background: '#18181b',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-main)',
-                fontSize: '0.84rem',
-                lineHeight: '1.65',
-                whiteSpace: 'pre-wrap'
+                padding: '16px',
+                borderRadius: '10px',
+                background: '#121518',
+                border: '1px solid #282f34',
+                color: '#f8fafa',
+                fontSize: '0.88rem',
+                lineHeight: '1.7',
+                whiteSpace: 'pre-wrap',
+                fontWeight: '400'
               }}>
                 {showTranslated 
                   ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || 'No translation available.')
