@@ -27,7 +27,8 @@ import {
   ChevronDown,
   MoreVertical,
   Grid,
-  User
+  User,
+  RotateCw
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -620,6 +621,24 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleRetryReel = async (reelId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/reels/${reelId}/retry?token=${token}`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        setReels(prev => prev.map(r => r.id === reelId ? { ...r, status: 'processing', error_message: null } : r));
+        if (selectedReel?.id === reelId) {
+          setSelectedReel(prev => prev ? { ...prev, status: 'processing', error_message: null } : null);
+        }
+      }
+    } catch (err) {
+      console.error('Error retrying reel:', err);
     }
   };
 
@@ -1533,7 +1552,18 @@ export default function App() {
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden'
                             }}>
-                              {formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'}
+                              {reel.status === 'failed' ? (
+                                <span style={{ color: '#f87171', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  ⚠️ Transcription failed • Tap to retry
+                                </span>
+                              ) : (
+                                formatSummary(reel.summary) || reel.preview_text || (
+                                  <span style={{ color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#90a4f2', animation: 'pulse 1.2s infinite' }} />
+                                    Transcribing spoken audio...
+                                  </span>
+                                )
+                              )}
                             </p>
                           </div>
 
@@ -1689,6 +1719,17 @@ export default function App() {
                                     </>
                                   )}
                                 </div>
+                              )}
+
+                              {reel.status === 'failed' && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleRetryReel(reel.id, e)}
+                                  style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '3px' }}
+                                  title="Retry Transcription"
+                                >
+                                  <RotateCw size={14} />
+                                </button>
                               )}
 
                               <button
@@ -2762,6 +2803,44 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Retry Button if Failed */}
+            {selectedReel.status === 'failed' && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f87171' }}>Transcription Incomplete</div>
+                  <div style={{ fontSize: '0.78rem', color: '#a1a1aa', marginTop: '2px' }}>{selectedReel.error_message || 'The audio stream could not be extracted.'}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleRetryReel(selectedReel.id, e)}
+                  style={{
+                    background: '#22272b',
+                    border: '1px solid #3f3f46',
+                    borderRadius: '8px',
+                    padding: '6px 14px',
+                    color: '#f8fafa',
+                    fontSize: '0.82rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RotateCw size={13} /> Retry
+                </button>
+              </div>
+            )}
 
             {/* Translation Active Alert */}
             {showTranslated && (

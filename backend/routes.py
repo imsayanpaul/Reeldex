@@ -649,6 +649,16 @@ def list_reels(
 
     reels_db = query_builder.order_by(desc(ReelItem.created_at)).all()
     
+    # Auto-recover stale reels stuck in processing for > 3 minutes
+    now_utc = datetime.datetime.utcnow()
+    for r in reels_db:
+        if r.status in ["processing", "downloading", "transcribing"] and r.created_at:
+            age_seconds = (now_utc - r.created_at).total_seconds()
+            if age_seconds > 180:
+                r.status = "failed"
+                r.error_message = "Transcription timed out. Tap retry."
+                db.commit()
+
     # Format objects for search and frontend
     items = []
     for r in reels_db:
@@ -686,6 +696,27 @@ def list_reels(
     # Apply hybrid semantic ranking & category filter
     ranked = rank_reels_search(items, query=q or "", category_filter=category, tag_filter=tag)
     return ranked
+
+@router.post("/reels/{reel_id}/retry")
+async def retry_reel(reel_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Re-triggers downloading and AI transcription for a failed or stuck reel."""
+    reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
+    if not reel:
+        raise HTTPException(status_code=404, detail="Reel not found")
+
+    reel.status = "processing"
+    reel.error_message = None
+    reel.created_at = datetime.datetime.utcnow()
+    db.commit()
+
+    background_tasks.add_task(
+        process_reel_pipeline,
+        reel_id=reel.id,
+        reel_url=reel.reel_url,
+        sender_id=reel.sender_id,
+        source=reel.source
+    )
+    return {"success": True, "message": f"Reel #{reel_id} queued for reprocessing", "status": "processing"}
 
 @router.get("/reels/{reel_id}")
 def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
