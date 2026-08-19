@@ -654,16 +654,27 @@ export default function App() {
     }
   };
 
-  const handleDeleteReel = async (reelId, e) => {
-    e.stopPropagation();
-    if (!window.confirm('Delete this reel from your vault?')) return;
+  const handleDeleteReel = (reelId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    // Instant 0ms Optimistic UI Removal
+    setReels(prev => {
+      const next = prev.filter(r => r.id !== reelId);
+      setSafeStorage('reelmind_cached_reels', next);
+      return next;
+    });
+    if (selectedReel?.id === reelId) {
+      setSelectedReel(null);
+    }
+    
+    // Background server sync
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
-      const res = await fetch(`${API_BASE}/reels/${reelId}?token=${token}`, { method: 'DELETE' });
-      if (res.ok) {
-        setReels(prev => prev.filter(r => r.id !== reelId));
-        if (selectedReel?.id === reelId) setSelectedReel(null);
-      }
+      fetch(`${API_BASE}/reels/${reelId}?token=${token}`, { method: 'DELETE' }).catch(err => {
+        console.error('Error deleting reel:', err);
+      });
     } catch (err) {
       console.error(err);
     }

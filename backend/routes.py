@@ -788,12 +788,17 @@ def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
 @router.delete("/reels/{reel_id}")
 def delete_reel(reel_id: int, db: Session = Depends(get_db)):
     """Deletes a reel and its transcript from the database."""
-    reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
-    if not reel:
-        raise HTTPException(status_code=404, detail="Reel not found")
-    
-    db.delete(reel)
-    db.commit()
+    try:
+        db.query(Transcript).filter(Transcript.reel_id == reel_id).delete(synchronize_session=False)
+        db.query(ReelItem).filter(ReelItem.id == reel_id).delete(synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[Delete Error]: {e}")
+        reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
+        if reel:
+            db.delete(reel)
+            db.commit()
     return {"success": True, "message": f"Reel #{reel_id} deleted successfully"}
 
 
