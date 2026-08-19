@@ -881,8 +881,21 @@ export default function App() {
         </header>
       ) : activeTab === 'vault' ? (
         <header className="ig-top-navbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)' }}>
+          <div
+            onClick={() => {
+              setActiveTab('vault');
+              setActiveViewFilter('All');
+              setSelectedCollection(null);
+              setSearchQuery('');
+              setSelectedReel(null);
+              setIsManageMode(false);
+              setSelectedReelIds(new Set());
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
+            title="Go to All Saved"
+          >
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
               ReelDex
             </h1>
           </div>
