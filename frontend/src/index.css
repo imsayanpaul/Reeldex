@@ -4,32 +4,32 @@
   /* Instagram OLED Dark Mode Palette */
   --bg-app: #0c0f14;
   --bg-page: #0c0f14;
-  --bg-card: #141820;
-  --bg-card-hover: #1c212c;
-  --bg-muted: #141820;
-  --bg-input: #1a1e28;
-  --bg-surface-elevated: #1f2533;
+  --bg-card: #181c1f;
+  --bg-card-hover: #22272b;
+  --bg-muted: #181c1f;
+  --bg-input: #121518;
+  --bg-surface-elevated: #181c1f;
   
   /* Instagram Brand Accents (White & Instagram Blue) */
-  --accent-primary: #ffffff;
+  --accent-primary: #f8fafa;
   --accent-primary-hover: #e4e4e7;
-  --accent-primary-light: rgba(255, 255, 255, 0.08);
+  --accent-primary-light: rgba(248, 250, 250, 0.08);
   --accent-dark: #000000;
   --accent-blue: #90a4f2;
   --accent-blue-hover: #7b94ea;
   --accent-emerald: #10b981;
 
   /* Typography (High Contrast Dark Theme) */
-  --text-main: #f5f5f5;
-  --text-heading: #ffffff;
+  --text-main: #f8fafa;
+  --text-heading: #f8fafa;
   --text-body: #a1a1aa;
   --text-muted: #71717a;
   --text-subtle: #52525b;
 
   /* Borders & Dividers */
-  --border-light: #222733;
-  --border-subtle: #181d28;
-  --border-focus: #ffffff;
+  --border-light: #282f34;
+  --border-subtle: #1c2227;
+  --border-focus: #f8fafa;
 
   --font-main: 'Geist', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;

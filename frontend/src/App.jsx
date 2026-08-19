@@ -1505,18 +1505,18 @@ export default function App() {
       {/* ======================================================== */}
       {showBatchCollectionModal && (
         <div className="modal-overlay" onClick={() => setShowBatchCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', padding: '16px 18px 28px', background: '#141820', borderRadius: '18px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', padding: '16px 18px 28px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
             {/* Top Drag Handle */}
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
             
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0 }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0 }}>
                 Add to collection
               </h3>
               <button
                 onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
                 title="Create New Collection"
               >
                 <Plus size={26} strokeWidth={2.4} />
@@ -1565,13 +1565,13 @@ export default function App() {
                         height: '74px',
                         borderRadius: '12px',
                         overflow: 'hidden',
-                        background: '#1c212c',
-                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                        background: '#121518',
+                        border: '1px solid #282f34'
                       }}>
                         {coverImg ? (
                           <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c212c' }}>
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#121518' }}>
                             <Folder size={26} color="#8e8e8e" />
                           </div>
                         )}
@@ -1579,7 +1579,7 @@ export default function App() {
                       <div style={{
                         fontSize: '0.84rem',
                         fontWeight: '500',
-                        color: '#ffffff',
+                        color: '#f8fafa',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -1601,7 +1601,7 @@ export default function App() {
       {/* ======================================================== */}
       {showCreateCollectionModal && (
         <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
             {/* Top Handle Bar */}
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
 
@@ -1610,12 +1610,12 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => { setShowCreateCollectionModal(false); setNewCollectionName(''); }}
-                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
               >
                 Cancel
               </button>
 
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
                 New collection
               </h3>
 
@@ -1650,8 +1650,8 @@ export default function App() {
                     padding: '16px 14px',
                     borderRadius: '12px',
                     border: '1.5px solid #3f3f46',
-                    background: '#09090b',
-                    color: '#ffffff',
+                    background: '#000000',
+                    color: '#f8fafa',
                     fontSize: '0.95rem',
                     outline: 'none',
                     boxSizing: 'border-box'
@@ -1669,9 +1669,9 @@ export default function App() {
                 cursor: 'pointer'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <Users size={22} color="#ffffff" />
+                  <Users size={22} color="#f8fafa" />
                   <div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#ffffff' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#f8fafa' }}>
                       Add people to this collection
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#8e8e8e', marginTop: '2px' }}>
@@ -1691,7 +1691,7 @@ export default function App() {
       {/* ======================================================== */}
       {showCollectionMenuModal && selectedCollection && (
         <div className="modal-overlay" onClick={() => setShowCollectionMenuModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '14px 20px 24px', background: '#141820', borderRadius: '18px 18px 0 0' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '14px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
             {/* Top drag handle */}
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
 
@@ -1728,7 +1728,7 @@ export default function App() {
                   background: 'none',
                   border: 'none',
                   borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-                  color: '#ffffff',
+                  color: '#f8fafa',
                   fontSize: '0.96rem',
                   fontWeight: '500',
                   padding: '16px 0',
@@ -1750,7 +1750,7 @@ export default function App() {
                   background: 'none',
                   border: 'none',
                   borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-                  color: '#ffffff',
+                  color: '#f8fafa',
                   fontSize: '0.96rem',
                   fontWeight: '500',
                   padding: '16px 0',
@@ -1770,7 +1770,7 @@ export default function App() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#ffffff',
+                  color: '#f8fafa',
                   fontSize: '0.96rem',
                   fontWeight: '500',
                   padding: '16px 0 6px',
@@ -1790,19 +1790,19 @@ export default function App() {
       {/* ======================================================== */}
       {showEditCollectionModal && selectedCollection && (
         <div className="modal-overlay" onClick={() => setShowEditCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#141820', borderRadius: '18px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
               <button
                 type="button"
                 onClick={() => setShowEditCollectionModal(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
               >
                 Cancel
               </button>
 
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
                 Edit collection
               </h3>
 
@@ -1834,8 +1834,8 @@ export default function App() {
                   padding: '16px 14px',
                   borderRadius: '12px',
                   border: '1.5px solid #3f3f46',
-                  background: '#09090b',
-                  color: '#ffffff',
+                  background: '#000000',
+                  color: '#f8fafa',
                   fontSize: '0.95rem',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -1852,7 +1852,7 @@ export default function App() {
       {/* ======================================================== */}
       {showAddToThisCollectionModal && selectedCollection && (
         <div className="modal-overlay" onClick={() => setShowAddToThisCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '14px 14px 20px', background: '#141820', borderRadius: '18px 18px 0 0' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '14px 14px 20px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 14px' }} />
 
             {/* Header: Back Arrow | Add from saved | Save */}
@@ -1860,13 +1860,13 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setShowAddToThisCollectionModal(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '4px' }}
+                style={{ background: 'none', border: 'none', color: '#f8fafa', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '4px' }}
                 title="Back"
               >
                 <ArrowLeft size={22} strokeWidth={2.2} />
               </button>
 
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
                 Add from saved
               </h3>
 
@@ -1877,7 +1877,7 @@ export default function App() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: selectedReelIdsForAdd.size > 0 ? '#90a4f2' : '#ffffff',
+                  color: selectedReelIdsForAdd.size > 0 ? '#90a4f2' : '#f8fafa',
                   fontSize: '0.96rem',
                   fontWeight: '700',
                   cursor: 'pointer',
@@ -1906,7 +1906,7 @@ export default function App() {
                     style={{
                       position: 'relative',
                       aspectRatio: '1 / 1',
-                      background: '#1c1c1e',
+                      background: '#121518',
                       cursor: 'pointer',
                       overflow: 'hidden'
                     }}
@@ -1926,8 +1926,8 @@ export default function App() {
                       width: '20px',
                       height: '20px',
                       borderRadius: '3px',
-                      background: isSelected ? '#ffffff' : 'rgba(0, 0, 0, 0.4)',
-                      border: isSelected ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.7)',
+                      background: isSelected ? '#f8fafa' : 'rgba(0, 0, 0, 0.4)',
+                      border: isSelected ? '1.5px solid #f8fafa' : '1.5px solid rgba(255, 255, 255, 0.7)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
