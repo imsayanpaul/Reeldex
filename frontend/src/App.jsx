@@ -24,6 +24,7 @@ import {
   Tag,
   Users,
   ChevronRight,
+  ChevronDown,
   MoreVertical,
   Grid
 } from 'lucide-react';
