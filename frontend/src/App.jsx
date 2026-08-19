@@ -209,7 +209,8 @@ const getSafeStorage = (key) => {
 
 const setSafeStorage = (key, val) => {
   try {
-    window.localStorage?.setItem(key, val);
+    const serialized = typeof val === 'string' ? val : JSON.stringify(val);
+    window.localStorage?.setItem(key, serialized);
   } catch (e) {}
 };
 
@@ -1811,17 +1812,20 @@ export default function App() {
                               )}
 
                               <button
+                                type="button"
+                                onTouchEnd={(e) => handleDeleteReel(reel.id, e)}
                                 onClick={(e) => handleDeleteReel(reel.id, e)}
                                 style={{
                                   background: 'none',
                                   border: 'none',
                                   color: '#94a3b8',
                                   cursor: 'pointer',
-                                  padding: '6px 8px',
+                                  padding: '8px 10px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  borderRadius: '6px'
+                                  borderRadius: '6px',
+                                  touchAction: 'manipulation'
                                 }}
                                 title="Delete Reel"
                               >
@@ -2677,19 +2681,21 @@ export default function App() {
               {selectedReel.status === 'failed' && (
                 <button
                   type="button"
+                  onTouchEnd={(e) => handleRetryReel(selectedReel.id, e)}
                   onClick={(e) => handleRetryReel(selectedReel.id, e)}
                   style={{
                     background: 'rgba(144, 164, 242, 0.12)',
                     border: '1px solid rgba(144, 164, 242, 0.25)',
                     color: '#90a4f2',
                     cursor: 'pointer',
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     borderRadius: '8px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '5px',
-                    fontSize: '0.82rem',
-                    fontWeight: '600'
+                    fontSize: '0.84rem',
+                    fontWeight: '600',
+                    touchAction: 'manipulation'
                   }}
                   title="Retry Transcription"
                 >
@@ -2700,22 +2706,21 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={(e) => {
-                  handleDeleteReel(selectedReel.id, e);
-                  setSelectedReel(null);
-                }}
+                onTouchEnd={(e) => handleDeleteReel(selectedReel.id, e)}
+                onClick={(e) => handleDeleteReel(selectedReel.id, e)}
                 style={{
                   background: '#181c1f',
                   border: '1px solid #282f34',
                   color: '#e4e4e7',
                   cursor: 'pointer',
-                  padding: '6px 12px',
+                  padding: '8px 14px',
                   borderRadius: '8px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  fontSize: '0.82rem',
+                  fontSize: '0.84rem',
                   fontWeight: '500',
+                  touchAction: 'manipulation',
                   transition: 'background 0.15s ease'
                 }}
                 title="Delete Reel"
