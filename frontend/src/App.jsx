@@ -496,13 +496,6 @@ export default function App() {
             >
               <PlusCircle size={15} /> Transcribe URL
             </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`pill-button ${activeTab === 'settings' ? 'active' : ''}`}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Settings size={15} /> Settings
-            </button>
           </nav>
         </div>
       </header>
@@ -839,65 +832,6 @@ export default function App() {
                   {transcribeMsg.text}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: SETTINGS & WEBHOOK */}
-        {activeTab === 'settings' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div className="glass-panel" style={{ padding: '32px' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Settings size={20} color="#818cf8" /> API & Instagram Configuration
-              </h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                Manage your Groq AI Whisper keys and Meta Instagram Webhook endpoints.
-              </p>
-
-              <form onSubmit={handleSaveConfig}>
-                <div style={{ marginBottom: '18px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    GROQ API KEY (Free Whisper + LLaMA 3.3 70B)
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="gsk_..."
-                    value={groqKey}
-                    onChange={(e) => setGroqKey(e.target.value)}
-                    className="custom-input"
-                  />
-                </div>
-
-                <div style={{ marginBottom: '18px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    INSTAGRAM PAGE ACCESS TOKEN (For Auto-Replying in DM)
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="IGAA... or EAAB..."
-                    value={pageToken}
-                    onChange={(e) => setPageToken(e.target.value)}
-                    className="custom-input"
-                  />
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    PUBLIC WEBHOOK CALLBACK URL
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    value="https://birthday-leone-hair-spoke.trycloudflare.com/api/webhook/instagram"
-                    className="custom-input"
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#a5b4fc' }}
-                  />
-                </div>
-
-                <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                  {saveSuccess ? '✅ Configuration Saved!' : 'Save Settings'}
-                </button>
-              </form>
             </div>
           </div>
         )}
