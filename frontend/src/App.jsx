@@ -729,7 +729,7 @@ export default function App() {
                   </div>
                 ) : activeViewFilter === 'All' ? (
                   <div className="ig-collections-shelf">
-                    {collections.map(col => {
+                    {collections.slice(0, 4).map(col => {
                       const coverImg = getCollectionCover(col.id);
                       return (
                         <div
@@ -741,8 +741,8 @@ export default function App() {
                             {coverImg ? (
                               <img src={coverImg} alt={col.name} />
                             ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1c1e' }}>
-                                <Folder size={22} color="#8e8e8e" />
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#141820' }}>
+                                <Folder size={20} color="#8e8e8e" />
                               </div>
                             )}
                           </div>
