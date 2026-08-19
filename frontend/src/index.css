@@ -109,15 +109,15 @@ body {
 .ig-top-navbar {
   position: sticky;
   top: 0;
-  background: rgba(12, 15, 20, 0.92);
+  background: rgba(12, 15, 20, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-light);
-  height: 64px;
+  border-bottom: none !important;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 16px;
   z-index: 50;
 }
 

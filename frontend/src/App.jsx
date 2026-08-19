@@ -641,17 +641,16 @@ export default function App() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '6px',
-                color: 'var(--text-heading)',
+                padding: '2px',
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '50%',
-                transition: 'background 0.15s ease'
+                marginLeft: '4px'
               }}
               title="Create New Collection"
             >
-              <Plus size={22} strokeWidth={2.2} />
+              <Plus size={28} strokeWidth={2.4} />
             </button>
           </div>
         </header>
