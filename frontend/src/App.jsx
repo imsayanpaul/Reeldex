@@ -7,15 +7,15 @@ import {
   Check, 
   Trash2, 
   Clock, 
-  MessageSquare, 
   Bot, 
   Download, 
   Send,
   ArrowRight,
   FolderOpen,
-  Share2,
-  CheckCircle2,
-  FileText
+  X,
+  Play,
+  Zap,
+  Bookmark
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -50,7 +50,7 @@ const formatSummary = (summary) => {
   return String(summary);
 };
 
-// Safe storage access for sandboxed WebViews
+// Safe storage access
 const getSafeStorage = (key) => {
   try {
     return window.localStorage?.getItem(key);
@@ -97,6 +97,7 @@ export default function App() {
   const [categories, setCategories] = useState(['All']);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState(['AI Tools', 'Career Advice', 'Fitness']);
   const [selectedReel, setSelectedReel] = useState(null);
 
   // Ask AI Chat State
@@ -104,7 +105,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 Hi! I am ReelDex AI. Ask me anything across your saved Instagram Reels — like "What tools or promo codes were mentioned in my tech reels?" or "Summarize my saved career advice".'
+      content: '👋 Hi! I am ReelDex AI. Ask me anything across your saved Instagram Reels — like "What tools or promo codes were mentioned?" or "Summarize all fitness rules I saved".'
     }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -138,7 +139,7 @@ export default function App() {
   // 2. Fetch Reels when Category or Search Query Changes
   useEffect(() => {
     fetchReels();
-    const interval = setInterval(fetchReels, 4000); // Live sync polling
+    const interval = setInterval(fetchReels, 4000);
     return () => clearInterval(interval);
   }, [session?.auth_token, selectedCategory, searchQuery]);
 
@@ -305,103 +306,110 @@ export default function App() {
     link.click();
   };
 
+  const trendingTopics = [
+    { label: 'Tech & AI', num: '#1' },
+    { label: 'Productivity', num: '#2' },
+    { label: 'Career & Business', num: '#3' },
+    { label: 'Finance & Investing', num: '#4' },
+    { label: 'Fitness & Health', num: '#5' },
+    { label: 'Design & Tools', num: '#6' }
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       
       {/* ======================================================== */}
-      {/* MODERN LINEAR-STYLE TOPBAR */}
+      {/* TOPBAR NAVIGATION */}
       {/* ======================================================== */}
       <header style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid var(--border-light)',
         position: 'sticky',
         top: 0,
-        zIndex: 50,
-        background: 'rgba(6, 7, 10, 0.85)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border-hairline)'
+        zIndex: 50
       }}>
         <div style={{
-          maxWidth: '1200px',
+          maxWidth: '1240px',
           margin: '0 auto',
-          padding: '12px 20px',
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
-        }} className="header-content">
+        }}>
           
-          {/* Brand & Live Sync Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
+          {/* Brand Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
             <div style={{
               width: '32px',
               height: '32px',
-              borderRadius: '8px',
-              background: '#0d111a',
-              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #ff5722 0%, #f43f5e 100%)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 3px 10px rgba(255, 87, 34, 0.3)'
             }}>
-              <Sparkles size={16} color="#818cf8" />
+              <Sparkles size={18} color="#ffffff" />
             </div>
-            <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                ReelDex
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '2px 7px', borderRadius: 'var(--radius-full)', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                  <div className="pulse-indicator" />
-                  <span style={{ fontSize: '0.65rem', fontWeight: '600', color: '#10b981', letterSpacing: '0.02em' }}>LIVE SYNC</span>
-                </div>
-              </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '-0.03em', color: '#0f172a' }}>
+              Reel<span style={{ color: '#ff5722' }}>Dex</span>
             </div>
           </div>
 
-          {/* Segmented Switcher (Vault / Ask AI) */}
-          <nav style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            padding: '3px',
-            borderRadius: 'var(--radius-full)',
-            border: '1px solid var(--border-hairline)'
-          }}>
+          {/* Capsule Tab Switcher */}
+          <nav className="nav-capsule">
             <button
               onClick={() => setActiveTab('vault')}
-              className={`nav-segment ${activeTab === 'vault' ? 'active' : ''}`}
+              className={`nav-capsule-item ${activeTab === 'vault' ? 'active' : ''}`}
             >
-              <FolderOpen size={14} /> Vault ({reels.length})
+              • Search & Vault
             </button>
             <button
               onClick={() => setActiveTab('chat')}
-              className={`nav-segment ${activeTab === 'chat' ? 'active' : ''}`}
+              className={`nav-capsule-item ${activeTab === 'chat' ? 'active' : ''}`}
             >
-              <Bot size={14} /> Ask AI
+              Ask AI <span style={{ fontSize: '0.68rem', background: activeTab === 'chat' ? '#ffffff' : 'rgba(255, 87, 34, 0.1)', color: activeTab === 'chat' ? '#ff5722' : '#ff5722', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>AI</span>
             </button>
           </nav>
 
-          {/* Instagram Account Link / Status */}
+          {/* User Account / Connect Instagram */}
           <div>
             {session?.is_instagram_linked ? (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
+                gap: '8px',
+                padding: '5px 12px 5px 6px',
                 borderRadius: 'var(--radius-full)',
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                fontSize: '0.78rem',
-                color: '#10b981',
-                fontWeight: '600'
+                background: '#ffffff',
+                border: '1px solid var(--border-light)',
+                boxShadow: 'var(--shadow-sm)'
               }}>
-                <InstagramIcon size={14} color="#10b981" />
-                <span>@{session.instagram_username || 'Linked'}</span>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: '#ff5722',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: '800'
+                }}>
+                  {session.instagram_username ? session.instagram_username[0].toUpperCase() : 'S'}
+                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-dark)' }}>
+                  @{session.instagram_username || 'Connected'}
+                </span>
               </div>
             ) : (
               <button
                 onClick={handleGeneratePairingCode}
-                className="btn-solid"
+                className="btn-coral"
                 disabled={pairingLoading}
               >
-                <InstagramIcon size={13} /> Connect Instagram
+                <InstagramIcon size={14} /> Connect Instagram
               </button>
             )}
           </div>
@@ -409,42 +417,218 @@ export default function App() {
       </header>
 
       {/* ======================================================== */}
+      {/* TRENDING TOPIC STRIP */}
+      {/* ======================================================== */}
+      <div style={{
+        maxWidth: '1240px',
+        width: '100%',
+        margin: '16px auto 0',
+        padding: '0 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        overflowX: 'auto'
+      }} className="no-scrollbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '4px' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff5722' }} />
+          TRENDING:
+        </div>
+        {trendingTopics.map((item, idx) => (
+          <button
+            key={idx}
+            onClick={() => {
+              setSelectedCategory(item.label);
+              setActiveTab('vault');
+            }}
+            className={`trending-chip ${selectedCategory === item.label ? 'active' : ''}`}
+          >
+            <span className="trending-number">{item.num}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ======================================================== */}
       {/* MAIN VIEWPORT CONTAINER */}
       {/* ======================================================== */}
-      <main style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '24px 20px', flex: 1 }}>
+      <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '16px 20px 40px', flex: 1 }}>
 
         {/* TAB 1: KNOWLEDGE VAULT */}
         {activeTab === 'vault' && (
           <div>
             
-            {/* Command-Bar Omnisearch */}
-            <div style={{ marginBottom: '18px' }}>
-              <div className="command-bar">
-                <Search size={16} color="var(--text-muted)" />
-                <input
-                  type="text"
-                  placeholder="Search across transcripts, tools, creators, and summaries..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="command-input"
-                />
-                {searchQuery && (
+            {/* HERO PROMOTIONAL BANNER (Appliqa Style) */}
+            <div style={{
+              background: 'linear-gradient(135deg, #ff5722 0%, #ee385c 100%)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--shadow-hero)',
+              padding: '36px 40px',
+              color: '#ffffff',
+              display: 'grid',
+              gridTemplateColumns: '1.25fr 0.75fr',
+              gap: '24px',
+              alignItems: 'center',
+              marginBottom: '32px',
+              position: 'relative',
+              overflow: 'hidden'
+            }} className="hero-container-grid">
+              
+              {/* Left Content */}
+              <div>
+                <h1 style={{
+                  fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)',
+                  fontWeight: '900',
+                  lineHeight: '1.15',
+                  letterSpacing: '-0.03em',
+                  marginBottom: '14px'
+                }}>
+                  Turn Saved Reels.<br />
+                  Into Second Brain.<br />
+                  All in One Place.
+                </h1>
+
+                <p style={{
+                  fontSize: '0.92rem',
+                  lineHeight: '1.6',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  maxWidth: '520px',
+                  marginBottom: '24px'
+                }}>
+                  Stop losing valuable advice in your Instagram saved folder. Automatically transcribe audio, extract tools & action items, and search everything with AI.
+                </p>
+
+                {/* Search Bar inside Hero */}
+                <div style={{
+                  background: '#ffffff',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '6px 8px 6px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                  maxWidth: '520px',
+                  marginBottom: '12px'
+                }}>
+                  <Search size={18} color="#94a3b8" />
+                  <input
+                    type="text"
+                    placeholder="Search transcripts, tools, creators, or topics..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '0.88rem',
+                      fontFamily: 'inherit',
+                      color: '#0f172a'
+                    }}
+                  />
+                  
                   <button
-                    onClick={() => setSearchQuery('')}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '2px 6px' }}
+                    onClick={() => fetchReels()}
+                    className="btn-dark"
+                    style={{ padding: '8px 18px' }}
                   >
-                    Clear
+                    Search <ArrowRight size={14} />
                   </button>
-                )}
+                </div>
+
+                {/* Recent Searches Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '0.74rem' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={12} /> Recent:
+                  </span>
+                  {recentSearches.map((s, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSearchQuery(s)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.18)',
+                        border: 'none',
+                        color: '#ffffff',
+                        padding: '3px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '0.74rem'
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.72rem' }}
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Horizontal Category Chips */}
-              <div className="no-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', marginTop: '10px', paddingBottom: '2px' }}>
+              {/* Right Image Cutout */}
+              <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }} className="hero-image-column">
+                <div style={{
+                  position: 'relative',
+                  width: '280px',
+                  height: '280px',
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.25)',
+                  border: '3px solid rgba(255, 255, 255, 0.3)'
+                }}>
+                  <img
+                    src="/hero-creator.jpg"
+                    alt="ReelDex Creator"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  {/* Floating live badge */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: '12px',
+                    right: '12px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    color: '#ffffff',
+                    fontSize: '0.74rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Zap size={14} color="#ff5722" /> Groq Whisper Speech AI
+                    </span>
+                    <span style={{ color: '#10b981', fontSize: '0.7rem' }}>~1s Sync</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Results Title Bar & Categories Filter */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
+                  {selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory}
+                </h2>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'} stored in your personal vault
+                </p>
+              </div>
+
+              {/* Category Pills */}
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', maxWidth: '100%' }} className="no-scrollbar">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`filter-chip ${selectedCategory === cat ? 'active' : ''}`}
+                    className={`trending-chip ${selectedCategory === cat ? 'active' : ''}`}
+                    style={{ padding: '6px 14px' }}
                   >
                     {cat}
                   </button>
@@ -452,131 +636,90 @@ export default function App() {
               </div>
             </div>
 
-            {/* Results Title Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                  {selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.04)', padding: '1px 6px', borderRadius: '4px' }}>
-                  {reels.length}
-                </span>
-              </div>
-
-              {searchQuery && (
-                <span style={{ fontSize: '0.74rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Sparkles size={12} /> Semantic Search Active
-                </span>
-              )}
-            </div>
-
-            {/* Reel Cards Grid / Anti-Slop Empty State */}
+            {/* Reel Cards Grid / Empty State */}
             {reels.length === 0 ? (
-              <div className="reeldex-card" style={{ padding: '40px 24px', textAlign: 'center', maxWidth: '640px', margin: '30px auto' }}>
+              <div className="clean-card" style={{ padding: '48px 24px', textAlign: 'center', maxWidth: '640px', margin: '30px auto' }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: 'rgba(99, 102, 241, 0.1)',
-                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  width: '54px',
+                  height: '54px',
+                  borderRadius: '16px',
+                  background: 'rgba(255, 87, 34, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 16px'
                 }}>
-                  <InstagramIcon size={22} color="#818cf8" />
+                  <Bookmark size={26} color="#ff5722" />
                 </div>
                 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '700', letterSpacing: '-0.02em', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
                   Your Knowledge Vault is Ready
                 </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: '1.6', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px' }}>
-                  Turn Instagram into your second brain. Send any Reel in DM to <strong>@reeldex.io</strong> — it will instantly transcribe audio, extract insights, and organize it here.
+                <p style={{ color: 'var(--text-body)', fontSize: '0.88rem', lineHeight: '1.6', marginBottom: '24px', maxWidth: '440px', margin: '0 auto 24px' }}>
+                  Send any Instagram Reel in DM to <strong>@reeldex.io</strong>. Our AI engine will transcribe speech, extract tools, and file it here automatically!
                 </p>
 
-                {/* 3-Step Flow Pills */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                  gap: '10px',
-                  textAlign: 'left',
-                  marginBottom: '26px'
-                }}>
-                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 1</span>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Connect your Instagram account below</p>
-                  </div>
-                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 2</span>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Share any Reel in DM to <strong>@reeldex.io</strong></p>
-                  </div>
-                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 3</span>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Search, transcribe, and ask AI questions</p>
-                  </div>
-                </div>
-
-                <button onClick={handleGeneratePairingCode} className="btn-solid" style={{ padding: '9px 20px' }}>
-                  <InstagramIcon size={14} /> Connect Instagram Account
+                <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ padding: '10px 24px' }}>
+                  <InstagramIcon size={15} /> Connect Your Instagram
                 </button>
               </div>
             ) : (
-              <div className="reels-grid-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '18px' }}>
                 {reels.map((reel) => (
                   <div
                     key={reel.id}
-                    className="reeldex-card reeldex-card-interactive"
-                    style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                    className="clean-card clean-card-hover"
+                    style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                     onClick={() => openReelDetail(reel)}
                   >
                     <div>
-                      {/* Card Header: Category & Timestamp */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <span className="badge-category">
+                      {/* Top Header: Category & Timestamp */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <span className="pill-category">
                           {reel.category || 'General'}
                         </span>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '600' }}>
                             {reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
                           </span>
                           <button
                             onClick={(e) => handleDeleteReel(reel.id, e)}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-subtle)', cursor: 'pointer', padding: '2px' }}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
                             title="Delete"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
 
-                      {/* Title & Creator */}
-                      <h4 style={{ fontSize: '0.98rem', fontWeight: '600', letterSpacing: '-0.01em', color: '#ffffff', marginBottom: '4px', lineHeight: '1.4' }}>
+                      {/* Title & Author */}
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em', marginBottom: '4px', lineHeight: '1.4' }}>
                         {reel.title || `Reel by @${reel.author || 'Creator'}`}
                       </h4>
                       
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '12px' }}>
                         by @{reel.author || reel.sender_username || 'creator'} {reel.duration ? `• ${Math.round(reel.duration)}s` : ''}
                       </div>
 
-                      {/* AI Summary Preview */}
+                      {/* AI Summary */}
                       <p style={{
-                        fontSize: '0.84rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: '1.5',
-                        marginBottom: '12px',
+                        fontSize: '0.86rem',
+                        color: 'var(--text-body)',
+                        lineHeight: '1.6',
+                        marginBottom: '14px',
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden'
                       }}>
-                        {formatSummary(reel.summary) || reel.preview_text || 'Transcribing audio...'}
+                        {formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'}
                       </p>
 
                       {/* Action Item Pill */}
                       {reel.action_items?.length > 0 && (
-                        <div style={{ marginBottom: '10px' }}>
-                          <span className="badge-action-item">
+                        <div style={{ marginBottom: '12px' }}>
+                          <span className="pill-tool">
                             🛠️ {formatActionItem(reel.action_items[0])}
                           </span>
                         </div>
@@ -584,9 +727,17 @@ export default function App() {
 
                       {/* Tags */}
                       {reel.tags?.length > 0 && (
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '12px' }}>
                           {reel.tags.slice(0, 3).map((tag, idx) => (
-                            <span key={idx} className="badge-tag">
+                            <span key={idx} style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '0.7rem',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: '#f1f5f9',
+                              color: '#475569',
+                              fontWeight: '600'
+                            }}>
                               {formatTag(tag)}
                             </span>
                           ))}
@@ -594,20 +745,19 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Card Footer Actions */}
+                    {/* Footer Actions */}
                     <div style={{
-                      borderTop: '1px solid var(--border-hairline)',
-                      paddingTop: '10px',
+                      borderTop: '1px solid var(--border-light)',
+                      paddingTop: '12px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      fontSize: '0.74rem',
-                      color: 'var(--text-muted)'
+                      fontSize: '0.78rem'
                     }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#818cf8' }}>
-                        <Clock size={12} /> View Transcript
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff5722', fontWeight: '700' }}>
+                        <Clock size={13} /> View Transcript
                       </span>
-                      <ArrowRight size={13} color="var(--text-muted)" />
+                      <ArrowRight size={14} color="#ff5722" />
                     </div>
                   </div>
                 ))}
@@ -618,31 +768,32 @@ export default function App() {
 
         {/* TAB 2: ASK AI CONVERSATION */}
         {activeTab === 'chat' && (
-          <div style={{ maxWidth: '740px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)' }}>
+          <div style={{ maxWidth: '780px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)' }}>
             
             {/* Messages Feed */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px', marginBottom: '16px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '6px', marginBottom: '16px' }}>
               {chatMessages.map((msg, index) => (
                 <div
                   key={index}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: msg.role === 'user' ? '82%' : '100%',
-                    padding: msg.role === 'user' ? '10px 16px' : '16px 20px',
-                    borderRadius: 'var(--radius-md)',
-                    background: msg.role === 'user' ? 'var(--accent-indigo)' : 'var(--bg-surface-elevated)',
-                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-hairline)',
-                    color: '#ffffff',
-                    fontSize: '0.88rem',
+                    maxWidth: msg.role === 'user' ? '80%' : '100%',
+                    padding: msg.role === 'user' ? '12px 18px' : '18px 22px',
+                    borderRadius: '18px',
+                    background: msg.role === 'user' ? '#0f172a' : '#ffffff',
+                    boxShadow: 'var(--shadow-md)',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
+                    color: msg.role === 'user' ? '#ffffff' : 'var(--text-dark)',
+                    fontSize: '0.9rem',
                     lineHeight: '1.6'
                   }}
                 >
                   <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
 
-                  {/* Citations / Referenced Reel Chips */}
+                  {/* Referenced Citations */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-hairline)', paddingTop: '10px' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#ff5722', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Referenced Reels:
                       </span>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
@@ -650,8 +801,8 @@ export default function App() {
                           <button
                             key={i}
                             onClick={() => openReelDetail(c)}
-                            className="btn-subtle"
-                            style={{ fontSize: '0.74rem', padding: '4px 10px' }}
+                            className="btn-white"
+                            style={{ fontSize: '0.76rem', padding: '4px 10px' }}
                           >
                             🎬 {c.title || `Reel #${c.reel_id || c.id}`}
                           </button>
@@ -666,38 +817,41 @@ export default function App() {
                 <div style={{
                   alignSelf: 'flex-start',
                   padding: '12px 18px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-surface-elevated)',
-                  border: '1px solid var(--border-hairline)',
-                  fontSize: '0.84rem',
-                  color: '#818cf8',
+                  borderRadius: '14px',
+                  background: '#ffffff',
+                  boxShadow: 'var(--shadow-sm)',
+                  border: '1px solid var(--border-light)',
+                  fontSize: '0.86rem',
+                  color: '#ff5722',
+                  fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <Sparkles size={14} className="animate-spin" /> Synthesizing across your saved Reels...
+                  <Sparkles size={16} className="animate-spin" /> Synthesizing across your saved Reels...
                 </div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Suggested Prompts */}
+            {/* Suggested Inquiries */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
               {[
                 "What tools or promo codes were mentioned?",
-                "Summarize all job advice I saved",
-                "List all productivity rules"
+                "Summarize all career advice I saved",
+                "List all fitness routines"
               ].map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => setChatQuestion(prompt)}
                   style={{
-                    fontSize: '0.74rem',
-                    padding: '4px 10px',
+                    fontSize: '0.76rem',
+                    padding: '5px 12px',
                     borderRadius: 'var(--radius-full)',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-hairline)',
-                    color: 'var(--text-secondary)',
+                    background: '#ffffff',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-body)',
+                    fontWeight: '600',
                     cursor: 'pointer'
                   }}
                 >
@@ -707,19 +861,25 @@ export default function App() {
             </div>
 
             {/* Chat Input Bar */}
-            <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '8px' }}>
-              <div className="command-bar" style={{ flex: 1, padding: '10px 14px' }}>
-                <input
-                  type="text"
-                  placeholder="Ask a question across all your saved Reels..."
-                  value={chatQuestion}
-                  onChange={(e) => setChatQuestion(e.target.value)}
-                  className="command-input"
-                  style={{ margin: 0 }}
-                />
-              </div>
-              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-solid" style={{ padding: '0 18px' }}>
-                <Send size={14} />
+            <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                placeholder="Ask a question across all your saved Reels..."
+                value={chatQuestion}
+                onChange={(e) => setChatQuestion(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '12px 18px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid var(--border-light)',
+                  background: '#ffffff',
+                  outline: 'none',
+                  fontSize: '0.9rem',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              />
+              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-coral" style={{ padding: '0 24px' }}>
+                <Send size={16} />
               </button>
             </form>
           </div>
@@ -731,36 +891,36 @@ export default function App() {
       {/* ======================================================== */}
       {showPairModal && (
         <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
-          <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <InstagramIcon size={18} color="#818cf8" />
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #ff5722, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <InstagramIcon size={20} color="#fff" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', letterSpacing: '-0.01em' }}>Connect Your Instagram</h3>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sync your ReelDex library in 10 seconds</p>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-heading)' }}>Connect Your Instagram</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sync your ReelDex library in 10 seconds</p>
                 </div>
               </div>
-              <button onClick={() => setShowPairModal(false)} className="btn-subtle" style={{ padding: '4px 8px' }}>✕</button>
+              <button onClick={() => setShowPairModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
-            <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '18px' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '24px', textAlign: 'center', marginBottom: '18px' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Your Unique Linking Code
               </span>
-              <div style={{ fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ffffff', margin: '8px 0' }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ff5722', margin: '8px 0' }}>
                 {pairingCode || 'MIND-849201'}
               </div>
-              <button onClick={() => copyText(pairingCode)} className="btn-subtle" style={{ fontSize: '0.78rem' }}>
-                {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />} Copy Code
+              <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.8rem' }}>
+                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />} Copy Code
               </button>
             </div>
 
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '20px' }}>
-              <ol style={{ paddingLeft: '18px' }}>
+            <div style={{ fontSize: '0.86rem', color: 'var(--text-body)', lineHeight: '1.6', marginBottom: '22px' }}>
+              <ol style={{ paddingLeft: '20px' }}>
                 <li>Open Instagram and open DM with <strong>@reeldex.io</strong>.</li>
-                <li>Send your 6-digit code: <code style={{ color: '#818cf8', fontFamily: 'var(--font-mono)' }}>{pairingCode}</code></li>
+                <li>Send your code: <code style={{ color: '#ff5722', fontWeight: '700' }}>{pairingCode}</code></li>
                 <li>You're connected! Any Reel you share in DM will automatically sync here.</li>
               </ol>
             </div>
@@ -769,10 +929,10 @@ export default function App() {
               href="https://ig.me/m/reeldex.io"
               target="_blank"
               rel="noreferrer"
-              className="btn-solid"
-              style={{ width: '100%', justifyContent: 'center' }}
+              className="btn-coral"
+              style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
             >
-              Open Instagram DM <ExternalLink size={14} />
+              Open Instagram DM <ExternalLink size={15} />
             </a>
           </div>
         </div>
@@ -783,18 +943,18 @@ export default function App() {
       {/* ======================================================== */}
       {selectedReel && (
         <div className="modal-overlay" onClick={() => setSelectedReel(null)}>
-          <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
             
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
-                <span className="badge-category">
+                <span className="pill-category">
                   {selectedReel.category || 'General'}
                 </span>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.02em', marginTop: '6px', color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-heading)', marginTop: '8px', letterSpacing: '-0.02em' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: '500' }}>
                   by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
                 </p>
               </div>
@@ -803,18 +963,18 @@ export default function App() {
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   onClick={() => copyText(selectedReel.transcript?.full_text || selectedReel.preview_text || '')}
-                  className="btn-subtle"
+                  className="btn-white"
                   title="Copy Transcript"
                 >
-                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  {copied ? <Check size={15} color="#10b981" /> : <Copy size={15} />}
                 </button>
                 {selectedReel.transcript && (
                   <button
                     onClick={() => downloadSRT(selectedReel)}
-                    className="btn-subtle"
+                    className="btn-white"
                     title="Download .SRT"
                   >
-                    <Download size={14} /> .SRT
+                    <Download size={15} /> .SRT
                   </button>
                 )}
                 {selectedReel.reel_url && (
@@ -822,57 +982,57 @@ export default function App() {
                     href={selectedReel.reel_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-subtle"
+                    className="btn-white"
                     title="Open on Instagram"
                   >
-                    <ExternalLink size={14} />
+                    <ExternalLink size={15} />
                   </a>
                 )}
-                <button onClick={() => setSelectedReel(null)} className="btn-subtle">✕</button>
+                <button onClick={() => setSelectedReel(null)} className="btn-white">✕</button>
               </div>
             </div>
 
             {/* AI Summary Box */}
             {selectedReel.transcript?.summary && (
               <div style={{
-                padding: '16px',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(99, 102, 241, 0.05)',
-                border: '1px solid rgba(99, 102, 241, 0.15)',
-                marginBottom: '16px'
+                padding: '18px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'rgba(255, 87, 34, 0.05)',
+                border: '1px solid rgba(255, 87, 34, 0.15)',
+                marginBottom: '18px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: '700', color: '#818cf8', marginBottom: '6px' }}>
-                  <Sparkles size={14} /> AI SUMMARY & KEY TAKEAWAYS
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '800', color: '#ff5722', marginBottom: '8px' }}>
+                  <Sparkles size={15} /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
-                <p style={{ fontSize: '0.86rem', color: '#e2e8f0', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '10px' : '0' }}>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '12px' : '0' }}>
                   {formatSummary(selectedReel.transcript.summary)}
                 </p>
 
                 {selectedReel.transcript.key_points?.length > 0 && (
-                  <ul style={{ paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                  <ul style={{ paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '3px' }}>{formatSummary(pt)}</li>
+                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
                     ))}
                   </ul>
                 )}
               </div>
             )}
 
-            {/* Extracted Actions & Tools */}
+            {/* Extracted Tools & Actions */}
             {selectedReel.action_items?.length > 0 && (
               <div style={{
-                padding: '12px 16px',
+                padding: '14px 18px',
                 borderRadius: 'var(--radius-md)',
-                background: 'rgba(56, 189, 248, 0.04)',
-                border: '1px solid rgba(56, 189, 248, 0.15)',
-                marginBottom: '16px'
+                background: '#f8fafc',
+                border: '1px solid var(--border-light)',
+                marginBottom: '18px'
               }}>
-                <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#7dd3fc', marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.76rem', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
                   🛠️ EXTRACTED TOOLS, PROMOS & ACTION ITEMS
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {selectedReel.action_items.map((act, i) => (
-                    <div key={i} style={{ fontSize: '0.8rem', color: '#e0f2fe' }}>
+                    <div key={i} style={{ fontSize: '0.84rem', color: 'var(--text-body)' }}>
                       • {formatActionItem(act)}
                     </div>
                   ))}
@@ -881,18 +1041,18 @@ export default function App() {
             )}
 
             {/* Word-For-Word Transcript */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
                 FULL WORD-FOR-WORD TRANSCRIPT
               </div>
               <div style={{
                 maxHeight: '220px',
                 overflowY: 'auto',
-                padding: '14px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-app)',
-                border: '1px solid var(--border-hairline)',
-                fontSize: '0.85rem',
+                padding: '16px',
+                borderRadius: 'var(--radius-md)',
+                background: '#f8fafc',
+                border: '1px solid var(--border-light)',
+                fontSize: '0.86rem',
                 lineHeight: '1.7',
                 whiteSpace: 'pre-wrap'
               }}>
@@ -917,10 +1077,10 @@ export default function App() {
 
               return (
                 <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
                     TIMESTAMPS ({segs.length})
                   </div>
-                  <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {segs.map((seg, idx) => (
                       <div
                         key={idx}
@@ -928,17 +1088,17 @@ export default function App() {
                           display: 'flex',
                           alignItems: 'baseline',
                           gap: '10px',
-                          padding: '6px 10px',
-                          borderRadius: 'var(--radius-xs)',
-                          background: 'rgba(255, 255, 255, 0.02)',
-                          border: '1px solid var(--border-hairline)',
-                          fontSize: '0.8rem'
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          background: '#f8fafc',
+                          border: '1px solid var(--border-light)',
+                          fontSize: '0.82rem'
                         }}
                       >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#818cf8', minWidth: '60px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: '#ff5722', fontWeight: '700', minWidth: '60px' }}>
                           {Math.floor(seg.start || 0)}s - {Math.floor(seg.end || seg.start + 2)}s
                         </span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{seg.text}</span>
+                        <span style={{ color: 'var(--text-body)' }}>{seg.text}</span>
                       </div>
                     ))}
                   </div>
