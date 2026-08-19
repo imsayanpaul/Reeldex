@@ -667,14 +667,16 @@ body {
     display: none !important;
   }
 
-  .ig-user-pill {
-    display: none !important;
-  }
-  
   .ig-content-container {
-    padding: 14px 16px 70px 16px !important;
+    padding: 14px 16px 70px 16px;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  .ig-content-container.chat-active {
+    padding: 0 16px 14px 16px !important;
+    height: calc(100dvh - 60px) !important;
+    overflow: hidden !important;
   }
 
   .ig-section-header,

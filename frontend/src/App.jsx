@@ -850,10 +850,11 @@ export default function App() {
       {/* MAIN CONTENT AREA */}
       {/* ======================================================== */}
       <div
-        className="ig-content-container"
+        className={`ig-content-container ${activeTab === 'chat' ? 'chat-active' : ''}`}
         style={{
-          padding: activeTab === 'chat' ? '0 16px' : (isManageMode ? '14px 16px 100px' : '14px 16px 60px'),
-          height: activeTab === 'chat' ? 'calc(100dvh - 56px)' : 'auto',
+          padding: activeTab === 'chat' ? '0 16px 14px' : (isManageMode ? '14px 16px 100px' : '14px 16px 60px'),
+          height: activeTab === 'chat' ? 'calc(100dvh - 60px)' : 'auto',
+          overflow: activeTab === 'chat' ? 'hidden' : 'visible',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -1518,7 +1519,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: ASK AI COPILOT (FULL PAGE LAYOUT) */}
+        {/* TAB 2: ASK AI COPILOT (FULL PAGE PINNED LAYOUT) */}
         {activeTab === 'chat' && (
           <div style={{
             display: 'flex',
@@ -1527,15 +1528,9 @@ export default function App() {
             maxWidth: '820px',
             width: '100%',
             margin: '0 auto',
-            padding: '4px 0 16px'
+            padding: '8px 0 4px',
+            overflow: 'hidden'
           }}>
-            {/* Sub-header description */}
-            <div style={{ paddingBottom: '10px', borderBottom: '1px solid #282f34', marginBottom: '10px' }}>
-              <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0 }}>
-                Search and synthesize insights across all your saved Instagram Reels
-              </p>
-            </div>
-
             {/* Chat Messages Stream */}
             <div style={{
               flex: 1,
