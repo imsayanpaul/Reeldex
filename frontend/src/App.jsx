@@ -490,41 +490,30 @@ export default function App() {
         </div>
 
         {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Ask AI Tab Toggle */}
           <button
             onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
-            className={`header-ai-btn ${activeTab === 'chat' ? 'active' : ''}`}
+            className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
             title="Ask AI across your saved reels"
           >
-            <Sparkles size={14} color={activeTab === 'chat' ? '#38bdf8' : '#000000'} />
-            <span>Ask AI</span>
+            Ask AI
           </button>
 
-          {/* User / Instagram Status Capsule with Story Ring */}
-          <div
+          {/* User / Instagram Status Capsule */}
+          <button
             onClick={handleGeneratePairingCode}
-            className="header-profile-capsule"
+            className="ig-filter-pill"
             title="Instagram Connection Status - Click to Pair"
           >
-            <div className="story-avatar-ring">
-              <div className="story-avatar-inner">
-                <InstagramIcon size={13} color="#000000" />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
-                boxShadow: session.is_instagram_linked ? '0 0 6px rgba(16, 185, 129, 0.6)' : 'none'
-              }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#000000' }}>
-                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}
-              </span>
-            </div>
-          </div>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: session.is_instagram_linked ? '#10b981' : '#f59e0b'
+            }} />
+            <span>{session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}</span>
+          </button>
 
           {/* + New Collection Icon Only */}
           <button
