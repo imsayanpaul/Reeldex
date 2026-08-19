@@ -531,28 +531,6 @@ export default function App() {
                     alt="ReelDex Creator"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                  {/* Floating live badge */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    left: '12px',
-                    right: '12px',
-                    background: 'rgba(15, 23, 42, 0.85)',
-                    backdropFilter: 'blur(8px)',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    color: '#ffffff',
-                    fontSize: '0.74rem',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Zap size={14} color="#ff5722" /> Groq Whisper Speech AI
-                    </span>
-                    <span style={{ color: '#10b981', fontSize: '0.7rem' }}>~1s Sync</span>
-                  </div>
                 </div>
               </div>
             </div>
