@@ -840,61 +840,115 @@ export default function App() {
                                     position: 'absolute',
                                     top: '24px',
                                     right: '0',
-                                    width: '180px',
+                                    width: '190px',
                                     background: '#ffffff',
                                     borderRadius: '10px',
                                     boxShadow: 'var(--shadow-lg)',
                                     border: '1px solid var(--border-light)',
-                                    padding: '6px',
+                                    padding: '8px',
                                     zIndex: 100
                                   }}
                                 >
-                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', padding: '4px 6px', textTransform: 'uppercase' }}>
-                                    Move to:
+                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
+                                    Move to Collection:
                                   </div>
-                                  {collections.map((col) => (
-                                    <button
-                                      key={col.id}
-                                      onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
-                                      style={{
-                                        width: '100%',
-                                        textAlign: 'left',
-                                        padding: '5px 8px',
-                                        borderRadius: '6px',
-                                        background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
-                                        border: 'none',
-                                        fontSize: '0.78rem',
-                                        fontWeight: '600',
-                                        color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px'
-                                      }}
-                                    >
-                                      <Folder size={12} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
-                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
-                                    </button>
-                                  ))}
-                                  {reel.collection_id && (
-                                    <button
-                                      onClick={(e) => handleAssignCollection(reel.id, null, e)}
-                                      style={{
-                                        width: '100%',
-                                        textAlign: 'left',
-                                        padding: '5px 8px',
-                                        borderRadius: '6px',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        borderTop: '1px solid var(--border-light)',
-                                        fontSize: '0.72rem',
-                                        color: '#ef4444',
-                                        cursor: 'pointer',
-                                        marginTop: '4px'
-                                      }}
-                                    >
-                                      ✕ Remove from folder
-                                    </button>
+
+                                  {collections.length === 0 ? (
+                                    <div style={{ padding: '4px' }}>
+                                      <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: '1.4' }}>
+                                        No collections yet.
+                                      </p>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenCollectionPickerId(null);
+                                          setShowCreateCollectionModal(true);
+                                        }}
+                                        className="btn-coral"
+                                        style={{
+                                          width: '100%',
+                                          fontSize: '0.74rem',
+                                          padding: '6px 10px',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        <Plus size={12} /> New Collection
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {collections.map((col) => (
+                                        <button
+                                          key={col.id}
+                                          onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
+                                          style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '6px 8px',
+                                            borderRadius: '6px',
+                                            background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
+                                            border: 'none',
+                                            fontSize: '0.78rem',
+                                            fontWeight: '600',
+                                            color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            marginBottom: '2px'
+                                          }}
+                                        >
+                                          <Folder size={12} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
+                                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
+                                        </button>
+                                      ))}
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenCollectionPickerId(null);
+                                          setShowCreateCollectionModal(true);
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          textAlign: 'left',
+                                          padding: '6px 8px',
+                                          borderRadius: '6px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          borderTop: '1px solid var(--border-light)',
+                                          fontSize: '0.74rem',
+                                          fontWeight: '700',
+                                          color: '#ff5722',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          marginTop: '4px'
+                                        }}
+                                      >
+                                        <Plus size={12} /> Create Collection
+                                      </button>
+
+                                      {reel.collection_id && (
+                                        <button
+                                          onClick={(e) => handleAssignCollection(reel.id, null, e)}
+                                          style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '5px 8px',
+                                            borderRadius: '6px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            fontSize: '0.72rem',
+                                            color: '#ef4444',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          ✕ Remove from folder
+                                        </button>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               )}
