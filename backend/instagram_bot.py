@@ -98,7 +98,9 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                     # Fallback if URL is missing
                     reel_urls.append(f"https://www.instagram.com/reel/{payload.get('reel_video_id')}/")
             
+            mid = message.get("mid")
             results.append({
+                "message_id": mid,
                 "sender_id": sender_id,
                 "message_text": text,
                 "reel_urls": list(set(reel_urls))

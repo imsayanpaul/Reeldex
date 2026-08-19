@@ -455,6 +455,8 @@ def verify_instagram_webhook(
     
     raise HTTPException(status_code=403, detail="Verification token mismatch.")
 
+PROCESSED_MIDS = set()
+
 @router.post("/webhook/instagram")
 async def receive_instagram_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Receives inbound Instagram DMs, pairing codes, and shared Reels."""
@@ -464,6 +466,15 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
 
         events = parse_webhook_payload(body)
         for item in events:
+            mid = item.get("message_id")
+            if mid:
+                if mid in PROCESSED_MIDS:
+                    print(f"[Deduplication] Skipping already processed message_id: {mid}")
+                    continue
+                PROCESSED_MIDS.add(mid)
+                if len(PROCESSED_MIDS) > 2000:
+                    PROCESSED_MIDS.clear()
+
             sender_id = item["sender_id"]
             reel_urls = item.get("reel_urls", [])
             message_text = (item.get("message_text") or "").strip()
@@ -492,6 +503,9 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     db.query(ReelItem).filter(ReelItem.sender_id == sender_id).update({"user_id": target_user.id})
 
                     target_user.instagram_sender_id = sender_id
+                    p_code.is_used = True
+                    db.commit()
+
                     frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
                     vault_url = f"{frontend_base}/?token={target_user.auth_token}"
                     confirm_msg = (
@@ -513,6 +527,18 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                 for r_url in reel_urls:
                     clean_url = normalize_instagram_url(r_url)
                     shortcode = extract_shortcode(clean_url)
+
+                    # Deduplication: Check if this reel was already processed recently for this user
+                    ten_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
+                    existing_recent = db.query(ReelItem).filter(
+                        or_(ReelItem.user_id == user.id, ReelItem.sender_id == sender_id),
+                        or_(ReelItem.shortcode == shortcode, ReelItem.reel_url == clean_url),
+                        ReelItem.created_at > ten_mins_ago
+                    ).first()
+
+                    if existing_recent:
+                        print(f"[Deduplication] Skipping duplicate reel {clean_url} (Reel #{existing_recent.id} already {existing_recent.status})")
+                        continue
 
                     reel = ReelItem(
                         user_id=user.id,
