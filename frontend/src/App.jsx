@@ -70,6 +70,61 @@ const formatSummary = (summary) => {
   return String(summary);
 };
 
+const renderWithClickableLinks = (text) => {
+  if (!text) return '';
+  const str = typeof text === 'string' ? text : formatSummary(text);
+  if (!str) return '';
+
+  const urlRegex = /(https?:\/\/[^\s,)]+|(?:[a-zA-Z0-9-]+\.)+(?:com|dev|ai|io|net|org|app|co|xyz|so|me|tech|site|online|space|store|design|tools|club|live|pro|agency|studio)(?:\/[^\s,)]*)?)/gi;
+  
+  const elements = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlRegex.exec(str)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(str.substring(lastIndex, match.index));
+    }
+    const rawUrl = match[1];
+    const cleanUrl = rawUrl.replace(/[.,;:)]+$/, '');
+    const trailing = rawUrl.substring(cleanUrl.length);
+    const href = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
+      ? cleanUrl 
+      : `https://${cleanUrl}`;
+
+    elements.push(
+      <a
+        key={match.index}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          color: '#90a4f2',
+          textDecoration: 'underline',
+          textUnderlineOffset: '3px',
+          fontWeight: '500',
+          cursor: 'pointer'
+        }}
+      >
+        {cleanUrl}
+      </a>
+    );
+
+    if (trailing) {
+      elements.push(trailing);
+    }
+
+    lastIndex = match.index + rawUrl.length;
+  }
+
+  if (lastIndex < str.length) {
+    elements.push(str.substring(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : str;
+};
+
 // Safe storage access
 const getSafeStorage = (key) => {
   try {
@@ -2580,14 +2635,14 @@ export default function App() {
 
                 {selectedReel.transcript?.summary && (
                   <p style={{ fontSize: '0.92rem', color: '#f8fafa', lineHeight: '1.65', margin: 0, fontWeight: '400' }}>
-                    {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
+                    {renderWithClickableLinks(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
                   </p>
                 )}
 
                 {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
                   <ul style={{ paddingLeft: '18px', fontSize: '0.88rem', color: '#d4d4d8', lineHeight: '1.65', margin: 0 }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
+                      <li key={i} style={{ marginBottom: '4px' }}>{renderWithClickableLinks(pt)}</li>
                     ))}
                   </ul>
                 )}
@@ -2613,7 +2668,7 @@ export default function App() {
                         {validActions.map((act, i) => (
                           <div key={i} style={{ fontSize: '0.86rem', color: '#f8fafa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                             <span style={{ color: '#90a4f2' }}>•</span>
-                            <span>{act}</span>
+                            <span>{renderWithClickableLinks(act)}</span>
                           </div>
                         ))}
                       </div>
