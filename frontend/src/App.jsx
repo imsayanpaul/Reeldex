@@ -526,14 +526,24 @@ export default function App() {
             </div>
           </div>
 
-          {/* + New Collection Button */}
+          {/* + New Collection Icon Only */}
           <button
             onClick={() => setShowCreateCollectionModal(true)}
-            className="header-add-btn"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px',
+              color: '#000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              transition: 'background 0.15s ease'
+            }}
             title="Create New Collection"
           >
-            <Plus size={14} />
-            <span>Collection</span>
+            <Plus size={22} strokeWidth={2.2} />
           </button>
         </div>
       </header>
