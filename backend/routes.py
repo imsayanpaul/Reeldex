@@ -558,27 +558,48 @@ async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
     if not settings.GROQ_API_KEY:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
 
-    try:
-        from groq import Groq
-        client = Groq(api_key=settings.GROQ_API_KEY)
-        prompt = (
-            "You are a professional audio translator. Translate the following transcript and summary into natural, fluent English. "
-            "Respond ONLY with a valid JSON object matching this exact schema:\n"
-            '{"translated_summary": "English summary text", "translated_text": "Full word-for-word English transcript"}\n\n'
-            f"Original Summary:\n{t.summary or ''}\n\n"
-            f"Original Transcript:\n{t.full_text[:4000]}"
-        )
-        resp = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.2,
-            max_tokens=2000
-        )
-        parsed = json.loads(resp.choices[0].message.content)
+    prompt = (
+        "You are a professional audio translator. Translate the following transcript and summary into natural, fluent English. "
+        "Respond ONLY with a valid JSON object matching this exact schema:\n"
+        '{"translated_summary": "English summary text", "translated_text": "Full word-for-word English transcript"}\n\n'
+        f"Original Summary:\n{t.summary or ''}\n\n"
+        f"Original Transcript:\n{t.full_text[:4000]}"
+    )
+    models_to_try = [
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama3-8b-8192",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it"
+    ]
+    parsed = None
+    last_err = None
+    if settings.GROQ_API_KEY:
+        try:
+            from groq import Groq
+            client = Groq(api_key=settings.GROQ_API_KEY)
+            for model_id in models_to_try:
+                try:
+                    resp = client.chat.completions.create(
+                        model=model_id,
+                        messages=[
+                            {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.2,
+                        max_tokens=2000
+                    )
+                    parsed = json.loads(resp.choices[0].message.content)
+                    if parsed:
+                        break
+                except Exception as err:
+                    last_err = err
+                    continue
+        except Exception as groq_init_err:
+            last_err = groq_init_err
+
+    if parsed:
         t.translated_text = parsed.get("translated_text") or t.full_text
         t.translated_summary = parsed.get("translated_summary") or t.summary
         db.commit()
@@ -588,34 +609,8 @@ async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
             "translated_summary": t.translated_summary,
             "cached": False
         }
-    except Exception as e:
-        print(f"[Translation Error]: {e}")
-        # Fallback to general model
-        try:
-            from groq import Groq
-            client = Groq(api_key=settings.GROQ_API_KEY)
-            resp = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.2,
-                max_tokens=2000
-            )
-            parsed = json.loads(resp.choices[0].message.content)
-            t.translated_text = parsed.get("translated_text") or t.full_text
-            t.translated_summary = parsed.get("translated_summary") or t.summary
-            db.commit()
-            return {
-                "success": True,
-                "translated_text": t.translated_text,
-                "translated_summary": t.translated_summary,
-                "cached": False
-            }
-        except Exception as e2:
-            raise HTTPException(status_code=500, detail=f"Translation failed: {str(e2)}")
+    else:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(last_err)}")
 
 
 # --- Core Reels & Search Endpoints ---

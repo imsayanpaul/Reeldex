@@ -223,35 +223,50 @@ Provide a direct, clear answer with specific citations."""
             "citations": citations
         }
 
-    try:
-        from groq import Groq
-        client = Groq(api_key=api_key)
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,
-            max_tokens=600
-        )
-        answer = response.choices[0].message.content
-        res_payload = {
-            "answer": answer,
-            "citations": citations
-        }
-        # Save in Cache
-        AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
-        if len(AI_QUERY_CACHE) > 500:
-            AI_QUERY_CACHE.pop(next(iter(AI_QUERY_CACHE)))
-        return res_payload
-    except Exception as e:
-        print(f"[RAG Groq Error]: {e}, trying fallback model...")
+    models_to_try = [
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama3-8b-8192",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it",
+        "llama-3.1-8b-instant"
+    ]
+
+    answer = None
+    last_error = None
+
+    if api_key:
         try:
             from groq import Groq
             client = Groq(api_key=api_key)
+            for model_id in models_to_try:
+                try:
+                    response = client.chat.completions.create(
+                        model=model_id,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.3,
+                        max_tokens=600
+                    )
+                    answer = response.choices[0].message.content
+                    if answer:
+                        break
+                except Exception as model_err:
+                    last_error = model_err
+                    print(f"[RAG Groq {model_id} error]: {model_err}")
+                    continue
+        except Exception as groq_err:
+            last_error = groq_err
+
+    # Fallback to OpenAI if Groq fails or is not available
+    if not answer and settings.OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -260,15 +275,21 @@ Provide a direct, clear answer with specific citations."""
                 max_tokens=600
             )
             answer = response.choices[0].message.content
-            res_payload = {
-                "answer": answer,
-                "citations": citations
-            }
-            # Save in Cache
-            AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
-            return res_payload
-        except Exception as e2:
-            return {
-                "answer": f"I encountered an error analyzing your library: {str(e2)}",
-                "citations": citations
-            }
+        except Exception as oai_err:
+            last_error = oai_err
+
+    if not answer:
+        return {
+            "answer": f"I encountered an error connecting to the AI engine: {str(last_error)}",
+            "citations": citations
+        }
+
+    res_payload = {
+        "answer": answer,
+        "citations": citations
+    }
+    # Save in Cache
+    AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
+    if len(AI_QUERY_CACHE) > 500:
+        AI_QUERY_CACHE.pop(next(iter(AI_QUERY_CACHE)))
+    return res_payload
