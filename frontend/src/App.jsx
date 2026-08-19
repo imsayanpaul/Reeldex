@@ -282,8 +282,10 @@ export default function App() {
 
   // Reel Detail Modal
   const openReelDetail = async (reel) => {
+    const reelId = reel?.id || reel?.reel_id;
+    if (!reelId) return;
     try {
-      const res = await fetch(`${API_BASE}/reels/${reel.id}`);
+      const res = await fetch(`${API_BASE}/reels/${reelId}`);
       if (res.ok) {
         const detail = await res.json();
         setSelectedReel(detail);

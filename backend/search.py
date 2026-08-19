@@ -122,6 +122,7 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     citations = []
     for idx, r in enumerate(top_reels, 1):
         citations.append({
+            "id": r.get("id"),
             "reel_id": r.get("id"),
             "title": r.get("title") or f"Reel #{r.get('id')}",
             "author": r.get("author") or r.get("sender_username"),
