@@ -618,6 +618,63 @@ export default function App() {
                     onClick={() => openReelDetail(reel)}
                   >
                     <div>
+                      {/* Video Thumbnail Cover */}
+                      {reel.thumbnail_url && (
+                        <div style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '160px',
+                          borderRadius: '14px',
+                          overflow: 'hidden',
+                          marginBottom: '14px',
+                          backgroundColor: '#0f172a'
+                        }}>
+                          <img
+                            src={reel.thumbnail_url}
+                            alt={reel.title || 'Reel Thumbnail'}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'linear-gradient(to top, rgba(15, 23, 42, 0.6) 0%, transparent 60%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <div style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '50%',
+                              background: 'rgba(255, 255, 255, 0.92)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+                            }}>
+                              <Play size={15} color="#0f172a" style={{ marginLeft: '2px' }} />
+                            </div>
+                          </div>
+
+                          {reel.duration && (
+                            <span style={{
+                              position: 'absolute',
+                              bottom: '8px',
+                              right: '8px',
+                              background: 'rgba(0, 0, 0, 0.75)',
+                              color: '#ffffff',
+                              fontSize: '0.7rem',
+                              fontWeight: '700',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}>
+                              {Math.round(reel.duration)}s
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Top Header: Category & Timestamp */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="pill-category">
@@ -946,6 +1003,57 @@ export default function App() {
                 <button onClick={() => setSelectedReel(null)} className="btn-white">✕</button>
               </div>
             </div>
+
+            {/* Modal Video Thumbnail Preview */}
+            {selectedReel.thumbnail_url && (
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '190px',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                marginBottom: '18px',
+                backgroundColor: '#0f172a'
+              }}>
+                <img
+                  src={selectedReel.thumbnail_url}
+                  alt={selectedReel.title || 'Reel Thumbnail'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                />
+                {selectedReel.reel_url && (
+                  <a
+                    href={selectedReel.reel_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 60%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 18px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      color: '#0f172a',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
+                    }}>
+                      <Play size={14} color="#0f172a" style={{ fill: '#0f172a' }} /> Play Original on Instagram <ExternalLink size={12} />
+                    </div>
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* AI Summary Box */}
             {selectedReel.transcript?.summary && (

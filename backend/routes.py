@@ -84,7 +84,7 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
         
         reel.title = dl_result.get("title") or reel.title or f"Reel {reel.shortcode or ''}"
         reel.author = dl_result.get("author") or reel.author
-        reel.thumbnail_url = dl_result.get("thumbnail_url") or reel.thumbnail_url
+        reel.thumbnail_url = dl_result.get("thumbnail_url") or dl_result.get("thumbnail") or (f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None)
         reel.duration = dl_result.get("duration")
         db.commit()
 
@@ -281,7 +281,7 @@ def list_reels(
             "shortcode": r.shortcode,
             "title": r.title or (f"Reel {r.shortcode}" if r.shortcode else f"Reel #{r.id}"),
             "author": r.author,
-            "thumbnail_url": r.thumbnail_url,
+            "thumbnail_url": r.thumbnail_url or (f"https://www.instagram.com/p/{r.shortcode}/media/?size=l" if r.shortcode else None),
             "duration": r.duration,
             "source": r.source,
             "sender_id": r.sender_id,
@@ -332,7 +332,7 @@ def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
         "shortcode": reel.shortcode,
         "title": reel.title,
         "author": reel.author,
-        "thumbnail_url": reel.thumbnail_url,
+        "thumbnail_url": reel.thumbnail_url or (f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None),
         "duration": reel.duration,
         "source": reel.source,
         "sender_id": reel.sender_id,
