@@ -112,13 +112,14 @@ body {
   background: rgba(12, 15, 20, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: none !important;
-  height: 56px;
+  border-bottom: 1px solid #282f34 !important;
+  min-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 10px 20px;
   z-index: 50;
+  box-sizing: border-box;
 }
 
 .ig-content-container {

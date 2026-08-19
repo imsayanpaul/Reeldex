@@ -2152,14 +2152,15 @@ export default function App() {
             top: 0,
             zIndex: 30,
             background: 'rgba(12, 15, 20, 0.96)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             borderBottom: '1px solid #282f34',
-            height: '62px',
+            minHeight: '68px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 20px'
+            padding: '14px 20px',
+            boxSizing: 'border-box'
           }}>
             {/* Left: Back Button */}
             <button
