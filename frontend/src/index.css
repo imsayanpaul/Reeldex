@@ -247,6 +247,41 @@ body {
   gap: 4px;
 }
 
+/* Markdown Content Styling in Chat */
+.markdown-content p {
+  margin-bottom: 10px;
+  line-height: 1.65;
+}
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+.markdown-content strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+.markdown-content ul, .markdown-content ol {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+.markdown-content li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+.markdown-content code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ea580c;
+}
+
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;

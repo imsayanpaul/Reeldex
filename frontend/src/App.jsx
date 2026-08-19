@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Search, 
   Sparkles, 
@@ -717,7 +718,13 @@ export default function App() {
                     lineHeight: '1.6'
                   }}
                 >
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                  {msg.role === 'user' ? (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                  ) : (
+                    <div className="markdown-content">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  )}
 
                   {/* Referenced Citations */}
                   {msg.citations && msg.citations.length > 0 && (
