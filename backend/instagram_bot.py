@@ -56,6 +56,8 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     
     entries = payload.get("entry", [])
     for entry in entries:
+        account_id = entry.get("id") # The Instagram Business Account ID (Bot)
+
         # Format A: entry.messaging
         events = entry.get("messaging", [])
         
@@ -75,10 +77,14 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                 continue
 
             # CRITICAL: Skip outgoing echo messages sent by our bot
-            if message.get("is_echo"):
+            if message.get("is_echo") or event.get("is_echo") or event.get("app_id"):
                 continue
 
             sender_id = event.get("sender", {}).get("id") or event.get("sender_id") or "instagram_user"
+            
+            # CRITICAL: If the sender is our own bot/page account ID, ignore completely!
+            if account_id and str(sender_id) == str(account_id):
+                continue
             text = message.get("text", "")
             
             reel_urls = extract_reel_urls_from_text(text)

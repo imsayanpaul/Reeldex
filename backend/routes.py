@@ -528,16 +528,14 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     clean_url = normalize_instagram_url(r_url)
                     shortcode = extract_shortcode(clean_url)
 
-                    # Deduplication: Check if this reel was already processed recently for this user
-                    ten_mins_ago = datetime.datetime.utcnow() - datetime.timedelta(minutes=10)
+                    # Deduplication: Check if this reel was already processed or is processing for this user
                     existing_recent = db.query(ReelItem).filter(
                         or_(ReelItem.user_id == user.id, ReelItem.sender_id == sender_id),
-                        or_(ReelItem.shortcode == shortcode, ReelItem.reel_url == clean_url),
-                        ReelItem.created_at > ten_mins_ago
-                    ).first()
+                        or_(ReelItem.shortcode == shortcode, ReelItem.reel_url == clean_url)
+                    ).order_by(ReelItem.id.desc()).first()
 
-                    if existing_recent:
-                        print(f"[Deduplication] Skipping duplicate reel {clean_url} (Reel #{existing_recent.id} already {existing_recent.status})")
+                    if existing_recent and existing_recent.status in ["completed", "processing"]:
+                        print(f"[Deduplication] Reel #{existing_recent.id} already exists ({existing_recent.status}). Skipping duplicate processing.")
                         continue
 
                     reel = ReelItem(
@@ -556,6 +554,11 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     background_tasks.add_task(process_reel_pipeline, reel.id, clean_url, sender_id, "instagram_dm", user.id)
 
             elif message_text:
+                # Do NOT auto-reply to bot confirmation texts or echoes
+                lower_text = message_text.lower()
+                if "http" in lower_text or "reeldex" in lower_text or "saved to your" in lower_text:
+                    continue
+
                 # Welcome reply for plain text message
                 welcome_msg = (
                     "👋 Hi! Send me any Instagram Reel or video share, "
