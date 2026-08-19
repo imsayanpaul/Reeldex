@@ -337,21 +337,9 @@ export default function App() {
           justifyContent: 'space-between'
         }}>
           
-          {/* Brand Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #ff5722 0%, #f43f5e 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 3px 10px rgba(255, 87, 34, 0.3)'
-            }}>
-              <Sparkles size={18} color="#ffffff" />
-            </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '900', letterSpacing: '-0.03em', color: '#0f172a' }}>
+          {/* Brand Logo Wordmark */}
+          <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
+            <div style={{ fontSize: '1.45rem', fontWeight: '900', letterSpacing: '-0.04em', color: '#0f172a' }}>
               Reel<span style={{ color: '#ff5722' }}>Dex</span>
             </div>
           </div>
