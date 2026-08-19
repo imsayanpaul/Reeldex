@@ -792,13 +792,13 @@ export default function App() {
               </div>
             </div>
 
-            {/* Highlighted Ask AI Button */}
+            {/* Highlighted Ask Dex AI Button */}
             <button
               onClick={() => setActiveTab('chat')}
               className="ig-ask-ai-center-btn"
-              title="Ask AI across your saved reels"
+              title="Ask Dex AI across your saved reels"
             >
-              <span>Ask AI</span>
+              <span>Ask Dex AI</span>
             </button>
           </div>
 
@@ -1553,7 +1553,7 @@ export default function App() {
                   <ArrowLeft size={24} strokeWidth={2.2} />
                 </button>
                 <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
-                  Ask AI Copilot
+                  Ask Dex AI
                 </h1>
               </div>
 
@@ -1562,7 +1562,7 @@ export default function App() {
                   setChatMessages([
                     {
                       role: 'assistant',
-                      content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+                      content: 'I am your **Dex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
                     }
                   ]);
                 }}
