@@ -573,6 +573,20 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (activeTab === 'chat' || selectedReel) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [activeTab, selectedReel]);
+
   const openReelDetail = async (reel) => {
     try {
       const idToFetch = reel.id || reel.reel_id;
@@ -726,7 +740,7 @@ export default function App() {
             </button>
           </div>
         </header>
-      ) : (
+      ) : activeTab === 'vault' ? (
         <header className="ig-top-navbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)' }}>
@@ -811,24 +825,22 @@ export default function App() {
             </button>
           </div>
         </header>
-      )}
+      ) : null}
 
       {/* ======================================================== */}
       {/* MAIN CONTENT AREA */}
       {/* ======================================================== */}
-      <div
-        className={`ig-content-container ${activeTab === 'chat' ? 'chat-active' : ''}`}
-        style={{
-          padding: activeTab === 'chat' ? '0 16px 14px' : (isManageMode ? '14px 16px 100px' : '14px 16px 60px'),
-          height: activeTab === 'chat' ? 'calc(100dvh - 60px)' : 'auto',
-          overflow: activeTab === 'chat' ? 'hidden' : 'visible',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-
-        {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
-        {activeTab === 'vault' && !selectedCollection && !isManageMode && (
+      {activeTab === 'vault' && (
+        <div
+          className="ig-content-container"
+          style={{
+            padding: isManageMode ? '14px 16px 100px' : '14px 16px 60px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
+          {!selectedCollection && !isManageMode && (
           <div className="ig-categories-strip">
             <button
               onClick={() => setActiveViewFilter('All')}
@@ -854,10 +866,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1: VAULT VIEW */}
-        {activeTab === 'vault' && (
-          <div>
-            {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
+        {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
             {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
                 {activeViewFilter === 'All' && (
@@ -1541,19 +1550,24 @@ export default function App() {
               </button>
             </header>
 
-            {/* Middle Message Stream (Scrollable Only Here) */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              padding: '12px 16px',
-              maxWidth: '820px',
-              width: '100%',
-              margin: '0 auto',
-              boxSizing: 'border-box'
-            }}>
+            {/* Middle Message Stream (Scrollable Only Here, No Scrollbar Visible) */}
+            <div
+              className="no-scrollbar"
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                padding: '12px 16px',
+                maxWidth: '820px',
+                width: '100%',
+                margin: '0 auto',
+                boxSizing: 'border-box',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
               {chatMessages.map((msg, idx) => (
                 <div
                   key={idx}
@@ -1685,7 +1699,6 @@ export default function App() {
             </div>
           </div>
         )}
-      </div>
 
       {/* ======================================================== */}
       {/* MANAGE MODE STICKY BOTTOM ACTION BAR (Instagram Native) */}
