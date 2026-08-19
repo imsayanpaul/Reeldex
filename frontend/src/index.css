@@ -216,6 +216,19 @@ body {
   transform: scale(0.97);
 }
 
+/* Mobile Search Bar */
+.ig-mobile-search-bar {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .ig-mobile-search-bar {
+    display: block;
+  }
+}
+
 /* Instagram Categories Strip (Smooth Scroll) */
 .ig-categories-strip {
   display: flex;

@@ -990,6 +990,57 @@ export default function App() {
             flexDirection: 'column'
           }}
         >
+          {/* Mobile Search Bar (prominently available on mobile devices) */}
+          {!isManageMode && (
+            <div className="ig-mobile-search-bar" style={{ marginBottom: '14px' }}>
+              <div style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                background: '#181c1f',
+                borderRadius: '10px',
+                border: '1px solid #282f34',
+                padding: '0 12px',
+                height: '40px'
+              }}>
+                <Search size={15} color="#8e8e8e" style={{ marginRight: '8px', flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder={selectedCollection ? `Search in ${selectedCollection.name}...` : "Search transcripts, tools, creators..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    flex: 1,
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#f8fafa',
+                    fontSize: '0.88rem',
+                    padding: 0
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#8e8e8e',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Clear search"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
           {!selectedCollection && !isManageMode && (
           <div className="ig-categories-strip">
