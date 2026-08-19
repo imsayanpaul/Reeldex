@@ -699,6 +699,39 @@ export default function App() {
             </button>
           </div>
         </header>
+      ) : activeTab === 'chat' ? (
+        <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              onClick={() => setActiveTab('vault')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '2px' }}
+              title="Back to Vault"
+            >
+              <ArrowLeft size={24} strokeWidth={2.2} />
+            </button>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
+              Ask AI Copilot
+            </h1>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => {
+                setChatMessages([
+                  {
+                    role: 'assistant',
+                    content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+                  }
+                ]);
+              }}
+              className="ig-filter-pill"
+              style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+              title="Start a new chat"
+            >
+              New chat
+            </button>
+          </div>
+        </header>
       ) : selectedCollection ? (
         <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -1428,14 +1461,11 @@ export default function App() {
             maxWidth: '820px',
             width: '100%',
             margin: '0 auto',
-            padding: '12px 0 16px'
+            padding: '4px 0 16px'
           }}>
-            {/* Header */}
-            <div style={{ paddingBottom: '12px', borderBottom: '1px solid #282f34', marginBottom: '12px' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: '600', color: '#f8fafa', margin: 0 }}>
-                Ask AI Copilot
-              </h2>
-              <p style={{ fontSize: '0.82rem', color: '#8e8e8e', marginTop: '3px', margin: 0 }}>
+            {/* Sub-header description */}
+            <div style={{ paddingBottom: '10px', borderBottom: '1px solid #282f34', marginBottom: '10px' }}>
+              <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0 }}>
                 Search and synthesize insights across all your saved Instagram Reels
               </p>
             </div>
