@@ -576,7 +576,7 @@ export default function App() {
           </div>
 
           {/* Center: Search Box */}
-          <div style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
+          <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
               <input
@@ -660,9 +660,9 @@ export default function App() {
       {/* ======================================================== */}
       <div className="ig-content-container" style={{ paddingBottom: isManageMode ? '100px' : '60px' }}>
 
-        {/* Filter Pills (Clean Wrapping Category Strip) */}
+        {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
         {activeTab === 'vault' && !selectedCollection && !isManageMode && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '22px' }}>
+          <div className="ig-categories-strip">
             <button
               onClick={() => setActiveViewFilter('All')}
               className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
@@ -693,15 +693,15 @@ export default function App() {
             {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
             {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
                     Collections
                   </h2>
                   <button
-                    onClick={() => setShowCreateCollectionModal(true)}
+                    onClick={() => setActiveViewFilter('Collections')}
                     style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.84rem', cursor: 'pointer' }}
                   >
-                    + New Collection
+                    See all
                   </button>
                 </div>
 
@@ -737,16 +737,18 @@ export default function App() {
                             {coverImg ? (
                               <img src={coverImg} alt={col.name} />
                             ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #18181b, #27272a)' }}>
-                                <Folder size={32} color="#ffffff" opacity={0.6} />
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a' }}>
+                                <Folder size={22} color="#ffffff" opacity={0.6} />
                               </div>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {col.name}
-                          </div>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                            <Lock size={10} /> Private · {col.count} {col.count === 1 ? 'item' : 'items'}
+                          <div className="ig-collection-info">
+                            <div className="ig-collection-title">
+                              {col.name}
+                            </div>
+                            <div className="ig-collection-meta">
+                              <Lock size={10} /> Private
+                            </div>
                           </div>
                         </div>
                       );
@@ -857,6 +859,12 @@ export default function App() {
                         {reel.thumbnail_url ? (
                           <div className="modern-card-thumbnail-box">
                             <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
+                            
+                            {/* Instagram 3-Grid Top-Right Reel Icon */}
+                            <div className="ig-reel-media-badge">
+                              <Play size={13} color="#ffffff" fill="#ffffff" />
+                            </div>
+
                             <div className="modern-card-overlay">
                               {!isManageMode && (
                                 <div className="play-circle-badge">
@@ -866,7 +874,7 @@ export default function App() {
                             </div>
 
                             {/* Top Floating Badges */}
-                            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="modern-card-badges" style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span className="pill-category-badge">
                                 {reel.category || 'General'}
                               </span>

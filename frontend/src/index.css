@@ -157,42 +157,84 @@ body {
   border-color: #ffffff;
 }
 
-/* Instagram Collections Shelf - Dark */
+/* Instagram Categories Strip (Smooth Scroll) */
+.ig-categories-strip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.ig-categories-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Instagram Collections Shelf (2-Column Native Layout) - Dark */
 .ig-collections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 18px;
   margin-bottom: 28px;
 }
 
 .ig-collection-card {
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  background: var(--bg-card);
-  padding: 8px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: none;
+  transition: all 0.15s ease;
 }
 .ig-collection-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-  border-color: #52525b;
-  background: var(--bg-card-hover);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .ig-collection-cover {
-  width: 100%;
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
   aspect-ratio: 1 / 1;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   overflow: hidden;
   background: #1c1c1e;
   position: relative;
-  margin-bottom: 8px;
 }
 .ig-collection-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.ig-collection-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ig-collection-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.ig-collection-meta {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-weight: 500;
 }
 
 /* High-End Modern Reel Cards Grid - Dark */
@@ -234,6 +276,10 @@ body {
 }
 .modern-reel-card:hover .modern-card-thumbnail-box img {
   transform: scale(1.03);
+}
+
+.ig-reel-media-badge {
+  display: none;
 }
 
 .modern-card-overlay {
@@ -423,22 +469,107 @@ body {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Mobile Responsive (< 768px) */
+/* Mobile Responsive (< 768px) - Exact Instagram Native Saved App Layout */
 @media (max-width: 768px) {
-  .ig-content-container {
-    padding: 14px 12px 40px;
+  .ig-top-navbar {
+    padding: 10px 14px;
+    height: 54px;
   }
+  
+  .ig-content-container {
+    padding: 12px 10px 60px;
+    max-width: 100%;
+  }
+
+  .ig-categories-strip {
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-bottom: 20px;
+    gap: 6px;
+  }
+
+  .ig-filter-pill {
+    padding: 6px 14px;
+    font-size: 0.82rem;
+  }
+
   .ig-collections-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px 10px;
+    margin-bottom: 24px;
+  }
+
+  .ig-collection-card {
     gap: 10px;
+    padding: 2px;
   }
+
+  .ig-collection-cover {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    border-radius: 8px;
+  }
+
+  .ig-collection-title {
+    font-size: 0.88rem;
+  }
+
+  .ig-collection-meta {
+    font-size: 0.7rem;
+  }
+
+  /* Instagram Native 3-Column Reels Grid */
   .ig-reels-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-left: -10px;
+    margin-right: -10px;
   }
+
+  .modern-reel-card {
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .modern-card-thumbnail-box {
+    aspect-ratio: 1 / 1;
+    border-radius: 0;
+  }
+
+  .modern-card-overlay {
+    display: none;
+  }
+
+  .modern-card-badges {
+    display: none;
+  }
+
+  .ig-reel-media-badge {
+    display: flex !important;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 5;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+  }
+
+  .modern-card-body {
+    display: none;
+  }
+
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
   .modal-sheet {
-    border-radius: 18px 18px 0 0;
+    border-radius: 20px 20px 0 0;
     max-height: 88vh;
-    padding: 18px 14px;
+    padding: 20px 16px 36px;
   }
 }
