@@ -887,6 +887,21 @@ async def transcribe_reel_endpoint(req: TranscribeRequest, background_tasks: Bac
         "message": "Reel registered. Transcription & AI categorization started in background."
     }
 
+@router.post("/reels/{reel_id}/retry")
+def retry_reel_processing(reel_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Forces immediate re-processing of any reel."""
+    reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
+    if not reel:
+        raise HTTPException(status_code=404, detail="Reel not found.")
+    
+    reel.status = "processing"
+    reel.error_message = None
+    db.commit()
+    
+    clean_url = reel.reel_url or (f"https://www.instagram.com/reel/{reel.shortcode}/" if reel.shortcode else "")
+    background_tasks.add_task(process_reel_pipeline, reel.id, clean_url, reel.sender_id, reel.source or "web_ui", reel.user_id)
+    return {"success": True, "message": f"Retrying Reel #{reel.id} in background."}
+
 
 # --- Webhook & Meta Instagram Ingestion ---
 
