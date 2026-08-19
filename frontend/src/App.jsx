@@ -319,14 +319,7 @@ export default function App() {
         top: 0,
         zIndex: 50
       }}>
-        <div style={{
-          maxWidth: '1240px',
-          margin: '0 auto',
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        <div className="header-container-responsive">
           
           {/* Brand Logo Wordmark */}
           <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
@@ -335,8 +328,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Capsule Tab Switcher */}
-          <nav className="nav-capsule">
+          {/* Desktop Capsule Tab Switcher */}
+          <nav className="nav-capsule header-nav-desktop">
             <button
               onClick={() => setActiveTab('vault')}
               className={`nav-capsule-item ${activeTab === 'vault' ? 'active' : ''}`}
@@ -393,68 +386,58 @@ export default function App() {
             )}
           </div>
         </div>
+
+        {/* Mobile Sub-Header Navigation */}
+        <div className="header-nav-mobile">
+          <nav className="nav-capsule">
+            <button
+              onClick={() => setActiveTab('vault')}
+              className={`nav-capsule-item ${activeTab === 'vault' ? 'active' : ''}`}
+            >
+              • Search & Vault
+            </button>
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`nav-capsule-item ${activeTab === 'chat' ? 'active' : ''}`}
+            >
+              Ask AI <span style={{ fontSize: '0.68rem', background: activeTab === 'chat' ? '#ffffff' : 'rgba(255, 87, 34, 0.1)', color: activeTab === 'chat' ? '#ff5722' : '#ff5722', padding: '1px 5px', borderRadius: '4px', fontWeight: '800' }}>AI</span>
+            </button>
+          </nav>
+        </div>
       </header>
 
       {/* ======================================================== */}
       {/* MAIN VIEWPORT CONTAINER */}
       {/* ======================================================== */}
-      <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '24px 20px 40px', flex: 1 }}>
+      <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '20px 16px 40px', flex: 1 }}>
 
         {/* TAB 1: KNOWLEDGE VAULT */}
         {activeTab === 'vault' && (
           <div>
             
-            {/* HERO PROMOTIONAL BANNER (Appliqa Style) */}
-            <div style={{
-              background: 'linear-gradient(135deg, #ff5722 0%, #ee385c 100%)',
-              borderRadius: 'var(--radius-xl)',
-              boxShadow: 'var(--shadow-hero)',
-              padding: '36px 40px',
-              color: '#ffffff',
-              display: 'grid',
-              gridTemplateColumns: '1.25fr 0.75fr',
-              gap: '24px',
-              alignItems: 'center',
-              marginBottom: '32px',
-              position: 'relative',
-              overflow: 'hidden'
-            }} className="hero-container-grid">
+            {/* HERO PROMOTIONAL BANNER */}
+            <div className="hero-banner-responsive">
               
               {/* Left Content */}
               <div>
-                <h1 style={{
-                  fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)',
-                  fontWeight: '900',
-                  lineHeight: '1.15',
-                  letterSpacing: '-0.03em',
-                  marginBottom: '14px'
-                }}>
+                <h1 className="hero-heading-responsive">
                   Turn Saved Reels.<br />
                   Into Second Brain.<br />
                   All in One Place.
                 </h1>
 
                 <p style={{
-                  fontSize: '0.92rem',
-                  lineHeight: '1.6',
-                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '0.88rem',
+                  lineHeight: '1.55',
+                  color: 'rgba(255, 255, 255, 0.92)',
                   maxWidth: '520px',
-                  marginBottom: '24px'
+                  marginBottom: '20px'
                 }}>
                   Stop losing valuable advice in your Instagram saved folder. Automatically transcribe audio, extract tools & action items, and search everything with AI.
                 </p>
 
                 {/* Search Bar inside Hero */}
-                <div style={{
-                  background: '#ffffff',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '6px 8px 6px 18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                  maxWidth: '520px',
-                  marginBottom: '12px'
-                }}>
+                <div className="hero-search-box-responsive">
                   <Search size={18} color="#94a3b8" />
                   <input
                     type="text"
@@ -465,7 +448,7 @@ export default function App() {
                       border: 'none',
                       outline: 'none',
                       width: '100%',
-                      padding: '8px 12px',
+                      padding: '8px 10px',
                       fontSize: '0.88rem',
                       fontFamily: 'inherit',
                       color: '#0f172a'
@@ -475,7 +458,6 @@ export default function App() {
                   <button
                     onClick={() => fetchReels()}
                     className="btn-dark"
-                    style={{ padding: '8px 18px' }}
                   >
                     Search <ArrowRight size={14} />
                   </button>
@@ -589,7 +571,7 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '18px' }}>
+              <div className="reels-grid-responsive">
                 {reels.map((reel) => (
                   <div
                     key={reel.id}
