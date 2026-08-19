@@ -93,16 +93,16 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             attachments = message.get("attachments", [])
             for att in attachments:
                 att_type = att.get("type", "")
-                payload = att.get("payload", {})
-                payload_url = payload.get("url") if isinstance(payload, dict) else None
+                att_payload = att.get("payload", {})
+                payload_url = att_payload.get("url") if isinstance(att_payload, dict) else None
                 if not payload_url:
                     payload_url = att.get("url")
                 
                 if payload_url:
                     reel_urls.extend(extract_reel_urls_from_text(payload_url))
-                elif isinstance(payload, dict) and payload.get("reel_video_id"):
+                elif isinstance(att_payload, dict) and att_payload.get("reel_video_id"):
                     # Fallback if URL is missing
-                    reel_urls.append(f"https://www.instagram.com/reel/{payload.get('reel_video_id')}/")
+                    reel_urls.append(f"https://www.instagram.com/reel/{att_payload.get('reel_video_id')}/")
             
             mid = message.get("mid")
             results.append({

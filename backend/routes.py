@@ -148,7 +148,8 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
         db.commit()
 
         # 4. Auto DM Reply on Instagram (Mentions title, creator, category, and magic link)
-        if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN:
+        # CRITICAL: Only send DM if we haven't already replied for this reel
+        if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN and not reel.dm_replied:
             # Find user token for magic link
             user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
             frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
@@ -163,6 +164,8 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             sent = await send_instagram_dm(sender_id, summary_msg)
             reel.dm_replied = sent
             db.commit()
+        elif reel.dm_replied:
+            print(f"[Pipeline] DM already sent for Reel #{reel_id}. Skipping duplicate DM.")
 
     except Exception as e:
         print(f"[Pipeline Error for Reel #{reel_id}]: {e}")
@@ -528,14 +531,21 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     clean_url = normalize_instagram_url(r_url)
                     shortcode = extract_shortcode(clean_url)
 
-                    # Deduplication: Check if this reel was already processed or is processing for this user
-                    existing_recent = db.query(ReelItem).filter(
+                    # Deduplication: Check if this reel was already processed or is in-flight for this user
+                    dedup_filters = [
                         or_(ReelItem.user_id == user.id, ReelItem.sender_id == sender_id),
-                        or_(ReelItem.shortcode == shortcode, ReelItem.reel_url == clean_url)
-                    ).order_by(ReelItem.id.desc()).first()
+                        ReelItem.reel_url == clean_url
+                    ]
+                    # Only add shortcode filter if we actually extracted one
+                    if shortcode:
+                        dedup_filters = [
+                            or_(ReelItem.user_id == user.id, ReelItem.sender_id == sender_id),
+                            or_(ReelItem.shortcode == shortcode, ReelItem.reel_url == clean_url)
+                        ]
+                    existing_recent = db.query(ReelItem).filter(*dedup_filters).order_by(ReelItem.id.desc()).first()
 
-                    if existing_recent and existing_recent.status in ["completed", "processing"]:
-                        print(f"[Deduplication] Reel #{existing_recent.id} already exists ({existing_recent.status}). Skipping duplicate processing.")
+                    if existing_recent and existing_recent.status in ["completed", "processing", "downloading", "transcribing"]:
+                        print(f"[Deduplication] Reel #{existing_recent.id} already exists ({existing_recent.status}). Skipping.")
                         continue
 
                     reel = ReelItem(
