@@ -29,6 +29,29 @@ const InstagramIcon = ({ size = 18, color = "currentColor", style }) => (
     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
   </svg>
 );
+// Safe formatting helpers to prevent "Objects are not valid as React child" crashes
+const formatActionItem = (item) => {
+  if (!item) return '';
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object') {
+    return item.text || item.value || item.name || item.title || item.action || item.item || JSON.stringify(item);
+  }
+  return String(item);
+};
+
+const formatTag = (tag) => {
+  if (!tag) return '';
+  if (typeof tag === 'string') return tag;
+  if (typeof tag === 'object') return tag.tag || tag.name || tag.label || JSON.stringify(tag);
+  return String(tag);
+};
+
+const formatSummary = (summary) => {
+  if (!summary) return '';
+  if (typeof summary === 'string') return summary;
+  if (typeof summary === 'object') return summary.summary || summary.text || JSON.stringify(summary);
+  return String(summary);
+};
 
 // Safe storage access for sandboxed WebViews / In-App Browsers (Instagram/Facebook)
 const getSafeStorage = (key) => {
@@ -622,7 +645,7 @@ export default function App() {
 
                       {/* AI Summary Preview */}
                       <p style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '14px' }}>
-                        {reel.summary || reel.preview_text || 'Transcribing in progress...'}
+                        {formatSummary(reel.summary) || reel.preview_text || 'Transcribing in progress...'}
                       </p>
 
                       {/* Extracted Action Items Pill */}
@@ -636,7 +659,7 @@ export default function App() {
                           fontSize: '0.78rem',
                           color: '#e9d5ff'
                         }}>
-                          <strong>🛠️ Action Item:</strong> {reel.action_items[0]?.text || reel.action_items[0]}
+                          <strong>🛠️ Action Item:</strong> {formatActionItem(reel.action_items[0])}
                         </div>
                       )}
 
@@ -645,7 +668,7 @@ export default function App() {
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
                           {reel.tags.slice(0, 3).map((tag, idx) => (
                             <span key={idx} className="tag-badge">
-                              {tag}
+                              {formatTag(tag)}
                             </span>
                           ))}
                         </div>
@@ -997,13 +1020,13 @@ export default function App() {
                   <Sparkles size={16} /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
                 <p style={{ fontSize: '0.92rem', color: '#e2e8f0', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '12px' : '0' }}>
-                  {selectedReel.transcript.summary}
+                  {formatSummary(selectedReel.transcript.summary)}
                 </p>
 
                 {selectedReel.transcript.key_points?.length > 0 && (
                   <ul style={{ paddingLeft: '20px', fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '4px' }}>{pt}</li>
+                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
                     ))}
                   </ul>
                 )}
@@ -1025,7 +1048,7 @@ export default function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {selectedReel.action_items.map((act, i) => (
                     <div key={i} style={{ fontSize: '0.85rem', color: '#f3e8ff' }}>
-                      • {typeof act === 'string' ? act : act.text}
+                      • {formatActionItem(act)}
                     </div>
                   ))}
                 </div>
