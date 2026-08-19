@@ -452,12 +452,9 @@ export default function App() {
               <span>{selectedCollection.name}</span>
             </button>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <InstagramIcon size={22} color="#000000" />
-              <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', letterSpacing: '-0.02em' }}>
-                Saved
-              </h1>
-            </div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#000000', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
+              ReelDex
+            </h1>
           )}
         </div>
 
