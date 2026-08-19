@@ -1055,61 +1055,62 @@ export default function App() {
               </div>
             )}
 
-            {/* AI Summary Box */}
-            {selectedReel.transcript?.summary && (
+            {/* Unified AI Summary & Key Takeaways Box */}
+            {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
               <div style={{
-                padding: '18px',
+                padding: '20px',
                 borderRadius: 'var(--radius-lg)',
                 background: 'rgba(255, 87, 34, 0.05)',
                 border: '1px solid rgba(255, 87, 34, 0.15)',
                 marginBottom: '18px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '800', color: '#ff5722', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: '800', color: '#ff5722', marginBottom: '10px' }}>
                   <Sparkles size={15} /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '12px' : '0' }}>
-                  {formatSummary(selectedReel.transcript.summary)}
-                </p>
 
-                {selectedReel.transcript.key_points?.length > 0 && (
+                {selectedReel.transcript?.summary && (
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '12px' : '0' }}>
+                    {formatSummary(selectedReel.transcript.summary)}
+                  </p>
+                )}
+
+                {selectedReel.transcript?.key_points?.length > 0 && (
                   <ul style={{ paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
                       <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
                     ))}
                   </ul>
                 )}
+
+                {/* Merged Action Items / Tools inside unified card */}
+                {(() => {
+                  const validActions = (selectedReel.action_items || [])
+                    .map(formatActionItem)
+                    .filter(act => act && act.trim().length > 0 && !act.startsWith('{'));
+
+                  if (validActions.length === 0) return null;
+
+                  return (
+                    <div style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255, 87, 34, 0.12)'
+                    }}>
+                      <div style={{ fontSize: '0.74rem', fontWeight: '800', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '6px' }}>
+                        🛠️ Tools & Action Steps:
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {validActions.map((act, i) => (
+                          <div key={i} style={{ fontSize: '0.84rem', color: 'var(--text-dark)' }}>
+                            • {act}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
-
-            {/* Extracted Tools & Actions */}
-            {(() => {
-              const validActions = (selectedReel.action_items || [])
-                .map(formatActionItem)
-                .filter(act => act && act.trim().length > 0 && !act.startsWith('{'));
-
-              if (validActions.length === 0) return null;
-
-              return (
-                <div style={{
-                  padding: '14px 18px',
-                  borderRadius: 'var(--radius-md)',
-                  background: '#f8fafc',
-                  border: '1px solid var(--border-light)',
-                  marginBottom: '18px'
-                }}>
-                  <div style={{ fontSize: '0.76rem', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
-                    🛠️ EXTRACTED TOOLS, PROMOS & ACTION ITEMS
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {validActions.map((act, i) => (
-                      <div key={i} style={{ fontSize: '0.84rem', color: 'var(--text-body)' }}>
-                        • {act}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Word-For-Word Transcript */}
             <div style={{ marginBottom: '18px' }}>
