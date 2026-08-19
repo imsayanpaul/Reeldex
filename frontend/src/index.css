@@ -113,11 +113,11 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: none !important;
-  min-height: 64px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 10px 16px;
   z-index: 50;
   box-sizing: border-box;
 }
@@ -126,7 +126,8 @@ body {
   max-width: 1180px;
   width: 100%;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 14px 16px 60px;
+  box-sizing: border-box;
 }
 
 /* Filter Pills (Instagram Native Style - Dark) */
@@ -160,12 +161,12 @@ body {
 .ig-categories-strip {
   display: flex;
   gap: 8px;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding-bottom: 4px;
+  padding: 0;
 }
 .ig-categories-strip::-webkit-scrollbar {
   display: none;
@@ -658,8 +659,8 @@ body {
 /* Mobile Responsive (< 768px) - Exact Instagram Native Saved App Layout */
 @media (max-width: 768px) {
   .ig-top-navbar {
-    padding: 10px 14px;
-    height: 52px;
+    padding: 10px 16px;
+    height: 56px;
   }
 
   .ig-navbar-search {
@@ -671,19 +672,19 @@ body {
   }
   
   .ig-content-container {
-    padding: 10px 0 70px 0;
+    padding: 14px 16px 70px 16px !important;
     max-width: 100%;
-    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .ig-section-header,
   .ig-reels-header {
-    padding: 0 16px !important;
+    padding: 0 !important;
     margin-bottom: 12px;
   }
 
   .ig-categories-strip {
-    padding: 0 16px;
+    padding: 0 !important;
     margin-bottom: 18px;
     gap: 8px;
   }

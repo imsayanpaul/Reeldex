@@ -852,7 +852,7 @@ export default function App() {
       <div
         className="ig-content-container"
         style={{
-          padding: activeTab === 'chat' ? '0 16px' : (isManageMode ? '24px 20px 100px' : '24px 20px 60px'),
+          padding: activeTab === 'chat' ? '0 16px' : (isManageMode ? '14px 16px 100px' : '14px 16px 60px'),
           height: activeTab === 'chat' ? 'calc(100dvh - 56px)' : 'auto',
           display: 'flex',
           flexDirection: 'column'
