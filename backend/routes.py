@@ -147,15 +147,19 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             db.add(t)
         db.commit()
 
-        # 4. Auto DM Reply on Instagram (Ultra-concise magic link response)
+        # 4. Auto DM Reply on Instagram (Mentions title, creator, category, and magic link)
         if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN:
             # Find user token for magic link
             user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
-            frontend_base = (settings.FRONTEND_URL or "https://reeldex-one.vercel.app").rstrip("/")
+            frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
             vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
 
-            # Ultra-clean, minimal DM response
-            summary_msg = f"✨ Saved to your ReelDex! 🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
+            # Format title and creator
+            video_title = reel.title or "Instagram Reel"
+            creator_tag = f" by @{reel.author}" if reel.author else ""
+
+            # Clean DM response
+            summary_msg = f"✨ Saved to your ReelDex!\n\n🎬 {video_title}{creator_tag}\n🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
             sent = await send_instagram_dm(sender_id, summary_msg)
             reel.dm_replied = sent
             db.commit()
