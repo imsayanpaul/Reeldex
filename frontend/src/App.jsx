@@ -30,14 +30,45 @@ const InstagramIcon = ({ size = 18, color = "currentColor", style }) => (
   </svg>
 );
 
-const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '') + '/api';
+// Safe storage access for sandboxed WebViews / In-App Browsers (Instagram/Facebook)
+const getSafeStorage = (key) => {
+  try {
+    return window.localStorage?.getItem(key);
+  } catch (e) {
+    return null;
+  }
+};
+
+const setSafeStorage = (key, val) => {
+  try {
+    window.localStorage?.setItem(key, val);
+  } catch (e) {}
+};
+
+// Safe initial token detection
+const getInitialToken = () => {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+      setSafeStorage('reelmind_token', tokenFromUrl);
+      return tokenFromUrl;
+    }
+    return getSafeStorage('reelmind_token') || '';
+  } catch (e) {
+    return '';
+  }
+};
+
+const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : 'https://reeldex-api.onrender.com') + '/api';
 
 export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState('vault'); // 'vault' | 'chat' | 'transcribe' | 'settings'
 
-  // User & Pairing State
-  const [session, setSession] = useState(null);
+  // User & Pairing State (Default initialized to prevent black-screen flash in In-App Browsers)
+  const initialToken = getInitialToken();
+  const [session, setSession] = useState({ auth_token: initialToken, display_name: 'ReelDex User' });
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairingCode, setPairingCode] = useState(null);
   const [pairingLoading, setPairingLoading] = useState(false);
@@ -78,35 +109,33 @@ export default function App() {
 
   // 1. Initialize User Session
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenFromUrl = urlParams.get('token');
-    const storedToken = tokenFromUrl || localStorage.getItem('reelmind_token');
+    const currentToken = getInitialToken();
 
     fetch(`${API_BASE}/auth/session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: storedToken })
+      body: JSON.stringify({ token: currentToken })
     })
       .then(res => res.json())
       .then(data => {
-        setSession(data);
-        if (data.auth_token) {
-          localStorage.setItem('reelmind_token', data.auth_token);
+        if (data && data.auth_token) {
+          setSession(data);
+          setSafeStorage('reelmind_token', data.auth_token);
         }
       })
       .catch(err => console.error('Session error:', err));
 
     fetchCategories();
     fetchConfig();
+    fetchReels(currentToken);
   }, []);
 
-  // 2. Fetch Reels when Session, Category or Search Query Changes
+  // 2. Fetch Reels when Category or Search Query Changes
   useEffect(() => {
-    if (!session) return;
     fetchReels();
     const interval = setInterval(fetchReels, 4000); // Live poll for new DM reels
     return () => clearInterval(interval);
-  }, [session, selectedCategory, searchQuery]);
+  }, [session?.auth_token, selectedCategory, searchQuery]);
 
   const fetchCategories = async () => {
     try {
@@ -120,9 +149,9 @@ export default function App() {
     }
   };
 
-  const fetchReels = async () => {
+  const fetchReels = async (overrideToken) => {
     try {
-      const token = session?.auth_token || localStorage.getItem('reelmind_token') || '';
+      const token = overrideToken !== undefined ? overrideToken : (session?.auth_token || getSafeStorage('reelmind_token') || '');
       let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(selectedCategory)}`;
       if (searchQuery.trim()) {
         url += `&q=${encodeURIComponent(searchQuery.trim())}`;
