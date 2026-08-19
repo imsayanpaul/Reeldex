@@ -112,7 +112,7 @@ body {
   background: rgba(12, 15, 20, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid #282f34 !important;
+  border-bottom: none !important;
   min-height: 64px;
   display: flex;
   align-items: center;
