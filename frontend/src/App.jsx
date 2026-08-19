@@ -30,11 +30,26 @@ const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
 // Safe formatting helpers
 const formatActionItem = (item) => {
   if (!item) return '';
-  if (typeof item === 'string') return item;
-  if (typeof item === 'object') {
-    return item.text || item.value || item.name || item.title || item.action || item.item || JSON.stringify(item);
+  if (typeof item === 'string') {
+    const s = item.trim();
+    if (s.startsWith('{') || s.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(s);
+        return formatActionItem(parsed);
+      } catch (e) {
+        return '';
+      }
+    }
+    return s;
   }
-  return String(item);
+  if (typeof item === 'object') {
+    const text = item.text || item.name || item.value || item.title || item.action || item.item || item.tool || item.code || '';
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return '';
+    }
+    return text.trim();
+  }
+  return String(item).trim();
 };
 
 const formatTag = (tag) => {
@@ -647,13 +662,17 @@ export default function App() {
                       </p>
 
                       {/* Action Item Pill */}
-                      {reel.action_items?.length > 0 && (
-                        <div style={{ marginBottom: '12px' }}>
-                          <span className="pill-tool">
-                            🛠️ {formatActionItem(reel.action_items[0])}
-                          </span>
-                        </div>
-                      )}
+                      {(() => {
+                        const firstAction = (reel.action_items || []).map(formatActionItem).find(act => act && act.trim().length > 0 && !act.startsWith('{'));
+                        if (!firstAction) return null;
+                        return (
+                          <div style={{ marginBottom: '12px' }}>
+                            <span className="pill-tool">
+                              🛠️ {firstAction}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Tags */}
                       {reel.tags?.length > 0 && (
@@ -955,26 +974,34 @@ export default function App() {
             )}
 
             {/* Extracted Tools & Actions */}
-            {selectedReel.action_items?.length > 0 && (
-              <div style={{
-                padding: '14px 18px',
-                borderRadius: 'var(--radius-md)',
-                background: '#f8fafc',
-                border: '1px solid var(--border-light)',
-                marginBottom: '18px'
-              }}>
-                <div style={{ fontSize: '0.76rem', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
-                  🛠️ EXTRACTED TOOLS, PROMOS & ACTION ITEMS
+            {(() => {
+              const validActions = (selectedReel.action_items || [])
+                .map(formatActionItem)
+                .filter(act => act && act.trim().length > 0 && !act.startsWith('{'));
+
+              if (validActions.length === 0) return null;
+
+              return (
+                <div style={{
+                  padding: '14px 18px',
+                  borderRadius: 'var(--radius-md)',
+                  background: '#f8fafc',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '18px'
+                }}>
+                  <div style={{ fontSize: '0.76rem', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
+                    🛠️ EXTRACTED TOOLS, PROMOS & ACTION ITEMS
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {validActions.map((act, i) => (
+                      <div key={i} style={{ fontSize: '0.84rem', color: 'var(--text-body)' }}>
+                        • {act}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {selectedReel.action_items.map((act, i) => (
-                    <div key={i} style={{ fontSize: '0.84rem', color: 'var(--text-body)' }}>
-                      • {formatActionItem(act)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Word-For-Word Transcript */}
             <div style={{ marginBottom: '18px' }}>
@@ -982,7 +1009,7 @@ export default function App() {
                 FULL WORD-FOR-WORD TRANSCRIPT
               </div>
               <div style={{
-                maxHeight: '220px',
+                maxHeight: '260px',
                 overflowY: 'auto',
                 padding: '16px',
                 borderRadius: 'var(--radius-md)',
@@ -995,52 +1022,6 @@ export default function App() {
                 {selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...'}
               </div>
             </div>
-
-            {/* Timestamped Segments */}
-            {(() => {
-              let segs = [];
-              try {
-                if (Array.isArray(selectedReel.transcript?.segments)) {
-                  segs = selectedReel.transcript.segments;
-                } else if (typeof selectedReel.transcript?.segments === 'string') {
-                  segs = JSON.parse(selectedReel.transcript.segments);
-                }
-              } catch (e) {
-                segs = [];
-              }
-
-              if (!segs || segs.length === 0) return null;
-
-              return (
-                <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
-                    TIMESTAMPS ({segs.length})
-                  </div>
-                  <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {segs.map((seg, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'baseline',
-                          gap: '10px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          background: '#f8fafc',
-                          border: '1px solid var(--border-light)',
-                          fontSize: '0.82rem'
-                        }}
-                      >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: '#ff5722', fontWeight: '700', minWidth: '60px' }}>
-                          {Math.floor(seg.start || 0)}s - {Math.floor(seg.end || seg.start + 2)}s
-                        </span>
-                        <span style={{ color: 'var(--text-body)' }}>{seg.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         </div>
       )}
