@@ -306,15 +306,6 @@ export default function App() {
     link.click();
   };
 
-  const trendingTopics = [
-    { label: 'Tech & AI', num: '#1' },
-    { label: 'Productivity', num: '#2' },
-    { label: 'Career & Business', num: '#3' },
-    { label: 'Finance & Investing', num: '#4' },
-    { label: 'Fitness & Health', num: '#5' },
-    { label: 'Design & Tools', num: '#6' }
-  ];
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
       
@@ -405,41 +396,9 @@ export default function App() {
       </header>
 
       {/* ======================================================== */}
-      {/* TRENDING TOPIC STRIP */}
-      {/* ======================================================== */}
-      <div style={{
-        maxWidth: '1240px',
-        width: '100%',
-        margin: '16px auto 0',
-        padding: '0 20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        overflowX: 'auto'
-      }} className="no-scrollbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '4px' }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff5722' }} />
-          TRENDING:
-        </div>
-        {trendingTopics.map((item, idx) => (
-          <button
-            key={idx}
-            onClick={() => {
-              setSelectedCategory(item.label);
-              setActiveTab('vault');
-            }}
-            className={`trending-chip ${selectedCategory === item.label ? 'active' : ''}`}
-          >
-            <span className="trending-number">{item.num}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* ======================================================== */}
       {/* MAIN VIEWPORT CONTAINER */}
       {/* ======================================================== */}
-      <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '16px 20px 40px', flex: 1 }}>
+      <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '24px 20px 40px', flex: 1 }}>
 
         {/* TAB 1: KNOWLEDGE VAULT */}
         {activeTab === 'vault' && (
