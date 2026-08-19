@@ -147,7 +147,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 Hi! I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
+      content: 'I am your **ReelDex AI Copilot**. Ask me anything across your saved Instagram Reels — like *"List all AI tools mentioned"*, *"Summarize workout routines"*, or *"Find marketing advice"*.'
     }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -615,7 +615,7 @@ export default function App() {
     } catch (err) {
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Sorry, there was an error analyzing your library. Please try again.'
+        content: 'Sorry, there was an error analyzing your library. Please try again.'
       }]);
     } finally {
       setChatLoading(false);
@@ -1414,61 +1414,73 @@ export default function App() {
         {/* TAB 2: ASK AI COPILOT */}
         {activeTab === 'chat' && (
           <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-light)',
-            padding: '24px',
-            minHeight: '600px',
+            background: '#181c1f',
+            borderRadius: '18px',
+            border: '1px solid #282f34',
+            padding: '20px 20px 24px',
+            minHeight: '620px',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bot size={20} color="var(--text-heading)" /> Ask AI Copilot
-                </h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  High-density Grounded Knowledge Search across all your saved Instagram Reels
-                </p>
-              </div>
+            {/* Header */}
+            <div style={{ marginBottom: '18px', borderBottom: '1px solid #282f34', paddingBottom: '14px' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: '600', color: '#f8fafa', margin: 0 }}>
+                Ask AI Copilot
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: '#8e8e8e', marginTop: '4px', margin: 0 }}>
+                Search and synthesize insights across all your saved Instagram Reels
+              </p>
             </div>
 
             {/* Chat Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 2px' }}>
               {chatMessages.map((msg, idx) => (
                 <div
                   key={idx}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    padding: '12px 16px',
-                    borderRadius: '14px',
-                    background: msg.role === 'user' ? '#ffffff' : '#1c1c1e',
-                    color: msg.role === 'user' ? '#000000' : '#f4f4f5',
-                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
+                    maxWidth: '82%',
+                    padding: msg.role === 'user' ? '10px 16px' : '12px 18px',
+                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    background: msg.role === 'user' ? '#3797f0' : '#121518',
+                    color: msg.role === 'user' ? '#ffffff' : '#f8fafa',
+                    border: msg.role === 'user' ? 'none' : '1px solid #282f34',
                     fontSize: '0.88rem',
-                    lineHeight: '1.6'
+                    lineHeight: '1.5',
+                    fontWeight: '400'
                   }}
                 >
                   {msg.role === 'user' ? (
                     msg.content
                   ) : (
-                    <div className="markdown-prose">
+                    <div className="markdown-prose" style={{ color: '#f8fafa' }}>
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                   )}
                 </div>
               ))}
               {chatLoading && (
-                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#1c1c1e', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={15} color="#90a4f2" className="animate-spin" /> Synthesizing answer across your video transcripts...
+                <div style={{
+                  alignSelf: 'flex-start',
+                  padding: '10px 16px',
+                  borderRadius: '18px 18px 18px 4px',
+                  background: '#121518',
+                  border: '1px solid #282f34',
+                  fontSize: '0.82rem',
+                  color: '#8e8e8e',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#90a4f2', animation: 'pulse 1.2s infinite' }} />
+                  <span>Searching transcripts and summarizing...</span>
                 </div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            {/* Suggested Prompt Chips */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            {/* Suggested Prompt Chips (Emoji Free) */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
               {[
                 "What tools or promo codes were mentioned?",
                 "Summarize all career advice I saved",
@@ -1478,23 +1490,32 @@ export default function App() {
                   key={idx}
                   onClick={() => setChatQuestion(prompt)}
                   style={{
-                    fontSize: '0.74rem',
-                    padding: '5px 12px',
-                    borderRadius: 'var(--radius-full)',
-                    background: '#1c1c1e',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-main)',
-                    fontWeight: '600',
-                    cursor: 'pointer'
+                    fontSize: '0.8rem',
+                    padding: '7px 14px',
+                    borderRadius: '20px',
+                    background: '#121518',
+                    border: '1px solid #282f34',
+                    color: '#f8fafa',
+                    fontWeight: '400',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  ✨ {prompt}
+                  {prompt}
                 </button>
               ))}
             </div>
 
-            {/* Chat Input Bar */}
-            <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '8px' }}>
+            {/* Chat Input Bar (Native Instagram Rounded Pill Bar) */}
+            <form onSubmit={handleAskAI} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: '#121518',
+              border: '1.5px solid #282f34',
+              borderRadius: '24px',
+              padding: '4px 6px 4px 16px'
+            }}>
               <input
                 type="text"
                 placeholder="Ask a question across all your saved Reels..."
@@ -1502,16 +1523,33 @@ export default function App() {
                 onChange={(e) => setChatQuestion(e.target.value)}
                 style={{
                   flex: 1,
-                  padding: '10px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-input)',
-                  color: 'var(--text-main)',
+                  padding: '8px 0',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#f8fafa',
                   outline: 'none',
-                  fontSize: '0.88rem'
+                  fontSize: '0.9rem',
+                  fontWeight: '400'
                 }}
               />
-              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-primary" style={{ padding: '0 20px' }}>
+              <button
+                type="submit"
+                disabled={chatLoading || !chatQuestion.trim()}
+                style={{
+                  background: chatQuestion.trim() ? '#90a4f2' : '#27282c',
+                  color: chatQuestion.trim() ? '#0c0f14' : '#71717a',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: chatQuestion.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
+                }}
+              >
                 <Send size={15} />
               </button>
             </form>

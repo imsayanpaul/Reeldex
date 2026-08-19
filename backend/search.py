@@ -201,10 +201,10 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     context_str = "\n---\n".join(context_blocks)
 
     system_prompt = (
-        "You are ReelMind AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
+        "You are ReelDex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
         "Cite the specific creator (@handle) or Reel Title when mentioning facts, tools, promo codes, or steps. "
-        "Be concise, helpful, and formatted in clean markdown bullet points."
+        "Be concise, helpful, formatted in clean markdown bullet points, and do NOT use emojis anywhere in your response."
     )
 
     user_prompt = f"""User Question: {user_question}
