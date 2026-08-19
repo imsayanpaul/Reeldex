@@ -69,55 +69,6 @@ const formatSummary = (summary) => {
   return String(summary);
 };
 
-const renderTakeawayContent = (text) => {
-  if (!text) return null;
-  const str = String(text);
-  const domainRegex = /([a-zA-Z0-9-]+\.(?:dev|ai|io|com|org|net|app|co|xyz|so)(?:\/[^\s,)]*)?)/gi;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = domainRegex.exec(str)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(str.substring(lastIndex, match.index));
-    }
-    const url = match[1];
-    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-    parts.push(
-      <a
-        key={match.index}
-        href={fullUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          color: '#90a4f2',
-          textDecoration: 'none',
-          background: 'rgba(144, 164, 242, 0.12)',
-          border: '1px solid rgba(144, 164, 242, 0.25)',
-          padding: '1px 6px',
-          borderRadius: '5px',
-          fontWeight: '500',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '3px',
-          margin: '0 2px'
-        }}
-      >
-        <span>{url}</span>
-        <ExternalLink size={10} />
-      </a>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < str.length) {
-    parts.push(str.substring(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : str;
-};
-
 // Safe storage access
 const getSafeStorage = (key) => {
   try {
@@ -2582,108 +2533,36 @@ export default function App() {
               </div>
             )}
 
-            {/* Executive Summary & Key Takeaways Card (Modern Editorial UI) */}
-            {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0) || (selectedReel.transcript?.key_points && selectedReel.transcript.key_points.length > 0)) && (
+            {/* AI Summary & Key Takeaways Card */}
+            {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
               <div style={{
-                padding: '22px',
+                padding: '20px',
                 borderRadius: '16px',
                 background: '#181c1f',
                 border: '1px solid #282f34',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '16px'
+                gap: '12px'
               }}>
-                {/* Header with Category & Insights count */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.92rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.01em' }}>
-                      Insights & Breakdown
-                    </span>
-                    {selectedReel.category && (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        background: '#121518',
-                        border: '1px solid #282f34',
-                        color: '#90a4f2',
-                        fontWeight: '500'
-                      }}>
-                        {selectedReel.category}
-                      </span>
-                    )}
-                  </div>
+                <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa' }}>
+                  AI Summary & Key Takeaways
                 </div>
 
-                {/* Executive Summary Callout */}
                 {selectedReel.transcript?.summary && (
-                  <div style={{
-                    background: '#121518',
-                    borderLeft: '3px solid #90a4f2',
-                    borderRadius: '0 12px 12px 0',
-                    padding: '14px 16px',
-                    fontSize: '0.93rem',
-                    color: '#f8fafa',
-                    lineHeight: '1.65',
-                    fontWeight: '400'
-                  }}>
-                    {renderTakeawayContent(formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary))}
-                  </div>
+                  <p style={{ fontSize: '0.92rem', color: '#f8fafa', lineHeight: '1.65', margin: 0, fontWeight: '400' }}>
+                    {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
+                  </p>
                 )}
 
-                {/* Structured Key Takeaways Rows */}
-                {(() => {
-                  const rawPoints = (selectedReel.transcript?.key_points && selectedReel.transcript.key_points.length > 0)
-                    ? selectedReel.transcript.key_points
-                    : [];
+                {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.88rem', color: '#d4d4d8', lineHeight: '1.65', margin: 0 }}>
+                    {selectedReel.transcript.key_points.map((pt, i) => (
+                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
+                    ))}
+                  </ul>
+                )}
 
-                  if (rawPoints.length === 0 || showTranslated) return null;
-
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ fontSize: '0.76rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8e8e8e', marginTop: '2px' }}>
-                        Key Takeaways ({rawPoints.length})
-                      </div>
-                      {rawPoints.map((pt, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '12px',
-                            padding: '12px 14px',
-                            borderRadius: '12px',
-                            background: '#121518',
-                            border: '1px solid #282f34',
-                            transition: 'border-color 0.15s ease'
-                          }}
-                        >
-                          <span style={{
-                            minWidth: '22px',
-                            height: '22px',
-                            borderRadius: '6px',
-                            background: '#1f2429',
-                            color: '#90a4f2',
-                            fontSize: '0.72rem',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            marginTop: '2px'
-                          }}>
-                            {String(i + 1).padStart(2, '0')}
-                          </span>
-                          <div style={{ fontSize: '0.88rem', color: '#f8fafa', lineHeight: '1.55', fontWeight: '400' }}>
-                            {renderTakeawayContent(formatSummary(pt))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Extracted Tools & Action Steps Chips */}
+                {/* Extracted Tools & Action Steps */}
                 {(() => {
                   const validActions = (selectedReel.action_items || [])
                     .map(formatActionItem)
@@ -2693,35 +2572,18 @@ export default function App() {
 
                   return (
                     <div style={{
-                      marginTop: '4px',
-                      paddingTop: '14px',
-                      borderTop: '1px solid #282f34',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '10px'
+                      marginTop: '6px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #282f34'
                     }}>
-                      <div style={{ fontSize: '0.76rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8e8e8e' }}>
-                        Mentioned Resources & Actions
+                      <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
+                        Extracted Tools & Action Steps:
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {validActions.map((act, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '7px 12px',
-                              background: '#121518',
-                              border: '1px solid #282f34',
-                              borderRadius: '8px',
-                              fontSize: '0.83rem',
-                              color: '#f8fafa',
-                              lineHeight: '1.4'
-                            }}
-                          >
-                            <span style={{ color: '#90a4f2', fontSize: '0.75rem' }}>⚡</span>
-                            <span>{renderTakeawayContent(act)}</span>
+                          <div key={i} style={{ fontSize: '0.86rem', color: '#f8fafa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                            <span style={{ color: '#90a4f2' }}>•</span>
+                            <span>{act}</span>
                           </div>
                         ))}
                       </div>
