@@ -41,7 +41,7 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
     output_template = os.path.join(settings.AUDIO_DIR, f"{output_filename}.%(ext)s")
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'ba/b',
         'outtmpl': output_template,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',

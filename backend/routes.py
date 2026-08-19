@@ -979,9 +979,18 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         ]
                     existing_recent = db.query(ReelItem).filter(*dedup_filters).order_by(ReelItem.id.desc()).first()
 
-                    if existing_recent and existing_recent.status in ["completed", "processing", "downloading", "transcribing"]:
-                        print(f"[Deduplication] Reel #{existing_recent.id} already exists ({existing_recent.status}). Skipping.")
-                        continue
+                    if existing_recent:
+                        if existing_recent.status in ["completed", "processing", "downloading", "transcribing"]:
+                            print(f"[Deduplication] Reel #{existing_recent.id} already exists ({existing_recent.status}). Skipping.")
+                            continue
+                        elif existing_recent.status == "failed":
+                            print(f"[Webhook Retry] Reel #{existing_recent.id} previously failed. Re-triggering pipeline on existing record.")
+                            existing_recent.status = "processing"
+                            existing_recent.error_message = None
+                            existing_recent.created_at = datetime.datetime.utcnow()
+                            db.commit()
+                            background_tasks.add_task(process_reel_pipeline, existing_recent.id, clean_url, sender_id, "instagram_dm", user.id)
+                            continue
 
                     reel = ReelItem(
                         user_id=user.id,
