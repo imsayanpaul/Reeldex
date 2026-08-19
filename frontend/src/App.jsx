@@ -549,7 +549,7 @@ export default function App() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => { setActiveTab('vault'); setSelectedCategory(cat); }}
+                onClick={() => { setActiveTab('vault'); setSelectedCategory(cat); setSelectedCollection(null); }}
                 className={`nav-item-button ${activeTab === 'vault' && selectedCategory === cat && !selectedCollection ? 'active' : ''}`}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -710,12 +710,34 @@ export default function App() {
                   <p style={{ color: 'var(--text-body)', fontSize: '0.86rem', lineHeight: '1.6', marginBottom: '22px', maxWidth: '420px', margin: '0 auto 22px' }}>
                     {selectedCollection 
                       ? 'Assign reels to this collection from any reel card using the folder icon!' 
-                      : 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes speech, extracts tools, and saves it here automatically!'}
+                      : (session.is_instagram_linked 
+                          ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes speech, extracts tools, and saves it here automatically!'
+                          : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!')}
                   </p>
 
-                  <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ padding: '9px 20px', margin: '0 auto' }}>
-                    <InstagramIcon size={14} /> Link Instagram Account
-                  </button>
+                  {selectedCollection ? (
+                    <button
+                      onClick={() => setSelectedCollection(null)}
+                      className="btn-white"
+                      style={{ padding: '8px 18px', margin: '0 auto', gap: '6px' }}
+                    >
+                      <Layers size={14} /> Browse All Reels
+                    </button>
+                  ) : session.is_instagram_linked ? (
+                    <a
+                      href="https://ig.me/m/reeldex.io"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-coral"
+                      style={{ padding: '9px 20px', margin: '0 auto', textDecoration: 'none' }}
+                    >
+                      <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
+                    </a>
+                  ) : (
+                    <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ padding: '9px 20px', margin: '0 auto' }}>
+                      <InstagramIcon size={14} /> Link Instagram Account
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="reels-studio-grid">
