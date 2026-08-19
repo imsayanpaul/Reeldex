@@ -680,180 +680,250 @@ export default function App() {
                     {reels.map((reel) => (
                       <div
                         key={reel.id}
-                        className="ig-reel-card"
+                        className="modern-reel-card"
                         onClick={() => { setShowTranslated(false); openReelDetail(reel); }}
                       >
-                        {/* Cover Image */}
+                        {/* Video Thumbnail Box */}
                         {reel.thumbnail_url ? (
-                          <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #18181b, #27272a)' }} />
-                        )}
+                          <div className="modern-card-thumbnail-box">
+                            <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
+                            <div className="modern-card-overlay">
+                              <div className="play-circle-badge">
+                                <Play size={15} color="#0f172a" style={{ fill: '#0f172a', marginLeft: '2px' }} />
+                              </div>
+                            </div>
 
-                        {/* Top & Bottom Overlay Elements */}
-                        <div className="ig-reel-overlay">
-                          {/* Top Row: Category Pill & Reel Play Icon */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span className="ig-reel-badge">
-                              {reel.category || 'General'}
-                            </span>
-                            <div style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              background: 'rgba(0, 0, 0, 0.65)',
-                              backdropFilter: 'blur(4px)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}>
-                              <Play size={11} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '1px' }} />
+                            {/* Top Floating Badges */}
+                            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span className="pill-category-badge" style={{ background: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', border: 'none' }}>
+                                {reel.category || 'General'}
+                              </span>
+                              {reel.duration && (
+                                <span style={{
+                                  background: 'rgba(15, 23, 42, 0.75)',
+                                  color: '#ffffff',
+                                  fontSize: '0.68rem',
+                                  fontWeight: '700',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px'
+                                }}>
+                                  {Math.round(reel.duration)}s
+                                </span>
+                              )}
                             </div>
                           </div>
+                        ) : (
+                          <div style={{ height: '140px', background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Play size={24} color="#ff5722" />
+                          </div>
+                        )}
 
-                          {/* Bottom Row: Title, Creator, & Quick Move */}
+                        {/* Card Body with High-End Typography */}
+                        <div className="modern-card-body">
                           <div>
-                            <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#ffffff', lineHeight: '1.25', marginBottom: '3px', textShadow: '0 2px 4px rgba(0,0,0,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {/* Author Handle */}
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>
+                              @{reel.author || reel.sender_username || 'creator'}
+                            </div>
+
+                            {/* Video Title */}
+                            <h3 style={{
+                              fontSize: '0.96rem',
+                              fontWeight: '800',
+                              color: 'var(--text-heading)',
+                              lineHeight: '1.35',
+                              letterSpacing: '-0.01em',
+                              marginBottom: '8px',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}>
                               {reel.title || `Reel by @${reel.author || 'Creator'}`}
-                            </div>
+                            </h3>
 
-                            <div style={{ fontSize: '0.7rem', color: '#d4d4d8', fontWeight: '600', marginBottom: '6px' }}>
-                              @{reel.author || reel.sender_username || 'creator'} {reel.duration ? `· ${Math.round(reel.duration)}s` : ''}
-                            </div>
+                            {/* AI Summary Snippet */}
+                            <p style={{
+                              fontSize: '0.82rem',
+                              color: 'var(--text-body)',
+                              lineHeight: '1.5',
+                              marginBottom: '10px',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}>
+                              {formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'}
+                            </p>
 
-                            {/* Action Item Pill on Card */}
+                            {/* Extracted Tool / Action Item Badge */}
                             {(() => {
                               const firstAction = (reel.action_items || []).map(formatActionItem).find(act => act && act.trim().length > 0 && !act.startsWith('{'));
                               if (!firstAction) return null;
                               return (
-                                <div style={{
-                                  fontSize: '0.66rem',
-                                  background: 'rgba(255, 87, 34, 0.85)',
-                                  backdropFilter: 'blur(4px)',
-                                  color: '#ffffff',
-                                  padding: '2px 6px',
-                                  borderRadius: '3px',
-                                  fontWeight: '700',
-                                  display: 'inline-block',
-                                  marginBottom: '6px',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  maxWidth: '100%'
-                                }}>
-                                  🛠️ {firstAction}
+                                <div style={{ marginBottom: '10px' }}>
+                                  <span className="pill-tool-chip">
+                                    🛠️ {firstAction}
+                                  </span>
                                 </div>
                               );
                             })()}
+                          </div>
 
-                            {/* Bottom Toolbar: Collection Tag & Move Button */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}>
-                              <span style={{ fontSize: '0.68rem', color: '#d4d4d8', fontWeight: '600' }}>
-                                {reel.collection_name ? `📁 ${reel.collection_name}` : 'Tap for insights'}
-                              </span>
+                          {/* Card Footer: Folder Tag, Date & Actions */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingTop: '10px',
+                            borderTop: '1px solid var(--border-light)',
+                            fontSize: '0.74rem'
+                          }}>
+                            <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>
+                              {reel.collection_name ? `📁 ${reel.collection_name}` : (reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Saved')}
+                            </span>
 
-                              <div style={{ position: 'relative' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
+                              {/* Move to Folder Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
+                                }}
+                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#ff5722' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                                title="Move to Collection"
+                              >
+                                <Folder size={14} />
+                              </button>
+
+                              {/* Collection Picker Popover */}
+                              {openCollectionPickerId === reel.id && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: '26px',
+                                    right: '0',
+                                    width: '190px',
+                                    background: '#ffffff',
+                                    borderRadius: '10px',
+                                    boxShadow: 'var(--shadow-lg)',
+                                    border: '1px solid var(--border-light)',
+                                    padding: '8px',
+                                    zIndex: 100
                                   }}
-                                  style={{ background: 'rgba(255, 255, 255, 0.2)', border: 'none', color: '#ffffff', borderRadius: '4px', padding: '3px 5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                  title="Move to Collection"
                                 >
-                                  <Folder size={12} />
-                                </button>
+                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
+                                    Move to Collection:
+                                  </div>
 
-                                {/* Popover */}
-                                {openCollectionPickerId === reel.id && (
-                                  <div
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      position: 'absolute',
-                                      bottom: '26px',
-                                      right: '0',
-                                      width: '180px',
-                                      background: '#ffffff',
-                                      borderRadius: '8px',
-                                      boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-                                      border: '1px solid var(--border-light)',
-                                      padding: '8px',
-                                      zIndex: 100,
-                                      color: '#262626'
-                                    }}
-                                  >
-                                    <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#8e8e8e', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
-                                      Move to Collection:
+                                  {collections.length === 0 ? (
+                                    <div style={{ padding: '4px' }}>
+                                      <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: '1.4' }}>
+                                        No collections yet.
+                                      </p>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenCollectionPickerId(null);
+                                          setShowCreateCollectionModal(true);
+                                        }}
+                                        className="btn-coral"
+                                        style={{
+                                          width: '100%',
+                                          fontSize: '0.74rem',
+                                          padding: '6px 10px',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        <Plus size={12} /> New Collection
+                                      </button>
                                     </div>
-
-                                    {collections.length === 0 ? (
-                                      <div>
-                                        <p style={{ fontSize: '0.74rem', color: '#737373', marginBottom: '8px' }}>No collections yet.</p>
+                                  ) : (
+                                    <>
+                                      {collections.map((col) => (
                                         <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setOpenCollectionPickerId(null);
-                                            setShowCreateCollectionModal(true);
-                                          }}
-                                          className="btn-coral"
-                                          style={{ width: '100%', fontSize: '0.72rem', padding: '5px' }}
-                                        >
-                                          <Plus size={12} /> New Collection
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        {collections.map(col => (
-                                          <button
-                                            key={col.id}
-                                            onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
-                                            style={{
-                                              width: '100%',
-                                              textAlign: 'left',
-                                              padding: '5px 6px',
-                                              borderRadius: '4px',
-                                              background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
-                                              border: 'none',
-                                              fontSize: '0.76rem',
-                                              fontWeight: '600',
-                                              color: reel.collection_id === col.id ? '#ff5722' : '#262626',
-                                              cursor: 'pointer',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: '6px'
-                                            }}
-                                          >
-                                            <Folder size={12} />
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
-                                          </button>
-                                        ))}
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setOpenCollectionPickerId(null);
-                                            setShowCreateCollectionModal(true);
-                                          }}
+                                          key={col.id}
+                                          onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
                                           style={{
                                             width: '100%',
                                             textAlign: 'left',
-                                            padding: '5px 6px',
-                                            background: 'transparent',
+                                            padding: '6px 8px',
+                                            borderRadius: '6px',
+                                            background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
                                             border: 'none',
-                                            borderTop: '1px solid var(--border-light)',
-                                            fontSize: '0.72rem',
-                                            fontWeight: '700',
-                                            color: '#ff5722',
+                                            fontSize: '0.78rem',
+                                            fontWeight: '600',
+                                            color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
                                             cursor: 'pointer',
-                                            marginTop: '4px'
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            marginBottom: '2px'
                                           }}
                                         >
-                                          + Create Collection
+                                          <Folder size={12} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
+                                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
                                         </button>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                                      ))}
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenCollectionPickerId(null);
+                                          setShowCreateCollectionModal(true);
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          textAlign: 'left',
+                                          padding: '6px 8px',
+                                          borderRadius: '6px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          borderTop: '1px solid var(--border-light)',
+                                          fontSize: '0.74rem',
+                                          fontWeight: '700',
+                                          color: '#ff5722',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          marginTop: '4px'
+                                        }}
+                                      >
+                                        <Plus size={12} /> Create Collection
+                                      </button>
+
+                                      {reel.collection_id && (
+                                        <button
+                                          onClick={(e) => handleAssignCollection(reel.id, null, e)}
+                                          style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '5px 8px',
+                                            borderRadius: '6px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            fontSize: '0.72rem',
+                                            color: '#ef4444',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          ✕ Remove from folder
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              <button
+                                onClick={(e) => handleDeleteReel(reel.id, e)}
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                                title="Delete"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </div>
                           </div>
                         </div>

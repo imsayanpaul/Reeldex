@@ -1,48 +1,47 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
 
 :root {
-  /* Instagram Native & Modern Clean Palette */
-  --bg-app: #ffffff;
-  --bg-page: #fafafa;
+  /* Modern Clean Palette */
+  --bg-app: #f8fafc;
+  --bg-page: #f8fafc;
   --bg-card: #ffffff;
-  --bg-muted: #f4f4f5;
-  --bg-input: #efefef;
+  --bg-muted: #f1f5f9;
+  --bg-input: #f1f5f9;
   
   /* Brand Accents */
   --accent-primary: #ff5722;
   --accent-primary-hover: #ea580c;
   --accent-primary-light: rgba(255, 87, 34, 0.08);
-  --accent-dark: #000000;
-  --accent-blue: #0095f6;
+  --accent-dark: #0f172a;
+  --accent-blue: #2563eb;
   --accent-emerald: #10b981;
 
   /* Typography */
-  --text-main: #262626;
-  --text-heading: #000000;
-  --text-body: #737373;
-  --text-muted: #8e8e8e;
-  --text-subtle: #a8a8a8;
+  --text-main: #0f172a;
+  --text-heading: #0f172a;
+  --text-body: #475569;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
 
   /* Borders & Strokes */
-  --border-light: #dbdbdb;
-  --border-subtle: #efefef;
-  --border-focus: #262626;
+  --border-light: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-focus: #ff5722;
 
-  --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-main: 'Geist', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --radius-xs: 4px;
+  --radius-xs: 6px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-xl: 22px;
   --radius-full: 9999px;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -57,25 +56,25 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
-  line-height: 1.4;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dbdbdb;
+  background: #cbd5e1;
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #94a3b8;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -86,7 +85,7 @@ body {
   scrollbar-width: none;
 }
 
-/* Instagram-Style Layout Framework */
+/* Layout Framework */
 .ig-app-wrapper {
   min-height: 100vh;
   background-color: var(--bg-page);
@@ -98,70 +97,81 @@ body {
 .ig-top-navbar {
   position: sticky;
   top: 0;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-light);
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   z-index: 50;
 }
 
 .ig-content-container {
-  max-width: 1080px;
+  max-width: 1180px;
   width: 100%;
   margin: 0 auto;
-  padding: 20px 16px 60px;
+  padding: 24px 20px 60px;
 }
 
 /* Filter Pills (Instagram Native Style) */
 .ig-filter-pill {
-  padding: 8px 18px;
+  padding: 7px 16px;
   border-radius: var(--radius-full);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  background: #efefef;
-  color: #262626;
-  border: none;
+  background: #ffffff;
+  color: var(--text-body);
+  border: 1px solid var(--border-light);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: var(--shadow-xs);
 }
 .ig-filter-pill:hover {
-  background: #e5e5e5;
+  background: #f8fafc;
+  color: var(--text-heading);
+  border-color: #cbd5e1;
 }
 .ig-filter-pill.active {
-  background: #000000;
+  background: #0f172a;
   color: #ffffff;
+  border-color: #0f172a;
 }
 
 /* Instagram Collections Shelf */
 .ig-collections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 16px;
   margin-bottom: 28px;
 }
 
 .ig-collection-card {
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #ffffff;
+  padding: 8px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
 }
 .ig-collection-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: #cbd5e1;
 }
 
 .ig-collection-cover {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: #efefef;
-  border: 1px solid var(--border-light);
+  background: #0f172a;
   position: relative;
   margin-bottom: 8px;
 }
@@ -171,58 +181,102 @@ body {
   object-fit: cover;
 }
 
-/* Instagram Reels 9:16 Vertical Grid */
+/* High-End Modern Reel Cards Grid */
 .ig-reels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
 }
 
-.ig-reel-card {
-  position: relative;
-  aspect-ratio: 9 / 16;
-  border-radius: var(--radius-md);
+.modern-reel-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
-  background: #000000;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.ig-reel-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  z-index: 10;
+.modern-reel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: #cbd5e1;
 }
 
-.ig-reel-card img {
+.modern-card-thumbnail-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0f172a;
+  overflow: hidden;
+}
+.modern-card-thumbnail-box img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.modern-reel-card:hover .modern-card-thumbnail-box img {
+  transform: scale(1.04);
 }
 
-/* Reel Overlay Elements */
-.ig-reel-overlay {
+.modern-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.4) 100%);
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.6) 0%, transparent 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-circle-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+.modern-reel-card:hover .play-circle-badge {
+  transform: scale(1.1);
+}
+
+.modern-card-body {
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justifyContent: space-between;
-  padding: 12px;
-  color: #ffffff;
+  flex: 1;
 }
 
-.ig-reel-badge {
-  font-size: 0.68rem;
+.pill-category-badge {
+  font-size: 0.7rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 87, 34, 0.08);
+  color: #ea580c;
+  border: 1px solid rgba(255, 87, 34, 0.15);
+}
+
+.pill-tool-chip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   padding: 3px 8px;
   border-radius: var(--radius-xs);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  background: #f8fafc;
+  border: 1px solid var(--border-light);
+  color: var(--text-heading);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Buttons */
@@ -248,7 +302,7 @@ body {
 
 .btn-white {
   background: #ffffff;
-  color: #000000;
+  color: #0f172a;
   border: 1px solid var(--border-light);
   padding: 7px 14px;
   border-radius: var(--radius-sm);
@@ -263,7 +317,8 @@ body {
   text-decoration: none;
 }
 .btn-white:hover {
-  background: #fafafa;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Markdown Rendering in Chat */
@@ -276,7 +331,7 @@ body {
 }
 .markdown-prose strong {
   font-weight: 700;
-  color: #000000;
+  color: #0f172a;
 }
 .markdown-prose ul, .markdown-prose ol {
   padding-left: 18px;
@@ -299,9 +354,9 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,8 +372,9 @@ body {
   max-width: 680px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 24px;
+  padding: 26px;
   animation: modalEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-light);
 }
 
 @keyframes modalEnter {
@@ -329,18 +385,15 @@ body {
 /* Mobile Responsive (< 768px) */
 @media (max-width: 768px) {
   .ig-content-container {
-    padding: 12px 10px 40px;
+    padding: 14px 12px 40px;
   }
   .ig-collections-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
   .ig-reels-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-  }
-  .ig-reel-card {
-    border-radius: 4px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .modal-sheet {
     border-radius: 18px 18px 0 0;
