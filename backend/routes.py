@@ -62,10 +62,11 @@ def get_or_create_user(db: Session, auth_token: Optional[str] = None, sender_id:
 # --- Background Processing Worker ---
 async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
     """
-    1. Downloads pure audio stream (yt-dlp) in ~1s.
-    2. Transcribes with Groq Whisper.
-    3. Categorizes, tags & extracts action items with Groq LLaMA 3.3 70B.
-    4. Auto-replies to user on Instagram with summary, tags & magic link.
+    1. Checks Global Cache: If ANY user has already processed this exact Reel, reuse transcript & insights instantly (0 tokens consumed).
+    2. Downloads pure audio stream (yt-dlp) in ~1s.
+    3. Transcribes with Groq Whisper.
+    4. Categorizes, tags & extracts action items with Groq LLaMA 3.3 70B.
+    5. Auto-replies to user on Instagram with summary, tags & magic link.
     """
     from backend.database import SessionLocal
     db = SessionLocal()
@@ -73,6 +74,75 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
     try:
         reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
         if not reel:
+            return
+
+        # ========================================================
+        # STEP 0: GLOBAL REEL CACHE CHECK (0 Token Consumption)
+        # ========================================================
+        cached_reel = None
+        if reel.shortcode or reel_url:
+            cached_query = db.query(ReelItem).filter(
+                ReelItem.status == "completed",
+                ReelItem.id != reel.id
+            )
+            if reel.shortcode:
+                cached_query = cached_query.filter(
+                    or_(ReelItem.shortcode == reel.shortcode, ReelItem.reel_url == reel_url)
+                )
+            else:
+                cached_query = cached_query.filter(ReelItem.reel_url == reel_url)
+
+            cached_reel = cached_query.order_by(ReelItem.id.desc()).first()
+
+        if cached_reel and cached_reel.transcript and cached_reel.transcript.full_text:
+            print(f"[Global Cache HIT] Reusing completed Reel #{cached_reel.id} for Reel #{reel.id}. 0 tokens consumed!")
+            reel.title = cached_reel.title
+            reel.author = cached_reel.author
+            reel.thumbnail_url = cached_reel.thumbnail_url
+            reel.duration = cached_reel.duration
+            reel.category = cached_reel.category
+            reel.tags = cached_reel.tags
+            reel.action_items = cached_reel.action_items
+            reel.status = "completed"
+            reel.error_message = None
+            db.commit()
+
+            # Copy existing Transcript record
+            cached_t = cached_reel.transcript
+            existing_t = db.query(Transcript).filter(Transcript.reel_id == reel.id).first()
+            if existing_t:
+                existing_t.full_text = cached_t.full_text
+                existing_t.summary = cached_t.summary
+                existing_t.key_points = cached_t.key_points
+                existing_t.segments = cached_t.segments
+                existing_t.language = cached_t.language
+            else:
+                t = Transcript(
+                    reel_id=reel.id,
+                    full_text=cached_t.full_text,
+                    summary=cached_t.summary,
+                    key_points=cached_t.key_points,
+                    segments=cached_t.segments,
+                    language=cached_t.language
+                )
+                db.add(t)
+            db.commit()
+
+            # Instant DM Reply for this user
+            if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN and not reel.dm_replied:
+                user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
+                frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
+                vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
+
+                video_title = reel.title or "Instagram Reel"
+                creator_tag = f" by @{reel.author}" if reel.author else ""
+                category = reel.category or "General Knowledge"
+
+                summary_msg = f"✨ Saved to your ReelDex!\n\n🎬 {video_title}{creator_tag}\n🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
+                sent = await send_instagram_dm(sender_id, summary_msg)
+                reel.dm_replied = sent
+                db.commit()
+
             return
 
         reel.status = "downloading"
