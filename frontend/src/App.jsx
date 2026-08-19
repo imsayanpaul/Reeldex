@@ -669,27 +669,14 @@ export default function App() {
           {activeTab === 'vault' && (
             <div>
               {/* Studio Canvas Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
                 <div>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em' }}>
+                  <h1 style={{ fontSize: '1.65rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em' }}>
                     {selectedCollection ? selectedCollection.name : (selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory)}
                   </h1>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px' }}>
                     {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'} · AI Transcribed & Deduplicated with 0-Token Engine
                   </p>
-                </div>
-
-                {/* Horizontal Category Filter Pills */}
-                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', maxWidth: '100%' }} className="no-scrollbar">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => { setSelectedCategory(cat); setSelectedCollection(null); }}
-                      className={`category-pill ${selectedCategory === cat && !selectedCollection ? 'active' : ''}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
                 </div>
               </div>
 
