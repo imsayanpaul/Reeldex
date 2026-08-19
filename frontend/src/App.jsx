@@ -776,28 +776,15 @@ export default function App() {
                             <p style={{
                               fontSize: '0.82rem',
                               color: 'var(--text-body)',
-                              lineHeight: '1.5',
-                              marginBottom: '10px',
+                              lineHeight: '1.55',
+                              marginBottom: '6px',
                               display: '-webkit-box',
-                              WebkitLineClamp: 2,
+                              WebkitLineClamp: 3,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden'
                             }}>
                               {formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'}
                             </p>
-
-                            {/* Extracted Tool / Action Item Badge */}
-                            {(() => {
-                              const firstAction = (reel.action_items || []).map(formatActionItem).find(act => act && act.trim().length > 0 && !act.startsWith('{'));
-                              if (!firstAction) return null;
-                              return (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <span className="pill-tool-chip">
-                                    🛠️ {firstAction}
-                                  </span>
-                                </div>
-                              );
-                            })()}
                           </div>
 
                           {/* Card Footer: Folder Tag, Date & Actions */}
