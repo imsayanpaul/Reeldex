@@ -22,3 +22,6 @@ temp_audio/
 
 # Cloudflared binary
 cloudflared.exe
+
+# Instagram session cookies (NEVER commit)
+instagram_cookies.txt

@@ -57,10 +57,36 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
 
-    # Optional: If cookies file exists
+    # --- Cookie Authentication (handles age-restricted / login-gated reels) ---
+    # Priority: 1) instagram_cookies.txt file  2) INSTAGRAM_COOKIES env var  3) INSTAGRAM_SESSION_ID env var
     cookies_path = os.path.join(os.getcwd(), "instagram_cookies.txt")
+    
+    # If no cookies file exists, try to generate one from environment variables (for Render/Docker)
+    if not os.path.exists(cookies_path):
+        env_cookies = os.environ.get("INSTAGRAM_COOKIES", "")
+        env_session = os.environ.get("INSTAGRAM_SESSION_ID", "")
+        
+        if env_cookies:
+            # Full Netscape cookie file content stored in env var
+            try:
+                with open(cookies_path, "w") as f:
+                    f.write(env_cookies)
+                print(f"[Cookie Auth] Written cookies file from INSTAGRAM_COOKIES env var")
+            except Exception as e:
+                print(f"[Cookie Auth] Failed to write cookies from env: {e}")
+        elif env_session:
+            # Just a sessionid — generate a minimal Netscape cookies file
+            try:
+                with open(cookies_path, "w") as f:
+                    f.write("# Netscape HTTP Cookie File\n")
+                    f.write(f".instagram.com\tTRUE\t/\tTRUE\t0\tsessionid\t{env_session}\n")
+                print(f"[Cookie Auth] Generated cookies file from INSTAGRAM_SESSION_ID env var")
+            except Exception as e:
+                print(f"[Cookie Auth] Failed to write session cookie: {e}")
+    
     if os.path.exists(cookies_path):
         ydl_opts['cookiefile'] = cookies_path
+        print(f"[Cookie Auth] Using cookies from {cookies_path}")
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
