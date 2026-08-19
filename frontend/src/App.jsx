@@ -2589,10 +2589,10 @@ export default function App() {
               gap: '10px',
               position: 'relative'
             }}>
-              {/* Custom Folder Dropdown Picker */}
+              {/* Custom Collection Dropdown Picker */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                 <span style={{ fontSize: '0.82rem', color: '#8e8e8e', fontWeight: '500' }}>
-                  Folder:
+                  Collection:
                 </span>
                 
                 <div style={{ position: 'relative' }}>
@@ -2616,7 +2616,7 @@ export default function App() {
                   >
                     <Folder size={14} color="#90a4f2" strokeWidth={2} />
                     <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {selectedReel.collection_name || '(Unassigned)'}
+                      {selectedReel.collection_name || 'None (All saved)'}
                     </span>
                     <ChevronDown size={14} color="#8e8e8e" />
                   </button>
@@ -2661,7 +2661,7 @@ export default function App() {
                           transition: 'background 0.15s ease'
                         }}
                       >
-                        <span>(Unassigned)</span>
+                        <span>None (All saved)</span>
                         {!selectedReel.collection_id && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
                       </button>
 
