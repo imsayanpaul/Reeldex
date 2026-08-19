@@ -958,45 +958,48 @@ export default function App() {
                 {!isManageMode && selectedCollection && (
                   <div style={{
                     display: 'flex',
-                    justifyContent: 'center',
-                    gap: '80px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                    marginBottom: '16px',
-                    marginTop: '-4px'
+                    width: '100%',
+                    borderBottom: '1px solid #282f34',
+                    marginBottom: '20px',
+                    marginTop: '-16px'
                   }}>
                     <button
                       onClick={() => setCollectionSubTab('all')}
                       style={{
+                        flex: 1,
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: collectionSubTab === 'all' ? '#ffffff' : '#71717a',
-                        padding: '10px 16px',
-                        borderBottom: collectionSubTab === 'all' ? '2px solid #ffffff' : '2px solid transparent',
+                        color: collectionSubTab === 'all' ? '#f8fafa' : '#71717a',
+                        padding: '12px 0',
+                        borderBottom: collectionSubTab === 'all' ? '1.5px solid #f8fafa' : '1.5px solid transparent',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease'
                       }}
                       title="Posts"
                     >
-                      <Grid size={22} strokeWidth={collectionSubTab === 'all' ? 2.4 : 1.8} />
+                      <Grid size={22} strokeWidth={collectionSubTab === 'all' ? 2.2 : 1.6} />
                     </button>
                     <button
                       onClick={() => setCollectionSubTab('reels')}
                       style={{
+                        flex: 1,
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: collectionSubTab === 'reels' ? '#ffffff' : '#71717a',
-                        padding: '10px 16px',
-                        borderBottom: collectionSubTab === 'reels' ? '2px solid #ffffff' : '2px solid transparent',
+                        color: collectionSubTab === 'reels' ? '#f8fafa' : '#71717a',
+                        padding: '12px 0',
+                        borderBottom: collectionSubTab === 'reels' ? '1.5px solid #f8fafa' : '1.5px solid transparent',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease'
                       }}
                       title="Reels"
                     >
-                      <Play size={22} strokeWidth={collectionSubTab === 'reels' ? 2.4 : 1.8} />
+                      <Play size={22} strokeWidth={collectionSubTab === 'reels' ? 2.2 : 1.6} />
                     </button>
                   </div>
                 )}
@@ -1034,48 +1037,89 @@ export default function App() {
                     ))}
                   </div>
                 ) : reels.length === 0 ? (
-                  <div style={{
-                    padding: '48px 24px',
-                    textAlign: 'center',
-                    background: 'var(--bg-card)',
-                    borderRadius: 'var(--radius-lg)',
-                    border: '1px solid var(--border-light)',
-                    maxWidth: '460px',
-                    margin: '30px auto'
-                  }}>
-                    <Bookmark size={28} color="var(--text-heading)" style={{ margin: '0 auto 12px' }} />
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--text-heading)', marginBottom: '6px' }}>
-                      {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'No Saved Reels Found'}
-                    </h3>
-                    <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '18px' }}>
-                      {selectedCollection 
-                        ? 'Assign reels to this collection from any reel card using the folder icon!' 
-                        : (session.is_instagram_linked 
-                            ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes audio and extracts tools automatically!'
-                            : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!')}
-                    </p>
+                  selectedCollection ? (
+                    <div style={{
+                      padding: '70px 20px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto'
+                    }}>
+                      {/* Circle Icon Badge */}
+                      <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        border: '2px solid #f8fafa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '18px'
+                      }}>
+                        <Bookmark size={28} color="#f8fafa" strokeWidth={1.8} />
+                      </div>
 
-                    {selectedCollection ? (
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
+                        Save to this collection
+                      </h3>
+                      <p style={{ fontSize: '0.86rem', color: '#8e8e8e', maxWidth: '340px', lineHeight: '1.45', marginBottom: '20px' }}>
+                        Save Reels and posts to easily find your favorite videos anytime.
+                      </p>
+
                       <button
                         onClick={async () => {
                           await fetchAllVaultReels();
                           setShowAddToThisCollectionModal(true);
                         }}
-                        className="btn-primary"
-                        style={{ margin: '0 auto', gap: '6px' }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#90a4f2',
+                          fontSize: '0.94rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px'
+                        }}
                       >
-                        <Plus size={15} /> Add reels to this collection
+                        <Plus size={16} strokeWidth={2.4} /> Add to collection
                       </button>
-                    ) : session.is_instagram_linked ? (
-                      <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-primary" style={{ margin: '0 auto' }}>
-                        <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
-                      </a>
-                    ) : (
-                      <button onClick={handleGeneratePairingCode} className="btn-blue" style={{ margin: '0 auto' }}>
-                        <InstagramIcon size={14} /> Link Instagram Account
-                      </button>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      padding: '48px 24px',
+                      textAlign: 'center',
+                      background: '#181c1f',
+                      borderRadius: '18px',
+                      border: '1px solid #282f34',
+                      maxWidth: '460px',
+                      margin: '30px auto'
+                    }}>
+                      <Bookmark size={28} color="#f8fafa" style={{ margin: '0 auto 12px' }} />
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: '#f8fafa', marginBottom: '6px' }}>
+                        No Saved Reels Found
+                      </h3>
+                      <p style={{ fontSize: '0.84rem', color: '#8e8e8e', lineHeight: '1.5', marginBottom: '18px' }}>
+                        {session.is_instagram_linked 
+                          ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes audio and extracts tools automatically!'
+                          : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!'}
+                      </p>
+
+                      {session.is_instagram_linked ? (
+                        <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-primary" style={{ margin: '0 auto' }}>
+                          <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
+                        </a>
+                      ) : (
+                        <button onClick={handleGeneratePairingCode} className="btn-blue" style={{ margin: '0 auto' }}>
+                          <InstagramIcon size={14} /> Link Instagram Account
+                        </button>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div className="ig-reels-grid">
                     {reels.map((reel) => (
