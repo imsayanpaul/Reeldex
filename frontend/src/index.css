@@ -186,6 +186,37 @@ body {
   white-space: nowrap;
 }
 
+/* Highlighted & Broadened Ask AI Center Button */
+.ig-ask-ai-center-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 22px;
+  border-radius: 9999px;
+  background: rgba(144, 164, 242, 0.08);
+  border: 1.5px solid #90a4f2;
+  box-shadow: 0 0 14px rgba(144, 164, 242, 0.22), inset 0 0 8px rgba(144, 164, 242, 0.06);
+  color: #f8fafa;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.ig-ask-ai-center-btn:hover {
+  background: rgba(144, 164, 242, 0.16);
+  border-color: #b0c0ff;
+  box-shadow: 0 0 20px rgba(144, 164, 242, 0.38), inset 0 0 10px rgba(144, 164, 242, 0.12);
+  transform: translateY(-1px);
+}
+
+.ig-ask-ai-center-btn:active {
+  transform: scale(0.97);
+}
+
 /* Instagram Categories Strip (Smooth Scroll) */
 .ig-categories-strip {
   display: flex;
@@ -738,6 +769,13 @@ body {
 
   .ig-username-text {
     display: none !important;
+  }
+
+  .ig-ask-ai-center-btn {
+    flex: 1;
+    max-width: 170px;
+    padding: 7px 18px !important;
+    font-size: 0.84rem !important;
   }
 
   .ig-collections-grid {

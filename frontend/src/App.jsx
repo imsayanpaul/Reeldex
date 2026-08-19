@@ -760,47 +760,51 @@ export default function App() {
             </h1>
           </div>
 
-          {/* Center: Search Box */}
-          <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
-              <input
-                type="text"
-                placeholder="Search transcripts & tools..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '7px 32px 7px 34px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-input)',
-                  fontSize: '0.84rem',
-                  outline: 'none',
-                  color: 'var(--text-main)'
-                }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
-                >
-                  <X size={13} />
-                </button>
-              )}
+          {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
+            <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+                <input
+                  type="text"
+                  placeholder="Search transcripts & tools..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '7px 32px 7px 34px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-input)',
+                    fontSize: '0.84rem',
+                    outline: 'none',
+                    color: 'var(--text-main)'
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Highlighted Broadened Ask AI Button */}
+            <button
+              onClick={() => setActiveTab('chat')}
+              className="ig-ask-ai-center-btn"
+              title="Ask AI across your saved reels"
+            >
+              <Sparkles size={14} color="#90a4f2" strokeWidth={2.2} />
+              <span>Ask AI</span>
+            </button>
           </div>
 
           {/* Right Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Ask AI Tab Toggle */}
-            <button
-              onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
-              className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
-              title="Ask AI across your saved reels"
-            >
-              Ask AI
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
             {/* User / Instagram Status Capsule */}
             <button
