@@ -7,12 +7,10 @@ import {
   Copy, 
   Check, 
   Trash2, 
-  Clock, 
   Bot, 
   Download, 
   Send,
-  ArrowRight,
-  FolderOpen,
+  ArrowLeft,
   Folder,
   FolderPlus,
   Languages,
@@ -20,16 +18,10 @@ import {
   Plus,
   X,
   Play,
-  Zap,
+  Lock,
   Bookmark,
   Layers,
-  Tag,
-  Share2,
-  Menu,
-  ChevronRight,
-  SlidersHorizontal,
-  Compass,
-  CheckCircle2
+  Tag
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -40,7 +32,7 @@ const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
   </svg>
 );
 
-// Safe formatting helpers
+// Formatting helpers
 const formatActionItem = (item) => {
   if (!item) return '';
   if (typeof item === 'string') {
@@ -63,13 +55,6 @@ const formatActionItem = (item) => {
     return text.trim();
   }
   return String(item).trim();
-};
-
-const formatTag = (tag) => {
-  if (!tag) return '';
-  if (typeof tag === 'string') return tag;
-  if (typeof tag === 'object') return tag.tag || tag.name || tag.label || JSON.stringify(tag);
-  return String(tag);
 };
 
 const formatSummary = (summary) => {
@@ -111,21 +96,19 @@ const getInitialToken = () => {
 const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : 'https://reeldex-api.onrender.com') + '/api';
 
 export default function App() {
-  // Navigation & View State
+  // Navigation State
   const [activeTab, setActiveTab] = useState('vault'); // 'vault' | 'chat'
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeViewFilter, setActiveViewFilter] = useState('All'); // 'All' | 'Collections' | Category string
 
   // User & Pairing State
   const initialToken = getInitialToken();
   const [session, setSession] = useState({ auth_token: initialToken, display_name: 'ReelDex Explorer' });
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairingCode, setPairingCode] = useState(null);
-  const [pairingLoading, setPairingLoading] = useState(false);
 
   // Vault, Collections & Search State
   const [reels, setReels] = useState([]);
   const [categories, setCategories] = useState(['All']);
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,7 +165,7 @@ export default function App() {
     fetchReels();
     const interval = setInterval(fetchReels, 4000);
     return () => clearInterval(interval);
-  }, [session?.auth_token, selectedCategory, selectedCollection, searchQuery]);
+  }, [session?.auth_token, activeViewFilter, selectedCollection, searchQuery]);
 
   useEffect(() => {
     if (activeTab === 'chat' && chatBottomRef.current) {
@@ -218,7 +201,8 @@ export default function App() {
   const fetchReels = async (overrideToken) => {
     try {
       const token = overrideToken !== undefined ? overrideToken : (session?.auth_token || getSafeStorage('reelmind_token') || '');
-      let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(selectedCategory)}`;
+      const categoryParam = (activeViewFilter === 'All' || activeViewFilter === 'Collections') ? 'All' : activeViewFilter;
+      let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(categoryParam)}`;
       if (selectedCollection?.id) {
         url += `&collection_id=${selectedCollection.id}`;
       }
@@ -236,7 +220,6 @@ export default function App() {
   };
 
   const handleGeneratePairingCode = async () => {
-    setPairingLoading(true);
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
       const res = await fetch(`${API_BASE}/auth/generate-code`, {
@@ -249,8 +232,6 @@ export default function App() {
       setShowPairModal(true);
     } catch (err) {
       console.error('Pairing error:', err);
-    } finally {
-      setPairingLoading(false);
     }
   };
 
@@ -434,723 +415,590 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Find cover thumbnail for collection from reels in that collection
+  const getCollectionCover = (collectionId) => {
+    const matchingReel = reels.find(r => r.collection_id === collectionId && r.thumbnail_url);
+    return matchingReel?.thumbnail_url || null;
+  };
+
   return (
-    <div className="app-studio-layout">
+    <div className="ig-app-wrapper">
       {/* ======================================================== */}
-      {/* LEFT WORKSPACE SIDEBAR */}
+      {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
       {/* ======================================================== */}
-      <aside className="app-sidebar">
-        <div>
-          {/* Brand Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 18px', borderBottom: '1px solid var(--border-light)' }}>
+      <header className="ig-top-navbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {selectedCollection ? (
+            <button
+              onClick={() => setSelectedCollection(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#000000', fontWeight: '700', fontSize: '0.95rem' }}
+            >
+              <ArrowLeft size={18} />
+              <span>{selectedCollection.name}</span>
+            </button>
+          ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #ff5722, #f43f5e)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(255, 87, 34, 0.3)'
-              }}>
-                <Zap size={18} color="#ffffff" />
-              </div>
-              <div>
-                <span style={{ fontSize: '1.05rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em' }}>
-                  ReelDex
-                </span>
-                <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#ff5722', background: 'rgba(255, 87, 34, 0.1)', padding: '1px 5px', borderRadius: '4px', marginLeft: '6px' }}>
-                  v2.0
-                </span>
-              </div>
+              <InstagramIcon size={22} color="#000000" />
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', letterSpacing: '-0.02em' }}>
+                Saved
+              </h1>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Core Navigation */}
-          <div style={{ marginTop: '16px' }}>
-            <button
-              onClick={() => { setActiveTab('vault'); setSelectedCollection(null); setSelectedCategory('All'); }}
-              className={`nav-item-button ${activeTab === 'vault' && selectedCollection === null && selectedCategory === 'All' ? 'active' : ''}`}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={16} className="nav-icon" color="#64748b" />
-                <span>All Vault Reels</span>
-              </span>
-              <span className="nav-badge-count">{reels.length}</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`nav-item-button ${activeTab === 'chat' ? 'active' : ''}`}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Bot size={16} className="nav-icon" color="#64748b" />
-                <span>Ask AI Copilot</span>
-              </span>
-              <span style={{ fontSize: '0.68rem', fontWeight: '800', background: 'linear-gradient(135deg, #ff5722, #f43f5e)', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>
-                AI
-              </span>
-            </button>
-          </div>
-
-          {/* Collections Section */}
-          <div className="sidebar-scrollable">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 8px 6px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Collections
-              </span>
+        {/* Center: Search Box */}
+        <div style={{ flex: 1, maxWidth: '420px', margin: '0 16px' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+            <input
+              type="text"
+              placeholder="Search transcripts & tools..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '7px 32px 7px 34px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: '#efefef',
+                fontSize: '0.84rem',
+                outline: 'none',
+                color: '#262626'
+              }}
+            />
+            {searchQuery && (
               <button
-                onClick={() => setShowCreateCollectionModal(true)}
-                style={{ background: 'none', border: 'none', color: '#ff5722', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.74rem', fontWeight: '700' }}
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
               >
-                <Plus size={13} /> New
+                <X size={13} />
               </button>
-            </div>
-
-            {collections.length === 0 ? (
-              <div style={{ padding: '8px', fontSize: '0.76rem', color: 'var(--text-subtle)' }}>
-                No custom folders yet
-              </div>
-            ) : (
-              collections.map((col) => (
-                <button
-                  key={col.id}
-                  onClick={() => { setActiveTab('vault'); setSelectedCollection(col); }}
-                  className={`nav-item-button ${activeTab === 'vault' && selectedCollection?.id === col.id ? 'active' : ''}`}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <Folder size={15} className="nav-icon" color="#64748b" />
-                    <span>{col.name}</span>
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="nav-badge-count">{col.count}</span>
-                    {selectedCollection?.id === col.id && (
-                      <span
-                        onClick={(e) => handleDeleteCollection(col.id, e)}
-                        style={{ color: '#94a3b8', cursor: 'pointer' }}
-                        title="Delete collection"
-                      >
-                        <X size={12} />
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))
             )}
+          </div>
+        </div>
 
-            {/* Knowledge Categories */}
-            <div style={{ padding: '16px 8px 6px', marginTop: '6px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Categories
-              </span>
-            </div>
+        {/* Right Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Ask AI Tab Toggle */}
+          <button
+            onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
+            className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
+            style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+          >
+            <Sparkles size={14} color={activeTab === 'chat' ? '#ff5722' : 'currentColor'} />
+            <span>Ask AI</span>
+          </button>
 
-            {categories.map((cat) => (
+          {/* User / Instagram Status Capsule */}
+          <div
+            onClick={handleGeneratePairingCode}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-full)',
+              background: '#efefef',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              color: '#262626'
+            }}
+            title="Instagram Connection Status"
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: session.is_instagram_linked ? '#10b981' : '#f59e0b' }} />
+            <span>{session.instagram_username || session.display_name || 'User #3832'}</span>
+          </div>
+
+          {/* + New Collection Button */}
+          <button
+            onClick={() => setShowCreateCollectionModal(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#000000' }}
+            title="Create Collection"
+          >
+            <Plus size={22} />
+          </button>
+        </div>
+      </header>
+
+      {/* ======================================================== */}
+      {/* MAIN CONTENT AREA */}
+      {/* ======================================================== */}
+      <div className="ig-content-container">
+
+        {/* Filter Pills (Instagram Native Strip) */}
+        {activeTab === 'vault' && !selectedCollection && (
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', marginBottom: '14px' }} className="no-scrollbar">
+            <button
+              onClick={() => setActiveViewFilter('All')}
+              className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setActiveViewFilter('Collections')}
+              className={`ig-filter-pill ${activeViewFilter === 'Collections' ? 'active' : ''}`}
+            >
+              Collections
+            </button>
+            {categories.filter(c => c !== 'All').map(cat => (
               <button
                 key={cat}
-                onClick={() => { setActiveTab('vault'); setSelectedCategory(cat); setSelectedCollection(null); }}
-                className={`nav-item-button ${activeTab === 'vault' && selectedCategory === cat && !selectedCollection ? 'active' : ''}`}
+                onClick={() => setActiveViewFilter(cat)}
+                className={`ig-filter-pill ${activeViewFilter === cat ? 'active' : ''}`}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <Tag size={14} className="nav-icon" color="#94a3b8" />
-                  <span>{cat}</span>
-                </span>
+                {cat}
               </button>
             ))}
           </div>
-        </div>
-      </aside>
+        )}
 
-      {/* ======================================================== */}
-      {/* MAIN WORKSPACE CANVAS */}
-      {/* ======================================================== */}
-      <main className="app-main-canvas">
-        
-        {/* Top Omni-Header Bar */}
-        <header className="app-top-header">
-          {/* Search Input Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, maxWidth: '640px' }}>
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px' }} />
-              <input
-                type="text"
-                placeholder="Search transcripts, extracted tools, creators, or topics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '9px 36px 9px 36px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-light)',
-                  background: '#f8fafc',
-                  fontSize: '0.86rem',
-                  outline: 'none',
-                  color: 'var(--text-heading)',
-                  transition: 'all 0.15s ease'
-                }}
-              />
-              {searchQuery ? (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                >
-                  <X size={14} />
-                </button>
-              ) : (
-                <span style={{
-                  position: 'absolute',
-                  right: '10px',
-                  fontSize: '0.68rem',
-                  fontWeight: '700',
-                  color: '#94a3b8',
-                  background: '#ffffff',
-                  border: '1px solid var(--border-light)',
-                  padding: '2px 5px',
-                  borderRadius: '4px'
-                }}>
-                  ⌘K
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Header Action Buttons & User Profile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              onClick={handleGeneratePairingCode}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '5px 12px',
-                borderRadius: 'var(--radius-full)',
-                background: '#ffffff',
-                border: '1px solid var(--border-light)',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-xs)',
-                transition: 'all 0.15s ease'
-              }}
-              title="Click to manage Instagram connection"
-            >
-              <div style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                background: session.is_instagram_linked ? 'linear-gradient(135deg, #ff5722, #f43f5e)' : '#f1f5f9',
-                color: session.is_instagram_linked ? '#ffffff' : '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.72rem',
-                fontWeight: '800'
-              }}>
-                {session.instagram_username ? session.instagram_username.slice(0, 1).toUpperCase() : 'U'}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-heading)', lineHeight: '1.2' }}>
-                  {session.instagram_username || session.display_name || 'User #3832'}
-                </span>
-                <span style={{ fontSize: '0.66rem', color: session.is_instagram_linked ? '#10b981' : '#f59e0b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: session.is_instagram_linked ? '#10b981' : '#f59e0b' }} />
-                  {session.is_instagram_linked ? 'Synced' : 'Link IG'}
-                </span>
-              </div>
-            </div>
-
-            <button onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')} className="btn-coral">
-              {activeTab === 'vault' ? <><Sparkles size={14} /> Ask AI</> : <><Layers size={14} /> Vault</>}
-            </button>
-          </div>
-        </header>
-
-        {/* Content Container */}
-        <div className="content-container">
-
-          {/* TAB 1: REELS VAULT */}
-          {activeTab === 'vault' && (
-            <div>
-              {/* Studio Canvas Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
-                <div>
-                  <h1 style={{ fontSize: '1.65rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em' }}>
-                    {selectedCollection ? selectedCollection.name : (selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory)}
-                  </h1>
-                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '3px' }}>
-                    {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'} · AI Transcribed & Deduplicated with 0-Token Engine
-                  </p>
+        {/* TAB 1: VAULT VIEW */}
+        {activeTab === 'vault' && (
+          <div>
+            {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
+            {(!selectedCollection && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: '#000000' }}>
+                    Collections
+                  </h2>
+                  <button
+                    onClick={() => setShowCreateCollectionModal(true)}
+                    style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.84rem', cursor: 'pointer' }}
+                  >
+                    + New Collection
+                  </button>
                 </div>
-              </div>
 
-              {/* Reels Grid / Empty State */}
-              {reels.length === 0 ? (
-                <div className="studio-card" style={{ padding: '48px 24px', textAlign: 'center', maxWidth: '580px', margin: '40px auto' }}>
+                {collections.length === 0 ? (
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '14px',
-                    background: 'var(--accent-primary-light)',
+                    padding: '20px',
+                    borderRadius: 'var(--radius-lg)',
+                    background: '#ffffff',
+                    border: '1px solid var(--border-light)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 14px'
+                    justifyContent: 'space-between'
                   }}>
-                    <Bookmark size={22} color="#ff5722" />
-                  </div>
-                  
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px' }}>
-                    {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'Your Knowledge Vault is Ready'}
-                  </h3>
-                  <p style={{ color: 'var(--text-body)', fontSize: '0.86rem', lineHeight: '1.6', marginBottom: '22px', maxWidth: '420px', margin: '0 auto 22px' }}>
-                    {selectedCollection 
-                      ? 'Assign reels to this collection from any reel card using the folder icon!' 
-                      : (session.is_instagram_linked 
-                          ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes speech, extracts tools, and saves it here automatically!'
-                          : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!')}
-                  </p>
-
-                  {selectedCollection ? (
-                    <button
-                      onClick={() => setSelectedCollection(null)}
-                      className="btn-white"
-                      style={{ padding: '8px 18px', margin: '0 auto', gap: '6px' }}
-                    >
-                      <Layers size={14} /> Browse All Reels
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#000000' }}>Organize with Collections</div>
+                      <div style={{ fontSize: '0.78rem', color: '#737373' }}>Group your transcribed reels by theme, work, or project.</div>
+                    </div>
+                    <button onClick={() => setShowCreateCollectionModal(true)} className="btn-coral" style={{ fontSize: '0.78rem' }}>
+                      <Plus size={13} /> Create
                     </button>
-                  ) : session.is_instagram_linked ? (
-                    <a
-                      href="https://ig.me/m/reeldex.io"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-coral"
-                      style={{ padding: '9px 20px', margin: '0 auto', textDecoration: 'none' }}
+                  </div>
+                ) : (
+                  <div className="ig-collections-grid">
+                    {collections.map(col => {
+                      const coverImg = getCollectionCover(col.id);
+                      return (
+                        <div
+                          key={col.id}
+                          className="ig-collection-card"
+                          onClick={() => setSelectedCollection(col)}
+                        >
+                          <div className="ig-collection-cover">
+                            {coverImg ? (
+                              <img src={coverImg} alt={col.name} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #18181b, #27272a)' }}>
+                                <Folder size={32} color="#ffffff" opacity={0.6} />
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {col.name}
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: '#8e8e8e', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <Lock size={10} /> Private · {col.count} {col.count === 1 ? 'item' : 'items'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 2. REELS AND POSTS SECTION (9:16 Vertical Instagram Cards Grid) */}
+            {activeViewFilter !== 'Collections' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: '#000000' }}>
+                    {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
+                  </h2>
+                  {selectedCollection && (
+                    <button
+                      onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
                     >
-                      <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
-                    </a>
-                  ) : (
-                    <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ padding: '9px 20px', margin: '0 auto' }}>
-                      <InstagramIcon size={14} /> Link Instagram Account
+                      Delete Collection
                     </button>
                   )}
                 </div>
-              ) : (
-                <div className="reels-studio-grid">
-                  {reels.map((reel) => (
-                    <div
-                      key={reel.id}
-                      className="studio-card"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => { setShowTranslated(false); openReelDetail(reel); }}
-                    >
-                      {/* Video Thumbnail Cover */}
-                      {reel.thumbnail_url && (
-                        <div style={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '170px',
-                          backgroundColor: '#0f172a',
-                          overflow: 'hidden'
-                        }}>
-                          <img
-                            src={reel.thumbnail_url}
-                            alt={reel.title || 'Reel Thumbnail'}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-                          />
-                          <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 60%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <div style={{
-                              width: '38px',
-                              height: '38px',
-                              borderRadius: '50%',
-                              background: 'rgba(255, 255, 255, 0.95)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
-                            }}>
-                              <Play size={16} color="#0f172a" style={{ marginLeft: '2px' }} />
-                            </div>
-                          </div>
 
-                          {reel.duration && (
-                            <span style={{
-                              position: 'absolute',
-                              bottom: '8px',
-                              right: '8px',
-                              background: 'rgba(0, 0, 0, 0.8)',
-                              color: '#ffffff',
-                              fontSize: '0.68rem',
-                              fontWeight: '700',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}>
-                              {Math.round(reel.duration)}s
-                            </span>
-                          )}
-                        </div>
-                      )}
+                {reels.length === 0 ? (
+                  <div style={{
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    background: '#ffffff',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)',
+                    maxWidth: '460px',
+                    margin: '30px auto'
+                  }}>
+                    <Bookmark size={28} color="#ff5722" style={{ margin: '0 auto 12px' }} />
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#000000', marginBottom: '6px' }}>
+                      {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'No Saved Reels Found'}
+                    </h3>
+                    <p style={{ fontSize: '0.84rem', color: '#737373', lineHeight: '1.5', marginBottom: '18px' }}>
+                      {selectedCollection 
+                        ? 'Assign reels to this collection from any reel card using the folder icon!' 
+                        : (session.is_instagram_linked 
+                            ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes audio and extracts tools automatically!'
+                            : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!')}
+                    </p>
 
-                      {/* Card Body */}
-                      <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
-                        <div>
-                          {/* Tags & Action Icons */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              <span className="pill-category">
-                                {reel.category || 'General'}
-                              </span>
-                              {reel.collection_name && (
-                                <span className="pill-collection">
-                                  <Folder size={11} color="#ff5722" /> {reel.collection_name}
-                                </span>
-                              )}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
-                              {/* Move to Folder Button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
-                                }}
-                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#ff5722' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
-                                title="Move to Collection"
-                              >
-                                <Folder size={14} />
-                              </button>
-
-                              {/* Collection Picker Popover */}
-                              {openCollectionPickerId === reel.id && (
-                                <div
-                                  onClick={(e) => e.stopPropagation()}
-                                  style={{
-                                    position: 'absolute',
-                                    top: '24px',
-                                    right: '0',
-                                    width: '190px',
-                                    background: '#ffffff',
-                                    borderRadius: '10px',
-                                    boxShadow: 'var(--shadow-lg)',
-                                    border: '1px solid var(--border-light)',
-                                    padding: '8px',
-                                    zIndex: 100
-                                  }}
-                                >
-                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
-                                    Move to Collection:
-                                  </div>
-
-                                  {collections.length === 0 ? (
-                                    <div style={{ padding: '4px' }}>
-                                      <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: '1.4' }}>
-                                        No collections yet.
-                                      </p>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenCollectionPickerId(null);
-                                          setShowCreateCollectionModal(true);
-                                        }}
-                                        className="btn-coral"
-                                        style={{
-                                          width: '100%',
-                                          fontSize: '0.74rem',
-                                          padding: '6px 10px',
-                                          justifyContent: 'center'
-                                        }}
-                                      >
-                                        <Plus size={12} /> New Collection
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      {collections.map((col) => (
-                                        <button
-                                          key={col.id}
-                                          onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
-                                          style={{
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '6px 8px',
-                                            borderRadius: '6px',
-                                            background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
-                                            border: 'none',
-                                            fontSize: '0.78rem',
-                                            fontWeight: '600',
-                                            color: reel.collection_id === col.id ? '#ff5722' : 'var(--text-body)',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            marginBottom: '2px'
-                                          }}
-                                        >
-                                          <Folder size={12} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
-                                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
-                                        </button>
-                                      ))}
-
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenCollectionPickerId(null);
-                                          setShowCreateCollectionModal(true);
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          textAlign: 'left',
-                                          padding: '6px 8px',
-                                          borderRadius: '6px',
-                                          background: 'transparent',
-                                          border: 'none',
-                                          borderTop: '1px solid var(--border-light)',
-                                          fontSize: '0.74rem',
-                                          fontWeight: '700',
-                                          color: '#ff5722',
-                                          cursor: 'pointer',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: '4px',
-                                          marginTop: '4px'
-                                        }}
-                                      >
-                                        <Plus size={12} /> Create Collection
-                                      </button>
-
-                                      {reel.collection_id && (
-                                        <button
-                                          onClick={(e) => handleAssignCollection(reel.id, null, e)}
-                                          style={{
-                                            width: '100%',
-                                            textAlign: 'left',
-                                            padding: '5px 8px',
-                                            borderRadius: '6px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            fontSize: '0.72rem',
-                                            color: '#ef4444',
-                                            cursor: 'pointer'
-                                          }}
-                                        >
-                                          ✕ Remove from folder
-                                        </button>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              )}
-
-                              <button
-                                onClick={(e) => handleDeleteReel(reel.id, e)}
-                                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '3px' }}
-                                title="Delete"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Title & Author */}
-                          <h4 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em', marginBottom: '3px', lineHeight: '1.4' }}>
-                            {reel.title || `Reel by @${reel.author || 'Creator'}`}
-                          </h4>
-                          
-                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '10px' }}>
-                            by @{reel.author || reel.sender_username || 'creator'} {reel.duration ? `• ${Math.round(reel.duration)}s` : ''}
-                          </div>
-
-                          {/* AI Summary Preview */}
-                          <p style={{
-                            fontSize: '0.84rem',
-                            color: 'var(--text-body)',
-                            lineHeight: '1.55',
-                            marginBottom: '12px',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}>
-                            {formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'}
-                          </p>
-
-                          {/* Action Item Pill */}
-                          {(() => {
-                            const firstAction = (reel.action_items || []).map(formatActionItem).find(act => act && act.trim().length > 0 && !act.startsWith('{'));
-                            if (!firstAction) return null;
-                            return (
-                              <div style={{ marginBottom: '10px' }}>
-                                <span className="pill-tool">
-                                  🛠️ {firstAction}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Card Footer */}
-                        <div style={{
-                          borderTop: '1px solid var(--border-light)',
-                          paddingTop: '10px',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '0.76rem'
-                        }}>
-                          <span style={{ color: 'var(--text-muted)' }}>
-                            {reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff5722', fontWeight: '700' }}>
-                            View Notes <ArrowRight size={13} />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: ASK AI COPILOT */}
-          {activeTab === 'chat' && (
-            <div className="studio-card" style={{ padding: '24px', minHeight: '640px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Bot size={20} color="#ff5722" /> ReelDex AI Copilot
-                  </h2>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    High-density Grounded BM25 Knowledge Retrieval across all saved reels
-                  </p>
-                </div>
-              </div>
-
-              {/* Chat Messages */}
-              <div style={{ flex: 1, overflowY: 'auto', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {chatMessages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                      maxWidth: '85%',
-                      padding: '12px 16px',
-                      borderRadius: '14px',
-                      background: msg.role === 'user' ? '#0f172a' : '#f8fafc',
-                      color: msg.role === 'user' ? '#ffffff' : 'var(--text-heading)',
-                      border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
-                      fontSize: '0.88rem',
-                      lineHeight: '1.6'
-                    }}
-                  >
-                    {msg.role === 'user' ? (
-                      msg.content
+                    {selectedCollection ? (
+                      <button onClick={() => setSelectedCollection(null)} className="btn-white" style={{ margin: '0 auto' }}>
+                        Browse All Reels
+                      </button>
+                    ) : session.is_instagram_linked ? (
+                      <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-coral" style={{ margin: '0 auto' }}>
+                        <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
+                      </a>
                     ) : (
-                      <div className="markdown-prose">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
+                      <button onClick={handleGeneratePairingCode} className="btn-coral" style={{ margin: '0 auto' }}>
+                        <InstagramIcon size={14} /> Link Instagram Account
+                      </button>
                     )}
                   </div>
-                ))}
-                {chatLoading && (
-                  <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Sparkles size={15} color="#ff5722" className="animate-spin" /> Synthesizing answer across your video transcripts...
+                ) : (
+                  <div className="ig-reels-grid">
+                    {reels.map((reel) => (
+                      <div
+                        key={reel.id}
+                        className="ig-reel-card"
+                        onClick={() => { setShowTranslated(false); openReelDetail(reel); }}
+                      >
+                        {/* Cover Image */}
+                        {reel.thumbnail_url ? (
+                          <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #18181b, #27272a)' }} />
+                        )}
+
+                        {/* Top & Bottom Overlay Elements */}
+                        <div className="ig-reel-overlay">
+                          {/* Top Row: Category Pill & Reel Play Icon */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="ig-reel-badge">
+                              {reel.category || 'General'}
+                            </span>
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              background: 'rgba(0, 0, 0, 0.65)',
+                              backdropFilter: 'blur(4px)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <Play size={11} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '1px' }} />
+                            </div>
+                          </div>
+
+                          {/* Bottom Row: Title, Creator, & Quick Move */}
+                          <div>
+                            <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#ffffff', lineHeight: '1.25', marginBottom: '3px', textShadow: '0 2px 4px rgba(0,0,0,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {reel.title || `Reel by @${reel.author || 'Creator'}`}
+                            </div>
+
+                            <div style={{ fontSize: '0.7rem', color: '#d4d4d8', fontWeight: '600', marginBottom: '6px' }}>
+                              @{reel.author || reel.sender_username || 'creator'} {reel.duration ? `· ${Math.round(reel.duration)}s` : ''}
+                            </div>
+
+                            {/* Action Item Pill on Card */}
+                            {(() => {
+                              const firstAction = (reel.action_items || []).map(formatActionItem).find(act => act && act.trim().length > 0 && !act.startsWith('{'));
+                              if (!firstAction) return null;
+                              return (
+                                <div style={{
+                                  fontSize: '0.66rem',
+                                  background: 'rgba(255, 87, 34, 0.85)',
+                                  backdropFilter: 'blur(4px)',
+                                  color: '#ffffff',
+                                  padding: '2px 6px',
+                                  borderRadius: '3px',
+                                  fontWeight: '700',
+                                  display: 'inline-block',
+                                  marginBottom: '6px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  maxWidth: '100%'
+                                }}>
+                                  🛠️ {firstAction}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Bottom Toolbar: Collection Tag & Move Button */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}>
+                              <span style={{ fontSize: '0.68rem', color: '#d4d4d8', fontWeight: '600' }}>
+                                {reel.collection_name ? `📁 ${reel.collection_name}` : 'Tap for insights'}
+                              </span>
+
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
+                                  }}
+                                  style={{ background: 'rgba(255, 255, 255, 0.2)', border: 'none', color: '#ffffff', borderRadius: '4px', padding: '3px 5px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                  title="Move to Collection"
+                                >
+                                  <Folder size={12} />
+                                </button>
+
+                                {/* Popover */}
+                                {openCollectionPickerId === reel.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: '26px',
+                                      right: '0',
+                                      width: '180px',
+                                      background: '#ffffff',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                                      border: '1px solid var(--border-light)',
+                                      padding: '8px',
+                                      zIndex: 100,
+                                      color: '#262626'
+                                    }}
+                                  >
+                                    <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#8e8e8e', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
+                                      Move to Collection:
+                                    </div>
+
+                                    {collections.length === 0 ? (
+                                      <div>
+                                        <p style={{ fontSize: '0.74rem', color: '#737373', marginBottom: '8px' }}>No collections yet.</p>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenCollectionPickerId(null);
+                                            setShowCreateCollectionModal(true);
+                                          }}
+                                          className="btn-coral"
+                                          style={{ width: '100%', fontSize: '0.72rem', padding: '5px' }}
+                                        >
+                                          <Plus size={12} /> New Collection
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {collections.map(col => (
+                                          <button
+                                            key={col.id}
+                                            onClick={(e) => handleAssignCollection(reel.id, col.id, e)}
+                                            style={{
+                                              width: '100%',
+                                              textAlign: 'left',
+                                              padding: '5px 6px',
+                                              borderRadius: '4px',
+                                              background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
+                                              border: 'none',
+                                              fontSize: '0.76rem',
+                                              fontWeight: '600',
+                                              color: reel.collection_id === col.id ? '#ff5722' : '#262626',
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '6px'
+                                            }}
+                                          >
+                                            <Folder size={12} />
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
+                                          </button>
+                                        ))}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenCollectionPickerId(null);
+                                            setShowCreateCollectionModal(true);
+                                          }}
+                                          style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '5px 6px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            borderTop: '1px solid var(--border-light)',
+                                            fontSize: '0.72rem',
+                                            fontWeight: '700',
+                                            color: '#ff5722',
+                                            cursor: 'pointer',
+                                            marginTop: '4px'
+                                          }}
+                                        >
+                                          + Create Collection
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div ref={chatBottomRef} />
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Suggested Prompt Chips */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                {[
-                  "What tools or promo codes were mentioned?",
-                  "Summarize all career advice I saved",
-                  "List all fitness routines"
-                ].map((prompt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setChatQuestion(prompt)}
-                    style={{
-                      fontSize: '0.74rem',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-full)',
-                      background: '#ffffff',
-                      border: '1px solid var(--border-light)',
-                      color: 'var(--text-body)',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ✨ {prompt}
-                  </button>
-                ))}
+        {/* TAB 2: ASK AI COPILOT */}
+        {activeTab === 'chat' && (
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-light)',
+            padding: '24px',
+            minHeight: '600px',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Bot size={20} color="#ff5722" /> Ask AI Copilot
+                </h2>
+                <p style={{ fontSize: '0.8rem', color: '#8e8e8e' }}>
+                  High-density Grounded Knowledge Search across all your saved Instagram Reels
+                </p>
               </div>
-
-              {/* Chat Input Bar */}
-              <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  placeholder="Ask a question across all your saved Reels..."
-                  value={chatQuestion}
-                  onChange={(e) => setChatQuestion(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    background: '#ffffff',
-                    outline: 'none',
-                    fontSize: '0.88rem'
-                  }}
-                />
-                <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-coral" style={{ padding: '0 20px' }}>
-                  <Send size={15} />
-                </button>
-              </form>
             </div>
-          )}
-        </div>
-      </main>
+
+            {/* Chat Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {chatMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%',
+                    padding: '12px 16px',
+                    borderRadius: '14px',
+                    background: msg.role === 'user' ? '#000000' : '#f4f4f5',
+                    color: msg.role === 'user' ? '#ffffff' : '#262626',
+                    fontSize: '0.88rem',
+                    lineHeight: '1.6'
+                  }}
+                >
+                  {msg.role === 'user' ? (
+                    msg.content
+                  ) : (
+                    <div className="markdown-prose">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {chatLoading && (
+                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#f4f4f5', fontSize: '0.82rem', color: '#8e8e8e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={15} color="#ff5722" className="animate-spin" /> Synthesizing answer across your video transcripts...
+                </div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
+
+            {/* Suggested Prompt Chips */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              {[
+                "What tools or promo codes were mentioned?",
+                "Summarize all career advice I saved",
+                "List all fitness routines"
+              ].map((prompt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setChatQuestion(prompt)}
+                  style={{
+                    fontSize: '0.74rem',
+                    padding: '5px 12px',
+                    borderRadius: 'var(--radius-full)',
+                    background: '#efefef',
+                    border: 'none',
+                    color: '#262626',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✨ {prompt}
+                </button>
+              ))}
+            </div>
+
+            {/* Chat Input Bar */}
+            <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="Ask a question across all your saved Reels..."
+                value={chatQuestion}
+                onChange={(e) => setChatQuestion(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-light)',
+                  background: '#ffffff',
+                  outline: 'none',
+                  fontSize: '0.88rem'
+                }}
+              />
+              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-coral" style={{ padding: '0 20px' }}>
+                <Send size={15} />
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
 
       {/* ======================================================== */}
       {/* CREATE COLLECTION MODAL */}
       {/* ======================================================== */}
       {showCreateCollectionModal && (
         <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FolderPlus size={18} color="#ff5722" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)' }}>New Collection</h3>
+                <FolderPlus size={18} color="#000000" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#000000' }}>New Collection</h3>
               </div>
               <button onClick={() => setShowCreateCollectionModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
             <form onSubmit={handleCreateCollection}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: '700', color: '#8e8e8e', marginBottom: '6px' }}>
                   COLLECTION NAME
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Startup Ideas, Workout Routines, AI Tools..."
+                  placeholder="e.g. Startup Ideas, Workout, AI Tools..."
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
+                    padding: '9px 12px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-light)',
                     fontSize: '0.88rem',
@@ -1176,22 +1024,20 @@ export default function App() {
       {/* ======================================================== */}
       {showPairModal && (
         <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #ff5722, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <InstagramIcon size={18} color="#fff" />
-                </div>
+                <InstagramIcon size={24} color="#000000" />
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)' }}>Link Your Instagram</h3>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sync reels via Instagram DM in 10 seconds</p>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#000000' }}>Link Your Instagram</h3>
+                  <p style={{ fontSize: '0.78rem', color: '#8e8e8e' }}>Sync reels via Instagram DM in 10 seconds</p>
                 </div>
               </div>
               <button onClick={() => setShowPairModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
-            <div style={{ background: '#f8fafc', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ background: '#fafafa', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Your Unique Linking Code
               </span>
               <div style={{ fontSize: '2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ff5722', margin: '6px 0' }}>
@@ -1202,7 +1048,7 @@ export default function App() {
               </button>
             </div>
 
-            <div style={{ fontSize: '0.84rem', color: 'var(--text-body)', lineHeight: '1.6', marginBottom: '20px' }}>
+            <div style={{ fontSize: '0.84rem', color: '#262626', lineHeight: '1.6', marginBottom: '20px' }}>
               <ol style={{ paddingLeft: '18px' }}>
                 <li>Open Instagram Direct and message <strong>@reeldex.io</strong>.</li>
                 <li>Send your code: <code style={{ color: '#ff5722', fontWeight: '700' }}>{pairingCode}</code></li>
@@ -1234,19 +1080,19 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span className="pill-category">
+                  <span className="ig-reel-badge" style={{ background: '#000000', color: '#ffffff' }}>
                     {selectedReel.category || 'General'}
                   </span>
                   {selectedReel.collection_name && (
-                    <span className="pill-collection">
-                      <Folder size={11} color="#ff5722" /> {selectedReel.collection_name}
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#ff5722', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      📁 {selectedReel.collection_name}
                     </span>
                   )}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', marginTop: '6px', letterSpacing: '-0.02em' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', marginTop: '6px', letterSpacing: '-0.02em' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                <p style={{ fontSize: '0.78rem', color: '#8e8e8e', fontWeight: '500' }}>
                   by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
                 </p>
               </div>
@@ -1297,7 +1143,7 @@ export default function App() {
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 marginBottom: '16px',
-                backgroundColor: '#0f172a'
+                backgroundColor: '#000000'
               }}>
                 <img
                   src={selectedReel.thumbnail_url}
@@ -1313,7 +1159,7 @@ export default function App() {
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, transparent 60%)',
+                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 60%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1327,12 +1173,12 @@ export default function App() {
                       padding: '7px 16px',
                       borderRadius: 'var(--radius-full)',
                       background: 'rgba(255, 255, 255, 0.95)',
-                      color: '#0f172a',
+                      color: '#000000',
                       fontWeight: '700',
                       fontSize: '0.8rem',
                       boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
                     }}>
-                      <Play size={13} color="#0f172a" style={{ fill: '#0f172a' }} /> Play Original on Instagram <ExternalLink size={11} />
+                      <Play size={13} color="#000000" style={{ fill: '#000000' }} /> Play on Instagram <ExternalLink size={11} />
                     </div>
                   </a>
                 )}
@@ -1344,7 +1190,7 @@ export default function App() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: '#f8fafc',
+              background: '#fafafa',
               border: '1px solid var(--border-light)',
               borderRadius: '10px',
               padding: '8px 12px',
@@ -1354,7 +1200,7 @@ export default function App() {
             }}>
               {/* Folder Selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: '700' }}>
+                <span style={{ fontSize: '0.76rem', color: '#8e8e8e', fontWeight: '700' }}>
                   Folder:
                 </span>
                 <select
@@ -1367,7 +1213,7 @@ export default function App() {
                     fontSize: '0.78rem',
                     background: '#ffffff',
                     fontWeight: '600',
-                    color: 'var(--text-heading)',
+                    color: '#262626',
                     outline: 'none'
                   }}
                 >
@@ -1390,13 +1236,13 @@ export default function App() {
                       style={{
                         fontSize: '0.76rem',
                         padding: '4px 10px',
-                        background: showTranslated ? 'rgba(59, 130, 246, 0.08)' : '#ffffff',
-                        borderColor: showTranslated ? '#3b82f6' : 'var(--border-light)',
-                        color: showTranslated ? '#2563eb' : 'var(--text-heading)',
+                        background: showTranslated ? 'rgba(0, 149, 246, 0.08)' : '#ffffff',
+                        borderColor: showTranslated ? '#0095f6' : 'var(--border-light)',
+                        color: showTranslated ? '#0095f6' : '#262626',
                         fontWeight: '700'
                       }}
                     >
-                      <Globe size={13} color={showTranslated ? "#2563eb" : "#ff5722"} />
+                      <Globe size={13} color={showTranslated ? "#0095f6" : "#ff5722"} />
                       {showTranslated ? 'Viewing English Translation' : 'Translate to English'}
                     </button>
                   ) : (
@@ -1417,12 +1263,12 @@ export default function App() {
             {/* Translation Active Alert */}
             {showTranslated && (
               <div style={{
-                background: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
+                background: 'rgba(0, 149, 246, 0.08)',
+                border: '1px solid rgba(0, 149, 246, 0.2)',
                 borderRadius: '8px',
                 padding: '7px 12px',
                 fontSize: '0.76rem',
-                color: '#1d4ed8',
+                color: '#0095f6',
                 fontWeight: '600',
                 marginBottom: '14px',
                 display: 'flex',
@@ -1447,13 +1293,13 @@ export default function App() {
                 </div>
 
                 {selectedReel.transcript?.summary && (
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-heading)', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '10px' : '0' }}>
+                  <p style={{ fontSize: '0.88rem', color: '#000000', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '10px' : '0' }}>
                     {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
                   </p>
                 )}
 
                 {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
-                  <ul style={{ paddingLeft: '18px', fontSize: '0.84rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.84rem', color: '#262626', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
                       <li key={i} style={{ marginBottom: '3px' }}>{formatSummary(pt)}</li>
                     ))}
@@ -1479,7 +1325,7 @@ export default function App() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         {validActions.map((act, i) => (
-                          <div key={i} style={{ fontSize: '0.82rem', color: 'var(--text-heading)' }}>
+                          <div key={i} style={{ fontSize: '0.82rem', color: '#000000' }}>
                             • {act}
                           </div>
                         ))}
@@ -1492,10 +1338,10 @@ export default function App() {
 
             {/* Word-For-Word Transcript */}
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: '800', color: '#000000', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>FULL WORD-FOR-WORD TRANSCRIPT</span>
                 {showTranslated && (
-                  <span style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: '700' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#0095f6', fontWeight: '700' }}>
                     ENGLISH TRANSLATION
                   </span>
                 )}
@@ -1505,7 +1351,7 @@ export default function App() {
                 overflowY: 'auto',
                 padding: '14px',
                 borderRadius: 'var(--radius-sm)',
-                background: '#f8fafc',
+                background: '#fafafa',
                 border: '1px solid var(--border-light)',
                 fontSize: '0.84rem',
                 lineHeight: '1.65',
