@@ -227,13 +227,13 @@ Provide a direct, clear answer with specific citations."""
         from groq import Groq
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
-            max_tokens=500
+            max_tokens=600
         )
         answer = response.choices[0].message.content
         res_payload = {
@@ -251,13 +251,13 @@ Provide a direct, clear answer with specific citations."""
             from groq import Groq
             client = Groq(api_key=api_key)
             response = client.chat.completions.create(
-                model="qwen/qwen3.6-27b",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=500
+                max_tokens=600
             )
             answer = response.choices[0].message.content
             res_payload = {

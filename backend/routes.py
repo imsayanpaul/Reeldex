@@ -569,7 +569,7 @@ async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
             f"Original Transcript:\n{t.full_text[:4000]}"
         )
         resp = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
                 {"role": "user", "content": prompt}
@@ -595,7 +595,7 @@ async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
             from groq import Groq
             client = Groq(api_key=settings.GROQ_API_KEY)
             resp = client.chat.completions.create(
-                model="qwen/qwen3.6-27b",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": "You are an expert audio translator. Return only valid JSON."},
                     {"role": "user", "content": prompt}
@@ -762,6 +762,7 @@ def delete_reel(reel_id: int, db: Session = Depends(get_db)):
 
 # --- "Ask Your Reels" AI RAG Chat Endpoint ---
 
+@router.post("/chat")
 @router.post("/chat/ask")
 @router.post("/ask")
 async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(None), db: Session = Depends(get_db)):

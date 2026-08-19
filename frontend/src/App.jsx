@@ -619,19 +619,30 @@ export default function App() {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token
+        },
         body: JSON.stringify({ question: userMsg.content, token })
       });
-      const data = await res.json();
-      setChatMessages(prev => [...prev, {
-        role: 'assistant',
-        content: data.answer || 'No answer generated.',
-        citations: data.citations || []
-      }]);
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.answer || 'I could not find an answer for that across your saved reels.',
+          citations: data.citations || []
+        }]);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setChatMessages(prev => [...prev, {
+          role: 'assistant',
+          content: errorData.detail || errorData.answer || 'I could not analyze your saved reels at this moment. Please try again.'
+        }]);
+      }
     } catch (err) {
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, there was an error analyzing your library. Please try again.'
+        content: 'Sorry, there was a network error communicating with the AI copilot. Please try again.'
       }]);
     } finally {
       setChatLoading(false);
