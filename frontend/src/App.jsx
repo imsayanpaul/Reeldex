@@ -525,17 +525,34 @@ export default function App() {
     }
   };
 
-  const handleDeleteCollection = async (collectionId, e) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm('Delete this collection? (Reels inside will remain in your vault)')) return;
+  const handleDeleteCollection = (collectionId, e) => {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    // 1. Instant 0ms Optimistic UI Removal
+    setShowCollectionMenuModal(false);
+    if (selectedCollection?.id === collectionId) {
+      setSelectedCollection(null);
+    }
+    setCollections(prev => {
+      const next = prev.filter(c => c.id !== collectionId);
+      setSafeStorage('reelmind_cached_collections', next);
+      return next;
+    });
+    // Unset collection_id on local reels immediately
+    setReels(prev => {
+      const next = prev.map(r => String(r.collection_id) === String(collectionId) ? { ...r, collection_id: null, collection_name: null } : r);
+      setSafeStorage('reelmind_cached_reels', next);
+      return next;
+    });
+
+    // 2. Background server deletion
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
-      const res = await fetch(`${API_BASE}/collections/${collectionId}?token=${token}`, { method: 'DELETE' });
-      if (res.ok) {
-        if (selectedCollection?.id === collectionId) setSelectedCollection(null);
-        fetchCollections(token);
-        fetchReels();
-      }
+      fetch(`${API_BASE}/collections/${collectionId}?token=${token}`, { method: 'DELETE' }).catch(err => {
+        console.error('Error deleting collection:', err);
+      });
     } catch (err) {
       console.error(err);
     }
@@ -736,25 +753,25 @@ export default function App() {
 
   const handleBatchDelete = async () => {
     if (selectedReelIds.size === 0) return;
-    if (!window.confirm(`Unsave and remove ${selectedReelIds.size} selected reel(s)?`)) return;
-    setBatchActionLoading(true);
+    const ids = Array.from(selectedReelIds);
+    // Instant 0ms Optimistic UI Removal
+    setReels(prev => {
+      const next = prev.filter(r => !selectedReelIds.has(r.id));
+      setSafeStorage('reelmind_cached_reels', next);
+      return next;
+    });
+    setSelectedReelIds(new Set());
+    setIsManageMode(false);
+
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
-      const ids = Array.from(selectedReelIds);
-      const res = await fetch(`${API_BASE}/reels/batch/delete?token=${token}`, {
+      await fetch(`${API_BASE}/reels/batch/delete?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reel_ids: ids })
       });
-      if (res.ok) {
-        setReels(prev => prev.filter(r => !selectedReelIds.has(r.id)));
-        setSelectedReelIds(new Set());
-        setIsManageMode(false);
-      }
     } catch (err) {
       console.error('Batch delete error:', err);
-    } finally {
-      setBatchActionLoading(false);
     }
   };
 
