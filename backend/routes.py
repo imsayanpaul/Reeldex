@@ -192,6 +192,7 @@ class ConfigUpdateRequest(BaseModel):
 class AskChatRequest(BaseModel):
     question: str
     category: Optional[str] = None
+    token: Optional[str] = None
 
 class AuthSessionRequest(BaseModel):
     token: Optional[str] = None
@@ -367,37 +368,49 @@ def delete_reel(reel_id: int, db: Session = Depends(get_db)):
 # --- "Ask Your Reels" AI RAG Chat Endpoint ---
 
 @router.post("/chat/ask")
+@router.post("/ask")
 async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(None), db: Session = Depends(get_db)):
     """RAG AI Chat: Answers questions across user's saved reels."""
-    user = get_or_create_user(db, auth_token=token)
+    auth_token = req.token or token
+    user = get_or_create_user(db, auth_token=auth_token)
     
     # Fetch only this user's reels
     if user.instagram_sender_id:
         reels_db = db.query(ReelItem).filter(
             or_(ReelItem.user_id == user.id, ReelItem.sender_id == user.instagram_sender_id),
-            ReelItem.status == "completed"
+            ReelItem.status.in_(["completed", "success", "processed"])
         ).all()
     else:
         reels_db = db.query(ReelItem).filter(
             ReelItem.user_id == user.id,
-            ReelItem.status == "completed"
+            ReelItem.status.in_(["completed", "success", "processed"])
         ).all()
+
+    # Fallback to any reel associated with user if status filter was restrictive
+    if not reels_db:
+        if user.instagram_sender_id:
+            reels_db = db.query(ReelItem).filter(
+                or_(ReelItem.user_id == user.id, ReelItem.sender_id == user.instagram_sender_id)
+            ).all()
+        else:
+            reels_db = db.query(ReelItem).filter(ReelItem.user_id == user.id).all()
 
     reels_context = []
     for r in reels_db:
         t = r.transcript
-        if t and t.full_text:
-            reels_context.append({
-                "id": r.id,
-                "title": r.title or f"Reel #{r.id}",
-                "author": r.author,
-                "reel_url": r.reel_url,
-                "category": r.category,
-                "tags": r.tags or [],
-                "action_items": r.action_items or [],
-                "summary": t.summary or "",
-                "full_text": t.full_text
-            })
+        full_text = (t.full_text if t else "") or r.preview_text or ""
+        summary = (t.summary if t else "") or r.preview_text or ""
+        reels_context.append({
+            "id": r.id,
+            "title": r.title or f"Reel #{r.id}",
+            "author": r.author,
+            "reel_url": r.reel_url,
+            "category": r.category,
+            "tags": r.tags or [],
+            "action_items": r.action_items or [],
+            "summary": summary,
+            "full_text": full_text
+        })
 
     result = await ask_reels_ai(req.question, reels_context)
     return result

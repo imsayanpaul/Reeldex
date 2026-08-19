@@ -235,29 +235,51 @@ export default function App() {
     if (e) e.preventDefault();
     if (!chatQuestion.trim()) return;
 
-    const userMsg = { role: 'user', content: chatQuestion };
+    const userMsg = { role: 'user', content: chatQuestion.trim() };
     setChatMessages(prev => [...prev, userMsg]);
     setChatQuestion('');
     setChatLoading(true);
 
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
-      const res = await fetch(`${API_BASE}/ask`, {
+      let res = await fetch(`${API_BASE}/chat/ask`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'token': token
+        },
         body: JSON.stringify({ question: userMsg.content, token })
       });
-      const data = await res.json();
-      const aiMsg = {
-        role: 'assistant',
-        content: data.answer,
-        citations: data.citations || []
-      };
-      setChatMessages(prev => [...prev, aiMsg]);
+
+      if (!res.ok) {
+        // Fallback to /ask endpoint
+        res = await fetch(`${API_BASE}/ask`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'token': token
+          },
+          body: JSON.stringify({ question: userMsg.content, token })
+        });
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const aiAnswer = data.answer || data.text || data.response || data.message || "I couldn't find relevant reels for this query in your vault.";
+        const aiMsg = {
+          role: 'assistant',
+          content: aiAnswer,
+          citations: Array.isArray(data.citations) ? data.citations : []
+        };
+        setChatMessages(prev => [...prev, aiMsg]);
+      } else {
+        throw new Error(`API responded with ${res.status}`);
+      }
     } catch (err) {
+      console.error('Ask AI error:', err);
       setChatMessages(prev => [
         ...prev,
-        { role: 'assistant', content: '⚠️ Sorry, I encountered an error searching your knowledge base. Please check your connection and try again.' }
+        { role: 'assistant', content: '⚠️ Sorry, I encountered an issue searching your knowledge base. Please verify your connection and try again.' }
       ]);
     } finally {
       setChatLoading(false);
