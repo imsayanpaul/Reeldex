@@ -569,10 +569,16 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                 if "http" in lower_text or "reeldex" in lower_text or "saved to your" in lower_text:
                     continue
 
-                # Welcome reply for plain text message
+                # Clean, accurate welcome message
+                frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
+                vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
                 welcome_msg = (
-                    "👋 Hi! Send me any Instagram Reel or video share, "
-                    "and ReelDex will transcribe, summarize, and categorize it for you instantly! 🎙️✨"
+                    "👋 Hi! Share or send any Instagram Reel here.\n\n"
+                    "✨ ReelDex will automatically:\n"
+                    "• Transcribe spoken audio & summarize key takeaways\n"
+                    "• Categorize & save it to your searchable Vault\n"
+                    "• Let you Ask AI questions across all your saved Reels\n\n"
+                    f"👉 Open your Vault:\n{vault_url}"
                 )
                 await send_instagram_dm(sender_id, welcome_msg)
 
