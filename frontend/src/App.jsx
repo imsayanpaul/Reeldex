@@ -1303,23 +1303,25 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* BATCH ADD TO COLLECTION MODAL (Instagram Screenshot 3) */}
+      {/* BATCH ADD TO COLLECTION BOTTOM SHEET (Exact Instagram Native Layout) */}
       {/* ======================================================== */}
       {showBatchCollectionModal && (
         <div className="modal-overlay" onClick={() => setShowBatchCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-            <div style={{ width: '36px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', padding: '16px 18px 28px', background: '#141820', borderRadius: '18px' }}>
+            {/* Top Drag Handle */}
+            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
             
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0 }}>
                 Add to collection
               </h3>
               <button
                 onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-heading)', padding: '4px' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
                 title="Create New Collection"
               >
-                <Plus size={22} />
+                <Plus size={26} strokeWidth={2.4} />
               </button>
             </div>
 
@@ -1336,41 +1338,56 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxHeight: '360px', overflowY: 'auto', padding: '2px' }}>
+              <div style={{
+                display: 'flex',
+                gap: '14px',
+                overflowX: 'auto',
+                padding: '4px 2px 12px',
+                scrollbarWidth: 'none'
+              }}>
                 {collections.map(col => {
                   const coverImg = getCollectionCover(col.id);
                   return (
                     <div
                       key={col.id}
                       onClick={() => handleBatchAssign(col.id)}
-                      className="ig-collection-card"
                       style={{
                         cursor: 'pointer',
-                        background: '#1c1c1e',
-                        padding: '8px 10px',
-                        borderRadius: '10px',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '10px',
-                        border: '1px solid rgba(255, 255, 255, 0.06)'
+                        width: '74px',
+                        minWidth: '74px',
+                        gap: '8px',
+                        textAlign: 'center'
                       }}
                     >
-                      <div className="ig-collection-cover" style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '8px', flexShrink: 0 }}>
+                      <div style={{
+                        width: '74px',
+                        height: '74px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        background: '#1c212c',
+                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                      }}>
                         {coverImg ? (
-                          <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                          <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a', borderRadius: '8px' }}>
-                            <Folder size={18} color="#ffffff" opacity={0.7} />
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c212c' }}>
+                            <Folder size={26} color="#8e8e8e" />
                           </div>
                         )}
                       </div>
-                      <div className="ig-collection-info" style={{ flex: 1, minWidth: 0, textAlign: 'left', overflow: 'hidden' }}>
-                        <div className="ig-collection-title" style={{ fontSize: '0.86rem', fontWeight: '700', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {col.name}
-                        </div>
-                        <div className="ig-collection-meta" style={{ fontSize: '0.72rem', color: '#8e8e8e', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {col.count} {col.count === 1 ? 'item' : 'items'}
-                        </div>
+                      <div style={{
+                        fontSize: '0.84rem',
+                        fontWeight: '500',
+                        color: '#ffffff',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        width: '100%'
+                      }}>
+                        {col.name}
                       </div>
                     </div>
                   );
