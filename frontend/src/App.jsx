@@ -232,7 +232,7 @@ export default function App() {
   const fetchReels = async (overrideToken) => {
     try {
       const token = overrideToken !== undefined ? overrideToken : (session?.auth_token || getSafeStorage('reelmind_token') || '');
-      const categoryParam = (activeViewFilter === 'All' || activeViewFilter === 'Collections') ? 'All' : activeViewFilter;
+      const categoryParam = (activeViewFilter === 'All' || activeViewFilter === 'Collections' || selectedCollection) ? 'All' : activeViewFilter;
       let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(categoryParam)}`;
       if (selectedCollection?.id) {
         url += `&collection_id=${selectedCollection.id}`;
@@ -919,7 +919,7 @@ export default function App() {
             )}
 
             {/* 2. REELS AND POSTS SECTION (9:16 Vertical Instagram Cards Grid) */}
-            {activeViewFilter !== 'Collections' && (
+            {(activeViewFilter !== 'Collections' || selectedCollection) && (
               <div>
                 {!isManageMode && selectedCollection && (
                   <div style={{

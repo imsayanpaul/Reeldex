@@ -503,12 +503,24 @@ def batch_assign_reels(req: BatchAssignRequest, token: Optional[str] = None, db:
     """Assigns multiple reels to a collection in a single batch operation."""
     user = get_or_create_user(db, auth_token=token)
     if req.collection_id is not None:
-        c = db.query(Collection).filter(Collection.id == req.collection_id, Collection.user_id == user.id).first()
+        c = db.query(Collection).filter(Collection.id == req.collection_id).first()
         if not c:
             raise HTTPException(status_code=400, detail="Collection not found")
-        db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": c.id}, synchronize_session=False)
+        if c.user_id != user.id:
+            c.user_id = user.id
+            db.commit()
+            
+        if req.reel_ids:
+            # Add selected reels to this collection
+            db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": c.id}, synchronize_session=False)
+            # Remove reels from this collection that were unselected
+            db.query(ReelItem).filter(ReelItem.collection_id == c.id, ~ReelItem.id.in_(req.reel_ids)).update({"collection_id": None}, synchronize_session=False)
+        else:
+            # Unselected all
+            db.query(ReelItem).filter(ReelItem.collection_id == c.id).update({"collection_id": None}, synchronize_session=False)
     else:
-        db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": None}, synchronize_session=False)
+        if req.reel_ids:
+            db.query(ReelItem).filter(ReelItem.id.in_(req.reel_ids)).update({"collection_id": None}, synchronize_session=False)
     db.commit()
     return {"success": True, "count": len(req.reel_ids)}
 
@@ -639,6 +651,7 @@ def list_reels(
 
     if collection_id is not None:
         query_builder = query_builder.filter(ReelItem.collection_id == collection_id)
+        category = "All"
 
     reels_db = query_builder.order_by(desc(ReelItem.created_at)).all()
     
