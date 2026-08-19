@@ -489,13 +489,6 @@ export default function App() {
             >
               <Bot size={15} /> Ask AI
             </button>
-            <button
-              onClick={() => setActiveTab('transcribe')}
-              className={`pill-button ${activeTab === 'transcribe' ? 'active' : ''}`}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <PlusCircle size={15} /> Transcribe URL
-            </button>
           </nav>
         </div>
       </header>
@@ -576,14 +569,11 @@ export default function App() {
                 <InstagramIcon size={38} color="#6366f1" style={{ margin: '0 auto 14px', opacity: 0.85 }} />
                 <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '8px' }}>Your Vault is Empty</h3>
                 <p style={{ color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: '1.6' }}>
-                  Send any Instagram Reel in DM to your connected bot, or paste a link in the Transcribe tab to automatically populate your knowledge base!
+                  Send any Instagram Reel in DM to <strong>@reeldex.io</strong> to automatically transcribe, categorize, and save it to your personal knowledge base!
                 </p>
                 <div className="empty-vault-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <button onClick={handleGeneratePairingCode} className="btn-primary" style={{ padding: '10px 18px' }}>
+                  <button onClick={handleGeneratePairingCode} className="btn-primary" style={{ padding: '10px 22px' }}>
                     <InstagramIcon size={15} /> Link Instagram Account
-                  </button>
-                  <button onClick={() => setActiveTab('transcribe')} className="btn-secondary" style={{ padding: '10px 18px' }}>
-                    <PlusCircle size={15} /> Transcribe a Link
                   </button>
                 </div>
               </div>
@@ -779,59 +769,6 @@ export default function App() {
                   Ask AI
                 </button>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: QUICK TRANSCRIBE URL */}
-        {activeTab === 'transcribe' && (
-          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-            <div className="glass-panel" style={{ padding: '32px' }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <PlusCircle size={22} color="#6366f1" /> Transcribe Direct Instagram Reel
-              </h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                Paste any public Instagram reel URL. Our engine will extract the pure audio stream, transcribe speech in ~1 second, and extract structured AI insights.
-              </p>
-
-              <form onSubmit={handleTranscribeUrl}>
-                <div style={{ marginBottom: '18px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    INSTAGRAM REEL URL
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://www.instagram.com/reel/..."
-                    value={inputUrl}
-                    onChange={(e) => setInputUrl(e.target.value)}
-                    className="custom-input"
-                    style={{ fontSize: '0.95rem', padding: '12px 14px' }}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={transcribing}
-                  className="btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.95rem' }}
-                >
-                  {transcribing ? 'Extracting & Transcribing Audio...' : '🚀 Transcribe & Save to Vault'}
-                </button>
-              </form>
-
-              {transcribeMsg && (
-                <div style={{
-                  marginTop: '18px',
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  background: transcribeMsg.success ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
-                  border: `1px solid ${transcribeMsg.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
-                  color: transcribeMsg.success ? '#10b981' : '#f43f5e',
-                  fontSize: '0.88rem'
-                }}>
-                  {transcribeMsg.text}
-                </div>
-              )}
             </div>
           </div>
         )}
