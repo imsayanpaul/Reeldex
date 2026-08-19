@@ -285,6 +285,10 @@ export default function App() {
         setShowCreateCollectionModal(false);
         await fetchCollections(token);
         setSelectedCollection(newCol);
+        // Automatically open "Add from saved" picker!
+        await fetchAllVaultReels();
+        setSelectedReelIdsForAdd(new Set());
+        setShowAddToThisCollectionModal(true);
       }
     } catch (err) {
       console.error('Error creating collection:', err);
@@ -1810,25 +1814,26 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* ADD TO THIS COLLECTION PICKER MODAL */}
+      {/* ADD FROM SAVED PICKER MODAL (Exact Instagram Screenshot 2) */}
       {/* ======================================================== */}
       {showAddToThisCollectionModal && selectedCollection && (
         <div className="modal-overlay" onClick={() => setShowAddToThisCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', padding: '16px 16px 20px', background: '#141820', borderRadius: '18px' }}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '14px 14px 20px', background: '#141820', borderRadius: '18px 18px 0 0' }}>
             <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 14px' }} />
 
-            {/* Header: Cancel | Add to collection | Add */}
+            {/* Header: Back Arrow | Add from saved | Save */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
               <button
                 type="button"
                 onClick={() => setShowAddToThisCollectionModal(false)}
-                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', color: '#ffffff', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '4px' }}
+                title="Back"
               >
-                Cancel
+                <ArrowLeft size={22} strokeWidth={2.2} />
               </button>
 
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
-                Add to collection
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+                Add from saved
               </h3>
 
               <button
@@ -1838,19 +1843,19 @@ export default function App() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#90a4f2',
+                  color: selectedReelIdsForAdd.size > 0 ? '#90a4f2' : '#ffffff',
                   fontSize: '0.96rem',
                   fontWeight: '700',
                   cursor: 'pointer',
-                  padding: 0
+                  padding: '4px 6px'
                 }}
               >
-                {addingReelsToCol ? 'Saving...' : 'Add'}
+                {addingReelsToCol ? 'Saving...' : 'Save'}
               </button>
             </div>
 
-            {/* Scrollable Reel Selector Grid */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '2px' }}>
+            {/* Scrollable 3-Column Square Grid with Top-Left Checkboxes */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', padding: '1px' }}>
               {allVaultReels.map(reel => {
                 const isSelected = selectedReelIdsForAdd.has(reel.id);
                 return (
@@ -1879,22 +1884,22 @@ export default function App() {
                         <Play size={24} color="#71717a" />
                       </div>
                     )}
-                    {/* Checkbox */}
+                    {/* Checkbox in Top-Left Corner (Exact Screenshot 2) */}
                     <div style={{
                       position: 'absolute',
-                      bottom: '6px',
-                      right: '6px',
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '4px',
-                      background: isSelected ? '#ffffff' : 'rgba(0, 0, 0, 0.45)',
-                      border: isSelected ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.75)',
+                      top: '8px',
+                      left: '8px',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '3px',
+                      background: isSelected ? '#ffffff' : 'rgba(0, 0, 0, 0.4)',
+                      border: isSelected ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.7)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       zIndex: 5
                     }}>
-                      {isSelected && <Check size={14} color="#000000" strokeWidth={3} />}
+                      {isSelected && <Check size={13} color="#000000" strokeWidth={3} />}
                     </div>
                   </div>
                 );
