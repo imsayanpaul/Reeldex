@@ -183,9 +183,11 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
         # Context compression: Include summary + top 300 chars of transcript
         summary_text = r.get("summary") or ""
         transcript_snippet = (r.get("full_text") or "")[:300]
+        reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"
+            f"Video Link: {reel_url}\n"
             f"Category: {r.get('category', 'General')}\n"
             f"Summary: {summary_text}\n"
             f"Tools/Actions: {actions}\n"
@@ -201,9 +203,9 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     context_str = "\n---\n".join(context_blocks)
 
     system_prompt = (
-        "You are ReelDex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
+        "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
-        "Cite the specific creator (@handle) or Reel Title when mentioning facts, tools, promo codes, or steps. "
+        "IMPORTANT CITATION RULE: For each fact, advice, tool, routine, or point you mention, ALWAYS cite the source with the creator (@handle) AND include the direct markdown video link using the provided Video Link (e.g., `Source: [Watch Video](https://www.instagram.com/reel/...) by @creator` or `Source: [Reel Title](https://www.instagram.com/reel/...) by @creator`). "
         "Be concise, helpful, formatted in clean markdown bullet points, and do NOT use emojis anywhere in your response."
     )
 

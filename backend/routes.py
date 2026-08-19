@@ -793,8 +793,9 @@ async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(N
         reels_context.append({
             "id": r.id,
             "title": r.title or f"Reel #{r.id}",
-            "author": r.author,
-            "reel_url": r.reel_url,
+            "author": r.author or r.sender_username,
+            "shortcode": r.shortcode,
+            "reel_url": r.reel_url or (f"https://www.instagram.com/reel/{r.shortcode}/" if r.shortcode else ""),
             "category": r.category,
             "tags": r.tags or [],
             "action_items": r.action_items or [],

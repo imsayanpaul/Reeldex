@@ -1667,7 +1667,26 @@ export default function App() {
                     msg.content
                   ) : (
                     <div className="markdown-prose" style={{ color: '#f8fafa' }}>
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ node, ...props }) => (
+                            <a
+                              {...props}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#90a4f2',
+                                textDecoration: 'underline',
+                                textUnderlineOffset: '3px',
+                                fontWeight: '500',
+                                cursor: 'pointer'
+                              }}
+                            />
+                          )
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
