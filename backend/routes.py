@@ -15,7 +15,7 @@ from backend.downloader import download_audio_from_reel, normalize_instagram_url
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import extract_reel_insights, CATEGORIES
 from backend.search import rank_reels_search, ask_reels_ai
-from backend.instagram_bot import send_instagram_dm, parse_webhook_payload
+from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload
 from backend.config import settings
 from sqlalchemy import text
 
@@ -80,7 +80,7 @@ def get_or_create_user(db: Session, auth_token: Optional[str] = None, sender_id:
 
 
 # --- Background Processing Worker ---
-async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
+def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
     """
     1. Checks Global Cache: If ANY user has already processed this exact Reel, reuse transcript & insights instantly (0 tokens consumed).
     2. In-Flight Lock: If another worker is currently processing this exact Reel, wait for completion to reuse with 0 tokens.
@@ -90,8 +90,8 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
     6. Categorizes, tags & extracts action items with Groq LLaMA 3.3 70B.
     7. Auto-replies to user on Instagram with summary, tags & magic link.
     """
+    import time
     from backend.database import SessionLocal
-    import asyncio
     db = SessionLocal()
     reel = None
     audio_path = None
@@ -130,7 +130,7 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             if in_flight:
                 print(f"[In-Flight Lock] Another worker is processing Reel {reel.shortcode}. Waiting for completion...")
                 for _ in range(12):  # Wait up to 18 seconds
-                    await asyncio.sleep(1.5)
+                    time.sleep(1.5)
                     db.expire_all()
                     completed_other = db.query(ReelItem).filter(
                         ReelItem.shortcode == reel.shortcode,
@@ -185,7 +185,7 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
                 category = reel.category or "General Knowledge"
 
                 summary_msg = f"✨ Saved to your ReelDex!\n\n🎬 {video_title}{creator_tag}\n🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
-                sent = await send_instagram_dm(sender_id, summary_msg)
+                sent = send_instagram_dm_sync(sender_id, summary_msg)
                 reel.dm_replied = sent
                 db.commit()
 
@@ -276,7 +276,7 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             creator_tag = f" by @{reel.author}" if reel.author else ""
 
             summary_msg = f"✨ Saved to your ReelDex!\n\n🎬 {video_title}{creator_tag}\n🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
-            sent = await send_instagram_dm(sender_id, summary_msg)
+            sent = send_instagram_dm_sync(sender_id, summary_msg)
             reel.dm_replied = sent
             db.commit()
         elif reel.dm_replied:

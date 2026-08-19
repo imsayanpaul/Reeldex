@@ -8,7 +8,7 @@ connect_args = {}
 engine_kwargs = {}
 
 if "sqlite" in settings.DATABASE_URL:
-    connect_args = {"check_same_thread": False}
+    connect_args = {"check_same_thread": False, "timeout": 30.0}
 else:
     # PostgreSQL: enable connection health checks and pool recycling
     engine_kwargs = {
@@ -23,6 +23,15 @@ engine = create_engine(
     connect_args=connect_args,
     **engine_kwargs
 )
+
+if "sqlite" in settings.DATABASE_URL:
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("PRAGMA journal_mode=WAL;"))
+            conn.execute(text("PRAGMA synchronous=NORMAL;"))
+    except Exception as e:
+        print(f"[DB WAL Init]: {e}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

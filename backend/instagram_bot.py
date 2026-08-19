@@ -47,6 +47,34 @@ async def send_instagram_dm(recipient_id: str, message_text: str) -> bool:
 
     return False
 
+def send_instagram_dm_sync(recipient_id: str, message_text: str) -> bool:
+    """Synchronous DM sender for thread pool background workers."""
+    if not settings.INSTAGRAM_PAGE_ACCESS_TOKEN:
+        return False
+
+    headers = {
+        "Authorization": f"Bearer {settings.INSTAGRAM_PAGE_ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "recipient": {"id": recipient_id},
+        "message": {"text": message_text}
+    }
+    endpoints = [
+        "https://graph.instagram.com/v21.0/me/messages",
+        "https://graph.facebook.com/v21.0/me/messages"
+    ]
+    with httpx.Client() as client:
+        for url in endpoints:
+            try:
+                resp = client.post(url, json=payload, headers=headers, timeout=12.0)
+                if resp.status_code == 200:
+                    print(f"[Instagram Bot Sync] Sent DM reply to {recipient_id}")
+                    return True
+            except Exception as e:
+                print(f"[Instagram Bot Sync Error]: {e}")
+    return False
+
 def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Parses incoming Meta Webhook payload for Instagram messaging events.
