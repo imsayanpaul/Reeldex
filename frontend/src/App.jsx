@@ -1288,7 +1288,7 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', maxHeight: '340px', overflowY: 'auto', padding: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxHeight: '360px', overflowY: 'auto', padding: '2px' }}>
                 {collections.map(col => {
                   const coverImg = getCollectionCover(col.id);
                   return (
@@ -1296,22 +1296,33 @@ export default function App() {
                       key={col.id}
                       onClick={() => handleBatchAssign(col.id)}
                       className="ig-collection-card"
-                      style={{ cursor: 'pointer', textAlign: 'center' }}
+                      style={{
+                        cursor: 'pointer',
+                        background: '#1c1c1e',
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)'
+                      }}
                     >
-                      <div className="ig-collection-cover" style={{ marginBottom: '8px' }}>
+                      <div className="ig-collection-cover" style={{ width: '46px', height: '46px', minWidth: '46px', borderRadius: '8px', flexShrink: 0 }}>
                         {coverImg ? (
-                          <img src={coverImg} alt={col.name} />
+                          <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
                         ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #18181b, #27272a)' }}>
-                            <Folder size={32} color="#ffffff" opacity={0.6} />
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a', borderRadius: '8px' }}>
+                            <Folder size={18} color="#ffffff" opacity={0.7} />
                           </div>
                         )}
                       </div>
-                      <div style={{ fontSize: '0.86rem', fontWeight: '700', color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {col.name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {col.count} {col.count === 1 ? 'item' : 'items'}
+                      <div className="ig-collection-info" style={{ flex: 1, minWidth: 0, textAlign: 'left', overflow: 'hidden' }}>
+                        <div className="ig-collection-title" style={{ fontSize: '0.86rem', fontWeight: '700', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {col.name}
+                        </div>
+                        <div className="ig-collection-meta" style={{ fontSize: '0.72rem', color: '#8e8e8e', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {col.count} {col.count === 1 ? 'item' : 'items'}
+                        </div>
                       </div>
                     </div>
                   );
