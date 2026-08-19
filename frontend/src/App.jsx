@@ -119,6 +119,7 @@ export default function App() {
   // Vault, Collections & Search State
   const [reels, setReels] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [reelsLoading, setReelsLoading] = useState(false);
   const [categories, setCategories] = useState(['All']);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
@@ -188,15 +189,47 @@ export default function App() {
 
     fetchCategories();
     fetchCollections(currentToken);
-    fetchReels(currentToken);
   }, []);
 
   // 2. Fetch Reels when Category, Collection, or Search Query Changes
   useEffect(() => {
-    fetchReels();
-    const interval = setInterval(fetchReels, 4000);
-    return () => clearInterval(interval);
-  }, [session?.auth_token, activeViewFilter, selectedCollection, searchQuery]);
+    setReels([]);
+    setReelsLoading(true);
+    let isCancelled = false;
+
+    const loadData = async () => {
+      try {
+        const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+        const categoryParam = (activeViewFilter === 'All' || activeViewFilter === 'Collections' || selectedCollection) ? 'All' : activeViewFilter;
+        let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(categoryParam)}`;
+        if (selectedCollection?.id) {
+          url += `&collection_id=${selectedCollection.id}`;
+        }
+        if (searchQuery.trim()) {
+          url += `&q=${encodeURIComponent(searchQuery.trim())}`;
+        }
+        const res = await fetch(url);
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          setReels(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching reels:', err);
+      } finally {
+        if (!isCancelled) {
+          setReelsLoading(false);
+          setInitialLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    const interval = setInterval(loadData, 4000);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [session?.auth_token, activeViewFilter, selectedCollection?.id, searchQuery]);
 
   useEffect(() => {
     if (activeTab === 'chat' && chatBottomRef.current) {
@@ -243,12 +276,13 @@ export default function App() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setReels(data);
+        setReels(data || []);
       }
     } catch (err) {
       console.error('Error fetching reels:', err);
     } finally {
       setInitialLoading(false);
+      setReelsLoading(false);
     }
   };
 
@@ -985,7 +1019,7 @@ export default function App() {
                   </div>
                 )}
 
-                {initialLoading ? (
+                {(initialLoading || reelsLoading) ? (
                   <div className="ig-reels-grid">
                     {[1, 2, 3].map((n) => (
                       <div key={n} className="modern-reel-card" style={{ opacity: 0.85 }}>
