@@ -542,9 +542,9 @@ export default function App() {
       {/* ======================================================== */}
       <div className="ig-content-container">
 
-        {/* Filter Pills (Instagram Native Strip) */}
+        {/* Filter Pills (Clean Wrapping Category Strip) */}
         {activeTab === 'vault' && !selectedCollection && (
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '14px', marginBottom: '14px' }} className="no-scrollbar">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '22px' }}>
             <button
               onClick={() => setActiveViewFilter('All')}
               className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
