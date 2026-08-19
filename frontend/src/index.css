@@ -1,33 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
 
 :root {
-  /* Instagram Native Clean Palette */
-  --bg-app: #ffffff;
-  --bg-page: #fafafa;
-  --bg-card: #ffffff;
-  --bg-muted: #f4f4f5;
-  --bg-input: #efefef;
+  /* Instagram OLED Dark Mode Palette */
+  --bg-app: #000000;
+  --bg-page: #000000;
+  --bg-card: #121212;
+  --bg-card-hover: #18181b;
+  --bg-muted: #18181b;
+  --bg-input: #1c1c1e;
+  --bg-surface-elevated: #1f1f22;
   
-  /* Instagram Brand Accents (Black & Native Blue) */
-  --accent-primary: #000000;
-  --accent-primary-hover: #262626;
-  --accent-primary-light: rgba(0, 0, 0, 0.05);
+  /* Instagram Brand Accents (White & Instagram Blue) */
+  --accent-primary: #ffffff;
+  --accent-primary-hover: #e4e4e7;
+  --accent-primary-light: rgba(255, 255, 255, 0.08);
   --accent-dark: #000000;
   --accent-blue: #0095f6;
   --accent-blue-hover: #1877f2;
   --accent-emerald: #10b981;
 
-  /* Typography */
-  --text-main: #000000;
-  --text-heading: #000000;
-  --text-body: #262626;
-  --text-muted: #737373;
-  --text-subtle: #8e8e8e;
+  /* Typography (High Contrast Dark Theme) */
+  --text-main: #f5f5f5;
+  --text-heading: #ffffff;
+  --text-body: #a1a1aa;
+  --text-muted: #71717a;
+  --text-subtle: #52525b;
 
-  /* Borders & Strokes */
-  --border-light: #dbdbdb;
-  --border-subtle: #efefef;
-  --border-focus: #000000;
+  /* Borders & Dividers */
+  --border-light: #262626;
+  --border-subtle: #1c1c1e;
+  --border-focus: #ffffff;
 
   --font-main: 'Geist', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -39,10 +41,10 @@
   --radius-xl: 18px;
   --radius-full: 9999px;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.12);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.9);
 }
 
 * {
@@ -62,7 +64,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar */
+/* Custom Dark Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -71,11 +73,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dbdbdb;
+  background: #262626;
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8e8e8e;
+  background: #3f3f46;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -92,7 +94,7 @@ body {
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
+  background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -109,9 +111,9 @@ body {
 .ig-top-navbar {
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-light);
   height: 64px;
   display: flex;
@@ -121,94 +123,6 @@ body {
   z-index: 50;
 }
 
-/* Header Action Elements */
-.header-ai-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-.header-ai-btn:hover {
-  background: #f4f4f5;
-  border-color: #000000;
-  transform: translateY(-1px);
-}
-.header-ai-btn.active {
-  background: #000000;
-  color: #ffffff;
-  border-color: #000000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.header-profile-capsule {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 6px;
-  border-radius: var(--radius-full);
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-.header-profile-capsule:hover {
-  border-color: #000000;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.story-avatar-ring {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  padding: 1.5px;
-  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.story-avatar-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000000;
-}
-
-.header-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  background: #000000;
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-.header-add-btn:hover {
-  background: #262626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
 .ig-content-container {
   max-width: 1180px;
   width: 100%;
@@ -216,15 +130,15 @@ body {
   padding: 24px 20px 60px;
 }
 
-/* Filter Pills (Instagram Native Style) */
+/* Filter Pills (Instagram Native Style - Dark) */
 .ig-filter-pill {
   padding: 6px 14px;
   border-radius: var(--radius-full);
   font-size: 0.82rem;
   font-weight: 600;
-  background: #efefef;
-  color: #262626;
-  border: none;
+  background: #18181b;
+  color: #a1a1aa;
+  border: 1px solid #27272a;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
@@ -233,15 +147,17 @@ body {
   gap: 6px;
 }
 .ig-filter-pill:hover {
-  background: #dbdbdb;
-  color: #000000;
+  background: #27272a;
+  color: #ffffff;
+  border-color: #3f3f46;
 }
 .ig-filter-pill.active {
-  background: #000000;
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
 }
 
-/* Instagram Collections Shelf */
+/* Instagram Collections Shelf - Dark */
 .ig-collections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -252,7 +168,7 @@ body {
 .ig-collection-card {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  background: #ffffff;
+  background: var(--bg-card);
   padding: 8px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
@@ -260,7 +176,8 @@ body {
 .ig-collection-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
-  border-color: #8e8e8e;
+  border-color: #52525b;
+  background: var(--bg-card-hover);
 }
 
 .ig-collection-cover {
@@ -268,7 +185,7 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: #18181b;
+  background: #1c1c1e;
   position: relative;
   margin-bottom: 8px;
 }
@@ -278,7 +195,7 @@ body {
   object-fit: cover;
 }
 
-/* High-End Modern Reel Cards Grid */
+/* High-End Modern Reel Cards Grid - Dark */
 .ig-reels-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -286,7 +203,7 @@ body {
 }
 
 .modern-reel-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-xs);
@@ -299,7 +216,7 @@ body {
 .modern-reel-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
-  border-color: #8e8e8e;
+  border-color: #52525b;
 }
 
 .modern-card-thumbnail-box {
@@ -322,7 +239,7 @@ body {
 .modern-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 60%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 60%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -332,22 +249,28 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   transition: transform 0.2s ease;
 }
 .modern-reel-card:hover .play-circle-badge {
   transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.85);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .modern-card-body {
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  justifyContent: space-between;
+  justify-content: space-between;
   flex: 1;
 }
 
@@ -360,6 +283,7 @@ body {
   border-radius: var(--radius-xs);
   background: #000000;
   color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .pill-tool-chip {
@@ -367,9 +291,9 @@ body {
   font-size: 0.72rem;
   padding: 3px 8px;
   border-radius: var(--radius-xs);
-  background: #f4f4f5;
+  background: #18181b;
   border: 1px solid var(--border-light);
-  color: #000000;
+  color: #f4f4f5;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -377,8 +301,8 @@ body {
 
 /* Instagram Buttons */
 .btn-coral, .btn-primary {
-  background: #000000;
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   border: none;
   padding: 7px 16px;
   border-radius: var(--radius-sm);
@@ -393,7 +317,7 @@ body {
   text-decoration: none;
 }
 .btn-coral:hover, .btn-primary:hover {
-  background: #262626;
+  background: #e4e4e7;
 }
 
 .btn-blue {
@@ -417,8 +341,8 @@ body {
 }
 
 .btn-white {
-  background: #ffffff;
-  color: #000000;
+  background: #18181b;
+  color: #f4f4f5;
   border: 1px solid var(--border-light);
   padding: 6px 14px;
   border-radius: var(--radius-sm);
@@ -433,8 +357,8 @@ body {
   text-decoration: none;
 }
 .btn-white:hover {
-  background: #f4f4f5;
-  border-color: #8e8e8e;
+  background: #27272a;
+  border-color: #52525b;
 }
 
 /* Markdown Rendering in Chat */
@@ -447,7 +371,7 @@ body {
 }
 .markdown-prose strong {
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
 }
 .markdown-prose ul, .markdown-prose ol {
   padding-left: 18px;
@@ -460,17 +384,17 @@ body {
 .markdown-prose code {
   font-family: var(--font-mono);
   font-size: 0.82rem;
-  background: #f4f4f5;
+  background: #1e1e24;
   padding: 2px 6px;
   border-radius: 4px;
-  color: #000000;
+  color: #38bdf8;
 }
 
-/* Modals */
+/* Modals & Dialogs - Dark */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -481,9 +405,9 @@ body {
 }
 
 .modal-sheet {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: var(--radius-xl);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8);
   width: 100%;
   max-width: 680px;
   max-height: 90vh;
@@ -491,6 +415,7 @@ body {
   padding: 24px;
   animation: modalEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid var(--border-light);
+  color: var(--text-main);
 }
 
 @keyframes modalEnter {

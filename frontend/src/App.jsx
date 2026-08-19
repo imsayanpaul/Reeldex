@@ -446,13 +446,13 @@ export default function App() {
           {selectedCollection ? (
             <button
               onClick={() => setSelectedCollection(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#000000', fontWeight: '700', fontSize: '0.95rem' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-heading)', fontWeight: '700', fontSize: '0.95rem' }}
             >
               <ArrowLeft size={18} />
               <span>{selectedCollection.name}</span>
             </button>
           ) : (
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#000000', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
               ReelDex
             </h1>
           )}
@@ -471,11 +471,11 @@ export default function App() {
                 width: '100%',
                 padding: '7px 32px 7px 34px',
                 borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                background: '#efefef',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-input)',
                 fontSize: '0.84rem',
                 outline: 'none',
-                color: '#262626'
+                color: 'var(--text-main)'
               }}
             />
             {searchQuery && (
@@ -523,7 +523,7 @@ export default function App() {
               border: 'none',
               cursor: 'pointer',
               padding: '6px',
-              color: '#000000',
+              color: 'var(--text-heading)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -576,7 +576,7 @@ export default function App() {
             {(!selectedCollection && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: '#000000' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
                     Collections
                   </h2>
                   <button
@@ -591,15 +591,15 @@ export default function App() {
                   <div style={{
                     padding: '20px',
                     borderRadius: 'var(--radius-lg)',
-                    background: '#ffffff',
+                    background: 'var(--bg-card)',
                     border: '1px solid var(--border-light)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#000000' }}>Organize with Collections</div>
-                      <div style={{ fontSize: '0.78rem', color: '#737373' }}>Group your transcribed reels by theme, work, or project.</div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-heading)' }}>Organize with Collections</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Group your transcribed reels by theme, work, or project.</div>
                     </div>
                     <button onClick={() => setShowCreateCollectionModal(true)} className="btn-coral" style={{ fontSize: '0.78rem' }}>
                       <Plus size={13} /> Create
@@ -624,10 +624,10 @@ export default function App() {
                               </div>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#000000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {col.name}
                           </div>
-                          <div style={{ fontSize: '0.74rem', color: '#8e8e8e', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                             <Lock size={10} /> Private · {col.count} {col.count === 1 ? 'item' : 'items'}
                           </div>
                         </div>
@@ -642,7 +642,7 @@ export default function App() {
             {activeViewFilter !== 'Collections' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: '#000000' }}>
+                  <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
                     {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
                   </h2>
                   {selectedCollection && (
@@ -673,17 +673,17 @@ export default function App() {
                   <div style={{
                     padding: '48px 24px',
                     textAlign: 'center',
-                    background: '#ffffff',
+                    background: 'var(--bg-card)',
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-light)',
                     maxWidth: '460px',
                     margin: '30px auto'
                   }}>
-                    <Bookmark size={28} color="#000000" style={{ margin: '0 auto 12px' }} />
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#000000', marginBottom: '6px' }}>
+                    <Bookmark size={28} color="var(--text-heading)" style={{ margin: '0 auto 12px' }} />
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px' }}>
                       {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'No Saved Reels Found'}
                     </h3>
-                    <p style={{ fontSize: '0.84rem', color: '#737373', lineHeight: '1.5', marginBottom: '18px' }}>
+                    <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '18px' }}>
                       {selectedCollection 
                         ? 'Assign reels to this collection from any reel card using the folder icon!' 
                         : (session.is_instagram_linked 
@@ -719,7 +719,7 @@ export default function App() {
                             <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
                             <div className="modern-card-overlay">
                               <div className="play-circle-badge">
-                                <Play size={15} color="#000000" style={{ fill: '#000000', marginLeft: '2px' }} />
+                                <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
                               </div>
                             </div>
 
@@ -956,7 +956,7 @@ export default function App() {
         {/* TAB 2: ASK AI COPILOT */}
         {activeTab === 'chat' && (
           <div style={{
-            background: '#ffffff',
+            background: 'var(--bg-card)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-light)',
             padding: '24px',
@@ -966,10 +966,10 @@ export default function App() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bot size={20} color="#000000" /> Ask AI Copilot
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Bot size={20} color="var(--text-heading)" /> Ask AI Copilot
                 </h2>
-                <p style={{ fontSize: '0.8rem', color: '#8e8e8e' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   High-density Grounded Knowledge Search across all your saved Instagram Reels
                 </p>
               </div>
@@ -985,8 +985,9 @@ export default function App() {
                     maxWidth: '85%',
                     padding: '12px 16px',
                     borderRadius: '14px',
-                    background: msg.role === 'user' ? '#000000' : '#f4f4f5',
-                    color: msg.role === 'user' ? '#ffffff' : '#262626',
+                    background: msg.role === 'user' ? '#ffffff' : '#1c1c1e',
+                    color: msg.role === 'user' ? '#000000' : '#f4f4f5',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
                     fontSize: '0.88rem',
                     lineHeight: '1.6'
                   }}
@@ -1001,7 +1002,7 @@ export default function App() {
                 </div>
               ))}
               {chatLoading && (
-                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#f4f4f5', fontSize: '0.82rem', color: '#8e8e8e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#1c1c1e', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Sparkles size={15} color="#0095f6" className="animate-spin" /> Synthesizing answer across your video transcripts...
                 </div>
               )}
@@ -1022,9 +1023,9 @@ export default function App() {
                     fontSize: '0.74rem',
                     padding: '5px 12px',
                     borderRadius: 'var(--radius-full)',
-                    background: '#efefef',
-                    border: 'none',
-                    color: '#262626',
+                    background: '#1c1c1e',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-main)',
                     fontWeight: '600',
                     cursor: 'pointer'
                   }}
@@ -1046,7 +1047,8 @@ export default function App() {
                   padding: '10px 16px',
                   borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--border-light)',
-                  background: '#ffffff',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-main)',
                   outline: 'none',
                   fontSize: '0.88rem'
                 }}
@@ -1067,15 +1069,15 @@ export default function App() {
           <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FolderPlus size={18} color="#000000" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#000000' }}>New Collection</h3>
+                <FolderPlus size={18} color="var(--text-heading)" />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-heading)' }}>New Collection</h3>
               </div>
               <button onClick={() => setShowCreateCollectionModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
             <form onSubmit={handleCreateCollection}>
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: '700', color: '#8e8e8e', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                   COLLECTION NAME
                 </label>
                 <input
@@ -1088,6 +1090,8 @@ export default function App() {
                     padding: '9px 12px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-light)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-main)',
                     fontSize: '0.88rem',
                     outline: 'none'
                   }}
@@ -1114,20 +1118,20 @@ export default function App() {
           <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <InstagramIcon size={24} color="#000000" />
+                <InstagramIcon size={24} color="var(--text-heading)" />
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#000000' }}>Link Your Instagram</h3>
-                  <p style={{ fontSize: '0.78rem', color: '#8e8e8e' }}>Sync reels via Instagram DM in 10 seconds</p>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-heading)' }}>Link Your Instagram</h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sync reels via Instagram DM in 10 seconds</p>
                 </div>
               </div>
               <button onClick={() => setShowPairModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
-            <div style={{ background: '#fafafa', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ background: '#1c1c1e', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Your Unique Linking Code
               </span>
-              <div style={{ fontSize: '2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#000000', margin: '6px 0' }}>
+              <div style={{ fontSize: '2rem', fontWeight: '900', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ffffff', margin: '6px 0' }}>
                 {pairingCode || 'MIND-849201'}
               </div>
               <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.78rem' }}>
@@ -1135,10 +1139,10 @@ export default function App() {
               </button>
             </div>
 
-            <div style={{ fontSize: '0.84rem', color: '#262626', lineHeight: '1.6', marginBottom: '20px' }}>
+            <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: '1.6', marginBottom: '20px' }}>
               <ol style={{ paddingLeft: '18px' }}>
                 <li>Open Instagram Direct and message <strong>@reeldex.io</strong>.</li>
-                <li>Send your code: <code style={{ color: '#000000', background: '#f4f4f5', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>{pairingCode}</code></li>
+                <li>Send your code: <code style={{ color: '#38bdf8', background: '#18181b', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>{pairingCode}</code></li>
                 <li>Done! Any Reel you share in DM will automatically transcribe and save here.</li>
               </ol>
             </div>
@@ -1176,10 +1180,10 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#000000', marginTop: '6px', letterSpacing: '-0.02em' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', marginTop: '6px', letterSpacing: '-0.02em' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
-                <p style={{ fontSize: '0.78rem', color: '#8e8e8e', fontWeight: '500' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '500' }}>
                   by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
                 </p>
               </div>
@@ -1259,13 +1263,15 @@ export default function App() {
                       gap: '6px',
                       padding: '7px 16px',
                       borderRadius: 'var(--radius-full)',
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      color: '#000000',
+                      background: 'rgba(0, 0, 0, 0.8)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#ffffff',
                       fontWeight: '700',
                       fontSize: '0.8rem',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.5)'
                     }}>
-                      <Play size={13} color="#000000" style={{ fill: '#000000' }} /> Play on Instagram <ExternalLink size={11} />
+                      <Play size={13} color="#ffffff" style={{ fill: '#ffffff' }} /> Play on Instagram <ExternalLink size={11} />
                     </div>
                   </a>
                 )}
@@ -1277,7 +1283,7 @@ export default function App() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: '#fafafa',
+              background: '#1c1c1e',
               border: '1px solid var(--border-light)',
               borderRadius: '10px',
               padding: '8px 12px',
@@ -1287,7 +1293,7 @@ export default function App() {
             }}>
               {/* Folder Selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.76rem', color: '#8e8e8e', fontWeight: '700' }}>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: '700' }}>
                   Folder:
                 </span>
                 <select
@@ -1298,9 +1304,9 @@ export default function App() {
                     borderRadius: '6px',
                     border: '1px solid var(--border-light)',
                     fontSize: '0.78rem',
-                    background: '#ffffff',
+                    background: 'var(--bg-input)',
                     fontWeight: '600',
-                    color: '#262626',
+                    color: 'var(--text-main)',
                     outline: 'none'
                   }}
                 >
@@ -1323,13 +1329,13 @@ export default function App() {
                       style={{
                         fontSize: '0.76rem',
                         padding: '4px 10px',
-                        background: showTranslated ? 'rgba(0, 149, 246, 0.08)' : '#ffffff',
+                        background: showTranslated ? 'rgba(0, 149, 246, 0.15)' : '#18181b',
                         borderColor: showTranslated ? '#0095f6' : 'var(--border-light)',
-                        color: showTranslated ? '#0095f6' : '#262626',
+                        color: showTranslated ? '#0095f6' : '#f4f4f5',
                         fontWeight: '700'
                       }}
                     >
-                      <Globe size={13} color={showTranslated ? "#0095f6" : "#000000"} />
+                      <Globe size={13} color={showTranslated ? "#0095f6" : "#ffffff"} />
                       {showTranslated ? 'Viewing English Translation' : 'Translate to English'}
                     </button>
                   ) : (
@@ -1337,7 +1343,7 @@ export default function App() {
                       onClick={() => handleTranslateReel(selectedReel.id)}
                       disabled={translating}
                       className="btn-white"
-                      style={{ fontSize: '0.76rem', padding: '4px 10px', color: '#000000', fontWeight: '700' }}
+                      style={{ fontSize: '0.76rem', padding: '4px 10px', color: '#ffffff', fontWeight: '700' }}
                     >
                       <Languages size={13} />
                       {translating ? 'Translating with Groq AI...' : 'Translate to English'}
@@ -1350,8 +1356,8 @@ export default function App() {
             {/* Translation Active Alert */}
             {showTranslated && (
               <div style={{
-                background: 'rgba(0, 149, 246, 0.08)',
-                border: '1px solid rgba(0, 149, 246, 0.2)',
+                background: 'rgba(0, 149, 246, 0.12)',
+                border: '1px solid rgba(0, 149, 246, 0.3)',
                 borderRadius: '8px',
                 padding: '7px 12px',
                 fontSize: '0.76rem',
@@ -1371,22 +1377,22 @@ export default function App() {
               <div style={{
                 padding: '18px',
                 borderRadius: 'var(--radius-md)',
-                background: '#f8fafc',
+                background: '#18181b',
                 border: '1px solid var(--border-light)',
                 marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: '#000000', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '8px' }}>
                   <Sparkles size={14} color="#0095f6" /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
 
                 {selectedReel.transcript?.summary && (
-                  <p style={{ fontSize: '0.88rem', color: '#000000', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '10px' : '0' }}>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: '1.6', marginBottom: (selectedReel.transcript.key_points?.length || selectedReel.action_items?.length) ? '10px' : '0' }}>
                     {formatSummary(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
                   </p>
                 )}
 
                 {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
-                  <ul style={{ paddingLeft: '18px', fontSize: '0.84rem', color: '#262626', lineHeight: '1.6' }}>
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.84rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
                       <li key={i} style={{ marginBottom: '3px' }}>{formatSummary(pt)}</li>
                     ))}
@@ -1407,12 +1413,12 @@ export default function App() {
                       paddingTop: '10px',
                       borderTop: '1px solid var(--border-light)'
                     }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-heading)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '4px' }}>
                         🛠️ Extracted Tools & Action Steps:
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         {validActions.map((act, i) => (
-                          <div key={i} style={{ fontSize: '0.82rem', color: '#000000' }}>
+                          <div key={i} style={{ fontSize: '0.82rem', color: 'var(--text-main)' }}>
                             • {act}
                           </div>
                         ))}
@@ -1425,7 +1431,7 @@ export default function App() {
 
             {/* Word-For-Word Transcript */}
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: '800', color: '#000000', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>FULL WORD-FOR-WORD TRANSCRIPT</span>
                 {showTranslated && (
                   <span style={{ fontSize: '0.7rem', color: '#0095f6', fontWeight: '700' }}>
@@ -1438,8 +1444,9 @@ export default function App() {
                 overflowY: 'auto',
                 padding: '14px',
                 borderRadius: 'var(--radius-sm)',
-                background: '#fafafa',
+                background: '#18181b',
                 border: '1px solid var(--border-light)',
+                color: 'var(--text-main)',
                 fontSize: '0.84rem',
                 lineHeight: '1.65',
                 whiteSpace: 'pre-wrap'
