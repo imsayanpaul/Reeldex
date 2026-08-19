@@ -1954,7 +1954,7 @@ export default function App() {
             onClick={handleBatchDelete}
             disabled={selectedReelIds.size === 0 || batchActionLoading}
             className="ig-manage-bottom-btn"
-            style={{ color: selectedReelIds.size > 0 ? '#ef4444' : '#71717a' }}
+            style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
           >
             Unsave
           </button>
