@@ -560,37 +560,6 @@ export default function App() {
             ))}
           </div>
         </div>
-
-        {/* Sidebar Footer: Instagram Pairing Status */}
-        <div style={{ paddingTop: '14px', borderTop: '1px solid var(--border-light)' }}>
-          <div
-            onClick={handleGeneratePairingCode}
-            style={{
-              padding: '10px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: '#f8fafc',
-              border: '1px solid var(--border-light)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: session.is_instagram_linked ? '#10b981' : '#f59e0b' }} />
-              <div>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-heading)' }}>
-                  {session.instagram_username || session.display_name || 'Connect Instagram'}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {session.is_instagram_linked ? 'Synced with Direct DM' : 'Click to link DM'}
-                </div>
-              </div>
-            </div>
-            <InstagramIcon size={16} color="#ff5722" />
-          </div>
-        </div>
       </aside>
 
       {/* ======================================================== */}
@@ -651,11 +620,50 @@ export default function App() {
             </div>
           </div>
 
-          {/* Header Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button onClick={handleGeneratePairingCode} className="btn-white" style={{ fontSize: '0.8rem' }}>
-              <InstagramIcon size={14} /> DM Sync
-            </button>
+          {/* Header Action Buttons & User Profile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              onClick={handleGeneratePairingCode}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: '#ffffff',
+                border: '1px solid var(--border-light)',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Click to manage Instagram connection"
+            >
+              <div style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: session.is_instagram_linked ? 'linear-gradient(135deg, #ff5722, #f43f5e)' : '#f1f5f9',
+                color: session.is_instagram_linked ? '#ffffff' : '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.72rem',
+                fontWeight: '800'
+              }}>
+                {session.instagram_username ? session.instagram_username.slice(0, 1).toUpperCase() : 'U'}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-heading)', lineHeight: '1.2' }}>
+                  {session.instagram_username || session.display_name || 'User #3832'}
+                </span>
+                <span style={{ fontSize: '0.66rem', color: session.is_instagram_linked ? '#10b981' : '#f59e0b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: session.is_instagram_linked ? '#10b981' : '#f59e0b' }} />
+                  {session.is_instagram_linked ? 'Synced' : 'Link IG'}
+                </span>
+              </div>
+            </div>
+
             <button onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')} className="btn-coral">
               {activeTab === 'vault' ? <><Sparkles size={14} /> Ask AI</> : <><Layers size={14} /> Vault</>}
             </button>
