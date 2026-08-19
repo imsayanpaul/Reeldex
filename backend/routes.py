@@ -388,11 +388,22 @@ def list_collections(token: Optional[str] = None, db: Session = Depends(get_db))
 
 @router.post("/collections")
 def create_collection(req: CreateCollectionRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
-    """Creates a new custom collection / folder."""
+    """Creates a new custom collection / folder (idempotent for same user and name)."""
     user = get_or_create_user(db, auth_token=token)
     name = req.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Collection name cannot be empty")
+
+    existing = db.query(Collection).filter(Collection.user_id == user.id, Collection.name == name).first()
+    if existing:
+        count = db.query(ReelItem).filter(ReelItem.collection_id == existing.id).count()
+        return {
+            "success": True,
+            "id": existing.id,
+            "name": existing.name,
+            "emoji": existing.emoji or "📁",
+            "count": count
+        }
 
     c = Collection(user_id=user.id, name=name, emoji=req.emoji or "📁")
     db.add(c)

@@ -117,6 +117,7 @@ export default function App() {
   // Collection Creator & Popover
   const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [creatingCollection, setCreatingCollection] = useState(false);
   const [openCollectionPickerId, setOpenCollectionPickerId] = useState(null);
 
   // On-Demand Translation State
@@ -237,7 +238,8 @@ export default function App() {
 
   const handleCreateCollection = async (e) => {
     if (e) e.preventDefault();
-    if (!newCollectionName.trim()) return;
+    if (!newCollectionName.trim() || creatingCollection) return;
+    setCreatingCollection(true);
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
       const res = await fetch(`${API_BASE}/collections?token=${token}`, {
@@ -249,11 +251,13 @@ export default function App() {
         const newCol = await res.json();
         setNewCollectionName('');
         setShowCreateCollectionModal(false);
-        fetchCollections(token);
+        await fetchCollections(token);
         setSelectedCollection(newCol);
       }
     } catch (err) {
       console.error('Error creating collection:', err);
+    } finally {
+      setCreatingCollection(false);
     }
   };
 
@@ -1080,8 +1084,8 @@ export default function App() {
 
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowCreateCollectionModal(false)} className="btn-white">Cancel</button>
-                <button type="submit" disabled={!newCollectionName.trim()} className="btn-coral">
-                  Create
+                <button type="submit" disabled={!newCollectionName.trim() || creatingCollection} className="btn-coral">
+                  {creatingCollection ? 'Creating...' : 'Create'}
                 </button>
               </div>
             </form>
