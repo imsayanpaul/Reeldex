@@ -21,7 +21,9 @@ import {
   Lock,
   Bookmark,
   Layers,
-  Tag
+  Tag,
+  Users,
+  ChevronRight
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -1350,48 +1352,89 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* CREATE COLLECTION MODAL */}
+      {/* CREATE COLLECTION MODAL (Exact Instagram Native Bottom Sheet) */}
       {/* ======================================================== */}
       {showCreateCollectionModal && (
         <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FolderPlus size={18} color="var(--text-heading)" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-heading)' }}>New Collection</h3>
-              </div>
-              <button onClick={() => setShowCreateCollectionModal(false)} className="btn-white" style={{ padding: '4px 8px' }}>✕</button>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px' }}>
+            {/* Top Handle Bar */}
+            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+            {/* Header: Cancel | New collection | Next */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <button
+                type="button"
+                onClick={() => { setShowCreateCollectionModal(false); setNewCollectionName(''); }}
+                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+              >
+                Cancel
+              </button>
+
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+                New collection
+              </h3>
+
+              <button
+                type="button"
+                onClick={handleCreateCollection}
+                disabled={!newCollectionName.trim() || creatingCollection}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: newCollectionName.trim() ? '#0095f6' : '#52525b',
+                  fontSize: '0.96rem',
+                  fontWeight: '700',
+                  cursor: newCollectionName.trim() ? 'pointer' : 'not-allowed',
+                  padding: 0
+                }}
+              >
+                {creatingCollection ? 'Adding...' : 'Next'}
+              </button>
             </div>
 
             <form onSubmit={handleCreateCollection}>
+              {/* Collection Name Input Box */}
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                  COLLECTION NAME
-                </label>
                 <input
                   type="text"
-                  placeholder="e.g. Startup Ideas, Workout, AI Tools..."
+                  placeholder="Collection name"
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-input)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.88rem',
-                    outline: 'none'
+                    padding: '16px 14px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #3f3f46',
+                    background: '#09090b',
+                    color: '#ffffff',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   autoFocus
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setShowCreateCollectionModal(false)} className="btn-white">Cancel</button>
-                <button type="submit" disabled={!newCollectionName.trim() || creatingCollection} className="btn-primary">
-                  {creatingCollection ? 'Creating...' : 'Create'}
-                </button>
+              {/* Add people to this collection option row */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 4px',
+                cursor: 'pointer'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <Users size={22} color="#ffffff" />
+                  <div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#ffffff' }}>
+                      Add people to this collection
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: '#8e8e8e', marginTop: '2px' }}>
+                      Save to a collection together
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight size={18} color="#71717a" />
               </div>
             </form>
           </div>
