@@ -371,17 +371,31 @@ def generate_pairing_code(req: AuthSessionRequest, db: Session = Depends(get_db)
 
 @router.get("/collections")
 def list_collections(token: Optional[str] = None, db: Session = Depends(get_db)):
-    """Lists all user-created collections with reel counts."""
+    """Lists all user-created collections with reel counts and thumbnails."""
     user = get_or_create_user(db, auth_token=token)
     colls = db.query(Collection).filter(Collection.user_id == user.id).order_by(Collection.id.desc()).all()
     results = []
     for c in colls:
-        count = db.query(ReelItem).filter(ReelItem.collection_id == c.id).count()
+        reels_in_col = db.query(ReelItem).filter(ReelItem.collection_id == c.id).order_by(desc(ReelItem.id)).all()
+        count = len(reels_in_col)
+        
+        thumbnails = []
+        for r in reels_in_col:
+            thumb = r.thumbnail_url or (f"https://www.instagram.com/p/{r.shortcode}/media/?size=l" if r.shortcode else None)
+            if thumb and thumb not in thumbnails:
+                thumbnails.append(thumb)
+            if len(thumbnails) >= 4:
+                break
+
+        cover_thumbnail = thumbnails[0] if thumbnails else None
+
         results.append({
             "id": c.id,
             "name": c.name,
             "emoji": c.emoji or "📁",
             "count": count,
+            "cover_thumbnail": cover_thumbnail,
+            "thumbnails": thumbnails,
             "created_at": c.created_at.isoformat() if c.created_at else ""
         })
     return results

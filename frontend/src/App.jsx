@@ -516,17 +516,32 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Find cover thumbnail for collection from reels in that collection
+  // Find cover thumbnail for collection
   const getCollectionCover = (collectionId) => {
-    const matchingReel = reels.find(r => r.collection_id === collectionId && r.thumbnail_url);
-    return matchingReel?.thumbnail_url || null;
+    // 1. Direct collection thumbnail from API
+    const col = collections.find(c => String(c.id) === String(collectionId));
+    if (col?.cover_thumbnail) return col.cover_thumbnail;
+    if (col?.thumbnails && col.thumbnails.length > 0) return col.thumbnails[0];
+
+    // 2. Search loaded reels state with type-safe string comparison
+    const matchingReel = reels.find(r => String(r.collection_id) === String(collectionId) && (r.thumbnail_url || r.shortcode));
+    if (matchingReel?.thumbnail_url) return matchingReel.thumbnail_url;
+    if (matchingReel?.shortcode) return `https://www.instagram.com/p/${matchingReel.shortcode}/media/?size=l`;
+
+    return null;
   };
 
   const getCollectionThumbnails = (collectionId) => {
-    return reels
-      .filter(r => r.collection_id === collectionId && r.thumbnail_url)
-      .slice(0, 4)
-      .map(r => r.thumbnail_url);
+    const col = collections.find(c => String(c.id) === String(collectionId));
+    if (col?.thumbnails && col.thumbnails.length > 0) return col.thumbnails;
+
+    const reelThumbs = reels
+      .filter(r => String(r.collection_id) === String(collectionId))
+      .map(r => r.thumbnail_url || (r.shortcode ? `https://www.instagram.com/p/${r.shortcode}/media/?size=l` : null))
+      .filter(Boolean)
+      .slice(0, 4);
+
+    return reelThumbs;
   };
 
   return (
