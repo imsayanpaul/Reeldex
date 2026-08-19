@@ -728,6 +728,37 @@ export default function App() {
                       <Plus size={13} /> Create
                     </button>
                   </div>
+                ) : activeViewFilter === 'All' ? (
+                  <div className="ig-collections-shelf">
+                    {collections.map(col => {
+                      const coverImg = getCollectionCover(col.id);
+                      return (
+                        <div
+                          key={col.id}
+                          className="ig-shelf-card"
+                          onClick={() => setSelectedCollection(col)}
+                        >
+                          <div className="ig-shelf-cover">
+                            {coverImg ? (
+                              <img src={coverImg} alt={col.name} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1c1e' }}>
+                                <Folder size={22} color="#8e8e8e" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="ig-shelf-info">
+                            <div className="ig-shelf-title">
+                              {col.name}
+                            </div>
+                            <div className="ig-shelf-meta">
+                              <Lock size={10} /> <span>Private</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="ig-collections-grid">
                     {collections.map(col => {
@@ -775,7 +806,7 @@ export default function App() {
                 {!isManageMode && (
                   <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
-                      {selectedCollection ? `${selectedCollection.name} (${reels.length})` : `Reels and posts (${reels.length})`}
+                      {selectedCollection ? `${selectedCollection.name} (${reels.length})` : 'Reels and posts'}
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {reels.length > 0 && (

@@ -172,30 +172,76 @@ body {
   display: none;
 }
 
-/* Instagram Collections Shelf (2-Column Native Layout) - Dark */
-.ig-collections-grid {
+
+/* Instagram Native Home Shelf (2 Columns of Horizontal Compact Cards) */
+.ig-collections-shelf {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px 18px;
-  margin-bottom: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 14px;
+  padding: 0 16px;
+  margin-bottom: 24px;
 }
 
-.ig-collection-card {
-  cursor: pointer;
+.ig-shelf-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  cursor: pointer;
   background: transparent;
-  padding: 4px;
-  border-radius: var(--radius-md);
-  border: none;
-  transition: all 0.15s ease;
+  min-width: 0;
+  padding: 2px 0;
+  transition: transform 0.15s ease;
 }
-.ig-collection-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+.ig-shelf-card:hover {
+  transform: translateX(2px);
 }
 
-/* Instagram Native 2-Column Square Collection Grid */
+.ig-shelf-cover {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1c1c1e;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.ig-shelf-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ig-shelf-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.ig-shelf-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.ig-shelf-meta {
+  font-size: 0.74rem;
+  color: #8e8e8e;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Instagram Native Full Page 2-Column Square Collection Grid */
 .ig-collections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
