@@ -431,6 +431,23 @@ def create_collection(req: CreateCollectionRequest, token: Optional[str] = None,
         "count": 0
     }
 
+class UpdateCollectionRequest(BaseModel):
+    name: str
+
+@router.patch("/collections/{collection_id}")
+def update_collection(collection_id: int, req: UpdateCollectionRequest, token: Optional[str] = None, db: Session = Depends(get_db)):
+    """Renames an existing collection."""
+    user = get_or_create_user(db, auth_token=token)
+    c = db.query(Collection).filter(Collection.id == collection_id, Collection.user_id == user.id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Collection name cannot be empty")
+    c.name = name
+    db.commit()
+    return {"success": True, "id": c.id, "name": c.name}
+
 @router.delete("/collections/{collection_id}")
 def delete_collection(collection_id: int, token: Optional[str] = None, db: Session = Depends(get_db)):
     """Deletes a collection and unassigns its reels."""

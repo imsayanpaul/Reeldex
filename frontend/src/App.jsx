@@ -23,7 +23,9 @@ import {
   Layers,
   Tag,
   Users,
-  ChevronRight
+  ChevronRight,
+  MoreVertical,
+  Grid
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -152,6 +154,17 @@ export default function App() {
 
   // Utility State
   const [copied, setCopied] = useState(false);
+
+  // Collection Detail View & Options State (Instagram Native)
+  const [showCollectionMenuModal, setShowCollectionMenuModal] = useState(false);
+  const [showEditCollectionModal, setShowEditCollectionModal] = useState(false);
+  const [editCollectionName, setEditCollectionName] = useState('');
+  const [editingCollection, setEditingCollection] = useState(false);
+  const [showAddToThisCollectionModal, setShowAddToThisCollectionModal] = useState(false);
+  const [allVaultReels, setAllVaultReels] = useState([]);
+  const [selectedReelIdsForAdd, setSelectedReelIdsForAdd] = useState(new Set());
+  const [addingReelsToCol, setAddingReelsToCol] = useState(false);
+  const [collectionSubTab, setCollectionSubTab] = useState('all'); // 'all' | 'reels'
 
   // 1. Initialize User Session
   useEffect(() => {
@@ -293,6 +306,78 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchAllVaultReels = async () => {
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/reels?token=${token}&category=All`);
+      if (res.ok) {
+        const data = await res.json();
+        setAllVaultReels(data || []);
+        // Pre-select reels already in this collection
+        if (selectedCollection) {
+          const currentIds = new Set(
+            (data || [])
+              .filter(r => String(r.collection_id) === String(selectedCollection.id))
+              .map(r => r.id)
+          );
+          setSelectedReelIdsForAdd(currentIds);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching vault reels:', e);
+    }
+  };
+
+  const handleSaveEditedCollectionName = async (e) => {
+    if (e) e.preventDefault();
+    if (!editCollectionName.trim() || editingCollection || !selectedCollection) return;
+    setEditingCollection(true);
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/collections/${selectedCollection.id}?token=${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editCollectionName.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCollection(prev => ({ ...prev, name: data.name }));
+        setShowEditCollectionModal(false);
+        fetchCollections(token);
+      }
+    } catch (err) {
+      console.error('Error editing collection:', err);
+    } finally {
+      setEditingCollection(false);
+    }
+  };
+
+  const handleAddReelsToCurrentCollection = async () => {
+    if (!selectedCollection || addingReelsToCol) return;
+    setAddingReelsToCol(true);
+    try {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/reels/batch/assign?token=${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reel_ids: Array.from(selectedReelIdsForAdd),
+          collection_id: selectedCollection.id
+        })
+      });
+      if (res.ok) {
+        setShowAddToThisCollectionModal(false);
+        setSelectedReelIdsForAdd(new Set());
+        fetchReels();
+        fetchCollections(token);
+      }
+    } catch (err) {
+      console.error('Error adding reels to collection:', err);
+    } finally {
+      setAddingReelsToCol(false);
     }
   };
 
@@ -574,22 +659,37 @@ export default function App() {
             </button>
           </div>
         </header>
+      ) : selectedCollection ? (
+        <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              onClick={() => setSelectedCollection(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#ffffff', padding: '2px' }}
+              title="Back"
+            >
+              <ArrowLeft size={24} strokeWidth={2.2} />
+            </button>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+              {selectedCollection.name}
+            </h1>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setShowCollectionMenuModal(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
+              title="Collection Options"
+            >
+              <MoreVertical size={24} strokeWidth={2.2} />
+            </button>
+          </div>
+        </header>
       ) : (
         <header className="ig-top-navbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {selectedCollection ? (
-              <button
-                onClick={() => setSelectedCollection(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-heading)', fontWeight: '700', fontSize: '0.95rem' }}
-              >
-                <ArrowLeft size={18} />
-                <span>{selectedCollection.name}</span>
-              </button>
-            ) : (
-              <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
-                ReelDex
-              </h1>
-            )}
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
+              ReelDex
+            </h1>
           </div>
 
           {/* Center: Search Box */}
@@ -817,10 +917,56 @@ export default function App() {
             {/* 2. REELS AND POSTS SECTION (9:16 Vertical Instagram Cards Grid) */}
             {activeViewFilter !== 'Collections' && (
               <div>
-                {!isManageMode && (
+                {!isManageMode && selectedCollection && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '80px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                    marginBottom: '16px',
+                    marginTop: '-4px'
+                  }}>
+                    <button
+                      onClick={() => setCollectionSubTab('all')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: collectionSubTab === 'all' ? '#ffffff' : '#71717a',
+                        padding: '10px 16px',
+                        borderBottom: collectionSubTab === 'all' ? '2px solid #ffffff' : '2px solid transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Posts"
+                    >
+                      <Grid size={22} strokeWidth={collectionSubTab === 'all' ? 2.4 : 1.8} />
+                    </button>
+                    <button
+                      onClick={() => setCollectionSubTab('reels')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: collectionSubTab === 'reels' ? '#ffffff' : '#71717a',
+                        padding: '10px 16px',
+                        borderBottom: collectionSubTab === 'reels' ? '2px solid #ffffff' : '2px solid transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Reels"
+                    >
+                      <Play size={22} strokeWidth={collectionSubTab === 'reels' ? 2.4 : 1.8} />
+                    </button>
+                  </div>
+                )}
+
+                {!isManageMode && !selectedCollection && (
                   <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#ffffff' }}>
-                      {selectedCollection ? `${selectedCollection.name} (${reels.length})` : 'Reels and posts'}
+                      Reels and posts
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {reels.length > 0 && (
@@ -829,14 +975,6 @@ export default function App() {
                           style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
                         >
                           Manage
-                        </button>
-                      )}
-                      {selectedCollection && (
-                        <button
-                          onClick={(e) => handleDeleteCollection(selectedCollection.id, e)}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
-                        >
-                          Delete Collection
                         </button>
                       )}
                     </div>
@@ -880,8 +1018,15 @@ export default function App() {
                     </p>
 
                     {selectedCollection ? (
-                      <button onClick={() => setSelectedCollection(null)} className="btn-white" style={{ margin: '0 auto' }}>
-                        Browse All Reels
+                      <button
+                        onClick={async () => {
+                          await fetchAllVaultReels();
+                          setShowAddToThisCollectionModal(true);
+                        }}
+                        className="btn-primary"
+                        style={{ margin: '0 auto', gap: '6px' }}
+                      >
+                        <Plus size={15} /> Add reels to this collection
                       </button>
                     ) : session.is_instagram_linked ? (
                       <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-primary" style={{ margin: '0 auto' }}>
@@ -1499,6 +1644,262 @@ export default function App() {
                 <ChevronRight size={18} color="#71717a" />
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* COLLECTION 3-DOTS OPTIONS BOTTOM SHEET (Exact Instagram Native Layout) */}
+      {/* ======================================================== */}
+      {showCollectionMenuModal && selectedCollection && (
+        <div className="modal-overlay" onClick={() => setShowCollectionMenuModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '14px 20px 24px', background: '#141820', borderRadius: '18px 18px 0 0' }}>
+            {/* Top drag handle */}
+            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* 1. Delete Collection (Red) */}
+              <button
+                onClick={(e) => {
+                  setShowCollectionMenuModal(false);
+                  handleDeleteCollection(selectedCollection.id, e);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                  color: '#ed4956',
+                  fontSize: '0.96rem',
+                  fontWeight: '600',
+                  padding: '16px 0',
+                  textAlign: 'left',
+                  cursor: 'pointer'
+                }}
+              >
+                Delete Collection
+              </button>
+
+              {/* 2. Edit collection */}
+              <button
+                onClick={() => {
+                  setShowCollectionMenuModal(false);
+                  setEditCollectionName(selectedCollection.name);
+                  setShowEditCollectionModal(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                  color: '#ffffff',
+                  fontSize: '0.96rem',
+                  fontWeight: '500',
+                  padding: '16px 0',
+                  textAlign: 'left',
+                  cursor: 'pointer'
+                }}
+              >
+                Edit collection
+              </button>
+
+              {/* 3. Add to collection */}
+              <button
+                onClick={async () => {
+                  setShowCollectionMenuModal(false);
+                  await fetchAllVaultReels();
+                  setShowAddToThisCollectionModal(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                  color: '#ffffff',
+                  fontSize: '0.96rem',
+                  fontWeight: '500',
+                  padding: '16px 0',
+                  textAlign: 'left',
+                  cursor: 'pointer'
+                }}
+              >
+                Add to collection
+              </button>
+
+              {/* 4. Select... */}
+              <button
+                onClick={() => {
+                  setShowCollectionMenuModal(false);
+                  setIsManageMode(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: '0.96rem',
+                  fontWeight: '500',
+                  padding: '16px 0 6px',
+                  textAlign: 'left',
+                  cursor: 'pointer'
+                }}
+              >
+                Select...
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* EDIT COLLECTION MODAL */}
+      {/* ======================================================== */}
+      {showEditCollectionModal && selectedCollection && (
+        <div className="modal-overlay" onClick={() => setShowEditCollectionModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#141820', borderRadius: '18px' }}>
+            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <button
+                type="button"
+                onClick={() => setShowEditCollectionModal(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+              >
+                Cancel
+              </button>
+
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+                Edit collection
+              </h3>
+
+              <button
+                type="button"
+                onClick={handleSaveEditedCollectionName}
+                disabled={!editCollectionName.trim() || editingCollection}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: editCollectionName.trim() ? '#90a4f2' : '#52525b',
+                  fontSize: '0.96rem',
+                  fontWeight: '700',
+                  cursor: editCollectionName.trim() ? 'pointer' : 'not-allowed',
+                  padding: 0
+                }}
+              >
+                {editingCollection ? 'Saving...' : 'Done'}
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedCollectionName}>
+              <input
+                type="text"
+                value={editCollectionName}
+                onChange={(e) => setEditCollectionName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '16px 14px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #3f3f46',
+                  background: '#09090b',
+                  color: '#ffffff',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                autoFocus
+              />
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ADD TO THIS COLLECTION PICKER MODAL */}
+      {/* ======================================================== */}
+      {showAddToThisCollectionModal && selectedCollection && (
+        <div className="modal-overlay" onClick={() => setShowAddToThisCollectionModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', padding: '16px 16px 20px', background: '#141820', borderRadius: '18px' }}>
+            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 14px' }} />
+
+            {/* Header: Cancel | Add to collection | Add */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
+              <button
+                type="button"
+                onClick={() => setShowAddToThisCollectionModal(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+              >
+                Cancel
+              </button>
+
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', margin: 0, textAlign: 'center' }}>
+                Add to collection
+              </h3>
+
+              <button
+                type="button"
+                onClick={handleAddReelsToCurrentCollection}
+                disabled={addingReelsToCol}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#90a4f2',
+                  fontSize: '0.96rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                {addingReelsToCol ? 'Saving...' : 'Add'}
+              </button>
+            </div>
+
+            {/* Scrollable Reel Selector Grid */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', padding: '2px' }}>
+              {allVaultReels.map(reel => {
+                const isSelected = selectedReelIdsForAdd.has(reel.id);
+                return (
+                  <div
+                    key={reel.id}
+                    onClick={() => {
+                      setSelectedReelIdsForAdd(prev => {
+                        const next = new Set(prev);
+                        if (next.has(reel.id)) next.delete(reel.id);
+                        else next.add(reel.id);
+                        return next;
+                      });
+                    }}
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '1 / 1',
+                      background: '#1c1c1e',
+                      cursor: 'pointer',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {reel.thumbnail_url ? (
+                      <img src={reel.thumbnail_url} alt={reel.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a' }}>
+                        <Play size={24} color="#71717a" />
+                      </div>
+                    )}
+                    {/* Checkbox */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '6px',
+                      right: '6px',
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '4px',
+                      background: isSelected ? '#ffffff' : 'rgba(0, 0, 0, 0.45)',
+                      border: isSelected ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.75)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 5
+                    }}>
+                      {isSelected && <Check size={14} color="#000000" strokeWidth={3} />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
