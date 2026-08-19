@@ -11,5 +11,7 @@ services:
         sync: false
       - key: META_VERIFY_TOKEN
         value: instam_secret_verify_token_2026
+      - key: INSTAGRAM_SESSION_ID
+        sync: false
       - key: PORT
         value: 8000
