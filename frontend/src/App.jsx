@@ -70,6 +70,70 @@ const formatSummary = (summary) => {
   return String(summary);
 };
 
+const isInstagramUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  return /instagram\.com|instagr\.am|ig\.me/i.test(url);
+};
+
+const openInstagramUrl = (rawUrl, e) => {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  if (!rawUrl) return;
+
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '');
+  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+  // Handle direct DM link
+  if (rawUrl.includes('ig.me') || rawUrl.includes('/m/')) {
+    if (isAndroid) {
+      window.location.href = 'intent://instagram.com/_u/reeldex.io/#Intent;package=com.instagram.android;scheme=https;end';
+      return;
+    }
+    if (isIOS) {
+      window.location.href = 'instagram://user?username=reeldex.io';
+      setTimeout(() => {
+        window.location.href = 'https://ig.me/m/reeldex.io';
+      }, 1200);
+      return;
+    }
+    window.open(rawUrl, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  // Extract shortcode if present: /reel/SHORTCODE/ or /p/SHORTCODE/
+  const match = rawUrl.match(/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
+  const shortcode = match ? match[1] : null;
+
+  if (isAndroid) {
+    if (shortcode) {
+      // Android Chrome Intent: Opens native Instagram app directly to the Reel
+      window.location.href = `intent://instagram.com/reel/${shortcode}/#Intent;package=com.instagram.android;scheme=https;end`;
+      return;
+    }
+    const cleanPath = rawUrl.replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, '');
+    window.location.href = `intent://instagram.com/${cleanPath}#Intent;package=com.instagram.android;scheme=https;end`;
+    return;
+  }
+
+  if (isIOS) {
+    if (shortcode) {
+      // iOS app deep link with graceful fallback
+      window.location.href = `instagram://reel?shortcode=${shortcode}`;
+      setTimeout(() => {
+        window.location.href = `https://www.instagram.com/reel/${shortcode}/`;
+      }, 1200);
+      return;
+    }
+    window.location.href = rawUrl;
+    return;
+  }
+
+  // Desktop / other: open standard web link in new tab
+  window.open(rawUrl, '_blank', 'noopener,noreferrer');
+};
+
 const renderWithClickableLinks = (text) => {
   if (!text) return '';
   const str = typeof text === 'string' ? text : formatSummary(text);
@@ -92,13 +156,21 @@ const renderWithClickableLinks = (text) => {
       ? cleanUrl 
       : `https://${cleanUrl}`;
 
+    const isIg = isInstagramUrl(href);
+
     elements.push(
       <a
         key={match.index}
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          if (isIg) {
+            openInstagramUrl(href, e);
+          } else {
+            e.stopPropagation();
+          }
+        }}
         style={{
           color: '#90a4f2',
           textDecoration: 'underline',
@@ -1669,20 +1741,29 @@ export default function App() {
                     <div className="markdown-prose" style={{ color: '#f8fafa' }}>
                       <ReactMarkdown
                         components={{
-                          a: ({ node, ...props }) => (
-                            <a
-                              {...props}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                color: '#90a4f2',
-                                textDecoration: 'underline',
-                                textUnderlineOffset: '3px',
-                                fontWeight: '500',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          )
+                          a: ({ node, href, ...props }) => {
+                            const isIg = isInstagramUrl(href);
+                            return (
+                              <a
+                                {...props}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  if (isIg) {
+                                    openInstagramUrl(href, e);
+                                  }
+                                }}
+                                style={{
+                                  color: '#90a4f2',
+                                  textDecoration: 'underline',
+                                  textUnderlineOffset: '3px',
+                                  fontWeight: '500',
+                                  cursor: 'pointer'
+                                }}
+                              />
+                            );
+                          }
                         }}
                       >
                         {msg.content}
@@ -2330,6 +2411,7 @@ export default function App() {
               href="https://ig.me/m/reeldex.io"
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => openInstagramUrl('https://ig.me/m/reeldex.io', e)}
               className="btn-blue"
               style={{ width: '100%', justifyContent: 'center', padding: '10px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.88rem' }}
             >
@@ -2458,10 +2540,8 @@ export default function App() {
                   onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                 />
                 {selectedReel.reel_url && (
-                  <a
-                    href={selectedReel.reel_url}
-                    target="_blank"
-                    rel="noreferrer"
+                  <div
+                    onClick={(e) => openInstagramUrl(selectedReel.reel_url, e)}
                     style={{
                       position: 'absolute',
                       inset: 0,
@@ -2469,7 +2549,7 @@ export default function App() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      textDecoration: 'none'
+                      cursor: 'pointer'
                     }}
                   >
                     <div style={{
@@ -2491,7 +2571,7 @@ export default function App() {
                       <span>Watch on Instagram</span>
                       <ExternalLink size={12} />
                     </div>
-                  </a>
+                  </div>
                 )}
               </div>
             )}
