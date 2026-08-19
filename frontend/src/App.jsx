@@ -705,9 +705,9 @@ export default function App() {
                 <button
                   onClick={() => setSelectedCollection(null)}
                   className={`trending-chip ${selectedCollection === null ? 'active' : ''}`}
-                  style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+                  style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  📁 All Reels
+                  <Folder size={13} /> All Reels
                 </button>
 
                 {collections.map((col) => (
@@ -715,9 +715,9 @@ export default function App() {
                     <button
                       onClick={() => setSelectedCollection(selectedCollection?.id === col.id ? null : col)}
                       className={`trending-chip ${selectedCollection?.id === col.id ? 'active' : ''}`}
-                      style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <span>{col.emoji || '📁'}</span>
+                      <Folder size={13} />
                       <span>{col.name}</span>
                       <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>({col.count})</span>
                     </button>
@@ -739,7 +739,7 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
-                  {selectedCollection ? `${selectedCollection.emoji} ${selectedCollection.name}` : (selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory)}
+                  {selectedCollection ? selectedCollection.name : (selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory)}
                 </h2>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'} stored in your personal vault
@@ -875,7 +875,7 @@ export default function App() {
                               alignItems: 'center',
                               gap: '4px'
                             }}>
-                              {reel.collection_emoji || '📁'} {reel.collection_name}
+                              <Folder size={12} color="#ff5722" /> {reel.collection_name}
                             </span>
                           )}
                         </div>
@@ -933,7 +933,7 @@ export default function App() {
                                     gap: '6px'
                                   }}
                                 >
-                                  <span>{col.emoji || '📁'}</span>
+                                  <Folder size={13} color={reel.collection_id === col.id ? "#ff5722" : "currentColor"} />
                                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
                                 </button>
                               ))}
@@ -1163,50 +1163,21 @@ export default function App() {
             </div>
 
             <form onSubmit={handleCreateCollection}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  CHOOSE EMOJI ICON
-                </label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {['📁', '🚀', '💡', '🤖', '💪', '📚', '💼', '🍳', '🎨', '🔥', '⚡', '🎬'].map((em) => (
-                    <button
-                      type="button"
-                      key={em}
-                      onClick={() => setNewCollectionEmoji(em)}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        fontSize: '1.1rem',
-                        border: newCollectionEmoji === em ? '2px solid #ff5722' : '1px solid var(--border-light)',
-                        background: newCollectionEmoji === em ? 'rgba(255, 87, 34, 0.1)' : '#ffffff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div style={{ marginBottom: '22px' }}>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
                   COLLECTION NAME
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Startup Ideas, Gym Workouts..."
+                  placeholder="e.g. Startup Ideas, Gym Workouts, AI Tools..."
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
+                    padding: '12px 14px',
                     borderRadius: '10px',
                     border: '1px solid var(--border-light)',
-                    fontSize: '0.9rem',
+                    fontSize: '0.92rem',
                     outline: 'none'
                   }}
                   autoFocus
@@ -1215,7 +1186,7 @@ export default function App() {
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowCreateCollectionModal(false)} className="btn-white">Cancel</button>
-                <button type="submit" disabled={!newCollectionName.trim()} className="btn-coral" style={{ padding: '8px 20px' }}>
+                <button type="submit" disabled={!newCollectionName.trim()} className="btn-coral" style={{ padding: '8px 22px' }}>
                   Create Collection
                 </button>
               </div>
@@ -1302,7 +1273,7 @@ export default function App() {
                       alignItems: 'center',
                       gap: '4px'
                     }}>
-                      {selectedReel.collection_emoji || '📁'} {selectedReel.collection_name}
+                      <Folder size={12} color="#ff5722" /> {selectedReel.collection_name}
                     </span>
                   )}
                 </div>
@@ -1437,7 +1408,7 @@ export default function App() {
                   <option value="">(None - Unassigned)</option>
                   {collections.map(c => (
                     <option key={c.id} value={c.id}>
-                      {c.emoji || '📁'} {c.name}
+                      {c.name}
                     </option>
                   ))}
                 </select>
