@@ -377,12 +377,35 @@ export default function App() {
     };
 
     loadData();
-    const interval = setInterval(loadData, 4000);
+
+    // Adaptive Smart Polling:
+    // - Active (3.5s) when a reel is in-flight (processing/transcribing)
+    // - Relaxed (10s) when all reels are completed
+    // - Paused when browser tab is inactive/backgrounded (saves 100% idle server load)
+    const hasPendingReels = reels.some(r => ['processing', 'downloading', 'transcribing'].includes(r.status));
+    const pollDelay = hasPendingReels ? 3500 : 10000;
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    }, pollDelay);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
     return () => {
       isCancelled = true;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
     };
-  }, [session?.auth_token, activeViewFilter, selectedCollection?.id, searchQuery]);
+  }, [session?.auth_token, activeViewFilter, selectedCollection?.id, searchQuery, reels.some(r => ['processing', 'downloading', 'transcribing'].includes(r.status))]);
 
   useEffect(() => {
     if (activeTab === 'chat' && chatBottomRef.current) {
