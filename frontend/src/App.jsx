@@ -2189,30 +2189,8 @@ export default function App() {
               </span>
             </div>
 
-            {/* Right: Instagram Link Action Button */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {selectedReel.reel_url && (
-                <a
-                  href={selectedReel.reel_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    background: '#181c1f',
-                    border: '1px solid #282f34',
-                    color: '#f8fafa',
-                    borderRadius: '10px',
-                    padding: '8px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textDecoration: 'none'
-                  }}
-                  title="Open on Instagram"
-                >
-                  <ExternalLink size={16} />
-                </a>
-              )}
-            </div>
+            {/* Right placeholder for balanced centering */}
+            <div style={{ width: '48px' }} />
           </header>
 
           {/* Main Full-Page Content */}
@@ -2423,54 +2401,6 @@ export default function App() {
                   )}
                 </div>
               </div>
-
-              {/* On-Demand Translation */}
-              {selectedReel.transcript && (
-                <div>
-                  {selectedReel.transcript.translated_text ? (
-                    <button
-                      onClick={() => setShowTranslated(!showTranslated)}
-                      style={{
-                        fontSize: '0.8rem',
-                        padding: '6px 14px',
-                        borderRadius: '8px',
-                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : '#121518',
-                        border: showTranslated ? '1px solid #90a4f2' : '1px solid #282f34',
-                        color: showTranslated ? '#90a4f2' : '#f8fafa',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Globe size={14} color={showTranslated ? "#90a4f2" : "#f8fafa"} />
-                      <span>{showTranslated ? 'Viewing English' : 'Translate to English'}</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleTranslateReel(selectedReel.id)}
-                      disabled={translating}
-                      style={{
-                        fontSize: '0.8rem',
-                        padding: '6px 14px',
-                        borderRadius: '8px',
-                        background: '#121518',
-                        border: '1px solid #282f34',
-                        color: '#f8fafa',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Languages size={14} />
-                      <span>{translating ? 'Translating with AI...' : 'Translate to English'}</span>
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Translation Active Alert */}
@@ -2620,6 +2550,59 @@ export default function App() {
                   ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || 'No translation available.')
                   : (selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...')}
               </div>
+
+              {/* Translation Controls Below Transcription */}
+              {selectedReel.transcript && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4px' }}>
+                  {selectedReel.transcript.translated_text ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowTranslated(!showTranslated)}
+                      style={{
+                        fontSize: '0.82rem',
+                        padding: '7px 14px',
+                        borderRadius: '8px',
+                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : '#121518',
+                        border: showTranslated ? '1px solid #90a4f2' : '1px solid #282f34',
+                        color: showTranslated ? '#90a4f2' : '#f8fafa',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Globe size={14} color={showTranslated ? "#90a4f2" : "#f8fafa"} />
+                      <span>{showTranslated ? 'Viewing English Translation' : 'Translate to English'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleTranslateReel(selectedReel.id)}
+                      disabled={translating}
+                      style={{
+                        fontSize: '0.82rem',
+                        padding: '7px 14px',
+                        borderRadius: '8px',
+                        background: '#121518',
+                        border: '1px solid #282f34',
+                        color: '#f8fafa',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: translating ? 'wait' : 'pointer',
+                        opacity: translating ? 0.7 : 1,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Languages size={14} color="#90a4f2" />
+                      <span>{translating ? 'Translating audio...' : 'Translate to English'}</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
