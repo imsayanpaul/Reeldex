@@ -101,10 +101,18 @@ def rank_reels_search(reels_data: List[Dict[str, Any]], query: str, category_fil
     return [item[1] for item in scored_results]
 
 
+import time
+import hashlib
+
+# In-memory LRU/TTL Response Cache for Ask AI queries (0 token re-queries)
+AI_QUERY_CACHE: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL_SECONDS = 3600  # 1 hour
+
 async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     RAG (Retrieval-Augmented Generation) Chat Engine:
     Answers a user's question by synthesizing information across their saved reels library.
+    Includes Top-K BM25 token compression and 0-token semantic response caching.
     """
     if not reels_context:
         return {
@@ -112,12 +120,25 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
             "citations": []
         }
 
-    # Find the most relevant reels for the question
-    top_reels = rank_reels_search(reels_context, user_question)[:5]
-    if not top_reels:
-        top_reels = reels_context[:4]
+    clean_question = user_question.strip().lower()
 
-    # Build context prompt
+    # 1. Check Query Response Cache (0 Token Consumption)
+    reel_ids_key = ",".join(str(r.get("id")) for r in sorted(reels_context, key=lambda x: x.get("id") or 0))
+    cache_key = hashlib.md5(f"{clean_question}::{reel_ids_key}".encode()).hexdigest()
+
+    now = time.time()
+    if cache_key in AI_QUERY_CACHE:
+        cached_entry = AI_QUERY_CACHE[cache_key]
+        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS:
+            print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
+            return cached_entry["response"]
+
+    # 2. Find the Top-4 most relevant reels (Top-K BM25 Token Compression)
+    top_reels = rank_reels_search(reels_context, user_question)[:4]
+    if not top_reels:
+        top_reels = reels_context[:3]
+
+    # 3. Build compressed context prompt
     context_blocks = []
     citations = []
     for idx, r in enumerate(top_reels, 1):
@@ -130,13 +151,28 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
             "category": r.get("category"),
             "summary": r.get("summary")
         })
-        actions = ", ".join([a.get("text", "") for a in r.get("action_items", []) if isinstance(a, dict)])
+        
+        # Clean action items
+        action_strs = []
+        for a in r.get("action_items", []):
+            if isinstance(a, str) and not a.startswith("{"):
+                action_strs.append(a)
+            elif isinstance(a, dict):
+                val = a.get("text") or a.get("name") or a.get("value")
+                if val:
+                    action_strs.append(val)
+        actions = ", ".join(action_strs)
+
+        # Context compression: Include summary + top 350 chars of transcript
+        summary_text = r.get("summary") or ""
+        transcript_snippet = (r.get("full_text") or "")[:350]
+
         context_blocks.append(
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"
-            f"Category: {r.get('category')}\n"
-            f"Summary: {r.get('summary')}\n"
+            f"Category: {r.get('category', 'General')}\n"
+            f"Summary: {summary_text}\n"
             f"Tools/Actions: {actions}\n"
-            f"Transcript: {r.get('full_text', '')[:600]}\n"
+            f"Key Excerpt: {transcript_snippet}\n"
         )
 
     context_str = "\n---\n".join(context_blocks)
@@ -174,13 +210,18 @@ Provide a direct, clear answer with specific citations."""
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
-            max_tokens=600
+            max_tokens=500
         )
         answer = response.choices[0].message.content
-        return {
+        res_payload = {
             "answer": answer,
             "citations": citations
         }
+        # Save in Cache
+        AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
+        if len(AI_QUERY_CACHE) > 500:
+            AI_QUERY_CACHE.pop(next(iter(AI_QUERY_CACHE)))
+        return res_payload
     except Exception as e:
         print(f"[RAG Groq Error]: {e}, trying fallback model...")
         try:
@@ -193,13 +234,16 @@ Provide a direct, clear answer with specific citations."""
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=600
+                max_tokens=500
             )
             answer = response.choices[0].message.content
-            return {
+            res_payload = {
                 "answer": answer,
                 "citations": citations
             }
+            # Save in Cache
+            AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
+            return res_payload
         except Exception as e2:
             return {
                 "answer": f"I encountered an error analyzing your library: {str(e2)}",

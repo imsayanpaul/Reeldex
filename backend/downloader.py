@@ -6,24 +6,29 @@ from typing import Dict, Any, Optional
 from backend.config import settings
 
 def extract_shortcode(url: str) -> Optional[str]:
-    """Extract Instagram shortcode from reel/post URL."""
+    """Extract clean Instagram shortcode from reel/post/share URL, ignoring tracking parameters."""
+    if not url:
+        return None
+    # Strip query parameters (?igsh=..., &utm_..., etc.)
+    clean = url.split("?")[0].split("#")[0].strip().rstrip("/")
     patterns = [
         r"(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)",
         r"(?:https?:\/\/)?(?:www\.)?instagr\.am\/(?:p|reel)\/([A-Za-z0-9_-]+)",
-        r"(?:https?:\/\/)?(?:www\.)?instagram\.com\/share\/reel\/([A-Za-z0-9_-]+)"
+        r"(?:https?:\/\/)?(?:www\.)?instagram\.com\/share\/reel\/([A-Za-z0-9_-]+)",
+        r"(?:https?:\/\/)?(?:www\.)?instagram\.com\/share\/p\/([A-Za-z0-9_-]+)"
     ]
     for pattern in patterns:
-        match = re.search(pattern, url)
+        match = re.search(pattern, clean)
         if match:
             return match.group(1)
     return None
 
 def normalize_instagram_url(url: str) -> str:
-    """Ensure standard reel URL format."""
+    """Ensure standard canonical reel URL format without tracking query parameters."""
     shortcode = extract_shortcode(url)
     if shortcode:
         return f"https://www.instagram.com/reel/{shortcode}/"
-    return url.strip()
+    return url.split("?")[0].split("#")[0].strip()
 
 def download_audio_from_reel(url: str) -> Dict[str, Any]:
     """

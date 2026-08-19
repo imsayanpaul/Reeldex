@@ -63,14 +63,18 @@ def get_or_create_user(db: Session, auth_token: Optional[str] = None, sender_id:
 async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
     """
     1. Checks Global Cache: If ANY user has already processed this exact Reel, reuse transcript & insights instantly (0 tokens consumed).
-    2. Downloads pure audio stream (yt-dlp) in ~1s.
-    3. Transcribes with Groq Whisper.
-    4. Categorizes, tags & extracts action items with Groq LLaMA 3.3 70B.
-    5. Auto-replies to user on Instagram with summary, tags & magic link.
+    2. In-Flight Lock: If another worker is currently processing this exact Reel, wait for completion to reuse with 0 tokens.
+    3. Zero-Speech Bypass: If audio has no spoken words, skips LLaMA 3.3 summarization (0 LLM tokens).
+    4. Downloads pure audio stream (yt-dlp) in ~1s.
+    5. Transcribes with Groq Whisper.
+    6. Categorizes, tags & extracts action items with Groq LLaMA 3.3 70B.
+    7. Auto-replies to user on Instagram with summary, tags & magic link.
     """
     from backend.database import SessionLocal
+    import asyncio
     db = SessionLocal()
     reel = None
+    audio_path = None
     try:
         reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
         if not reel:
@@ -93,6 +97,28 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
                 cached_query = cached_query.filter(ReelItem.reel_url == reel_url)
 
             cached_reel = cached_query.order_by(ReelItem.id.desc()).first()
+
+        # STEP 0b: IN-FLIGHT CONCURRENCY LOCK
+        # If another worker is actively downloading/transcribing this exact reel, wait for it
+        if not cached_reel and reel.shortcode:
+            in_flight = db.query(ReelItem).filter(
+                ReelItem.shortcode == reel.shortcode,
+                ReelItem.status.in_(["processing", "downloading", "transcribing"]),
+                ReelItem.id != reel.id
+            ).first()
+
+            if in_flight:
+                print(f"[In-Flight Lock] Another worker is processing Reel {reel.shortcode}. Waiting for completion...")
+                for _ in range(12):  # Wait up to 18 seconds
+                    await asyncio.sleep(1.5)
+                    db.expire_all()
+                    completed_other = db.query(ReelItem).filter(
+                        ReelItem.shortcode == reel.shortcode,
+                        ReelItem.status == "completed"
+                    ).first()
+                    if completed_other and completed_other.transcript:
+                        cached_reel = completed_other
+                        break
 
         if cached_reel and cached_reel.transcript and cached_reel.transcript.full_text:
             print(f"[Global Cache HIT] Reusing completed Reel #{cached_reel.id} for Reel #{reel.id}. 0 tokens consumed!")
@@ -174,20 +200,23 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             if isinstance(segments, list):
                 full_text = " ".join([s.get("text", "") for s in segments if isinstance(s, dict)]).strip()
 
-        # Cleanup audio file
-        try:
-            if os.path.exists(audio_path):
-                os.remove(audio_path)
-        except Exception:
-            pass
-
-        # 3. Extract AI Insights, Category, Tags & Action Items
-        insights = extract_reel_insights(full_text, reel.title)
-        summary_text = insights.get("summary", "")
-        key_points = insights.get("key_points", [])
-        category = insights.get("category", "General Knowledge")
-        tags = insights.get("tags", ["#reel"])
-        action_items = insights.get("action_items", [])
+        # 3. Extract AI Insights or Zero-Speech Short Circuit
+        if len(full_text) < 10:
+            # Zero-Speech Music/Silent clip short circuit (0 LLM tokens)
+            print(f"[Zero-Speech Short-Circuit] Reel #{reel.id} has no spoken audio. Skipping LLM call.")
+            summary_text = "Visual reel with background music (no spoken dialogue)."
+            key_points = ["Visual / background audio only"]
+            category = "Music / Visual"
+            tags = ["#visual", "#music"]
+            action_items = []
+        else:
+            # Full LLaMA 3.3 summarization
+            insights = extract_reel_insights(full_text, reel.title)
+            summary_text = insights.get("summary", "")
+            key_points = insights.get("key_points", [])
+            category = insights.get("category", "General Knowledge")
+            tags = insights.get("tags", ["#reel"])
+            action_items = insights.get("action_items", [])
 
         # Update ReelItem
         reel.category = category
@@ -218,18 +247,14 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
         db.commit()
 
         # 4. Auto DM Reply on Instagram (Mentions title, creator, category, and magic link)
-        # CRITICAL: Only send DM if we haven't already replied for this reel
         if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN and not reel.dm_replied:
-            # Find user token for magic link
             user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
             frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
             vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
 
-            # Format title and creator
             video_title = reel.title or "Instagram Reel"
             creator_tag = f" by @{reel.author}" if reel.author else ""
 
-            # Clean DM response
             summary_msg = f"✨ Saved to your ReelDex!\n\n🎬 {video_title}{creator_tag}\n🏷️ [{category}]\n\n🔗 View summary & transcript:\n{vault_url}"
             sent = await send_instagram_dm(sender_id, summary_msg)
             reel.dm_replied = sent
@@ -244,6 +269,12 @@ async def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional
             reel.error_message = f"Pipeline error: {str(e)}"
             db.commit()
     finally:
+        # Guaranteed audio file cleanup
+        try:
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+        except Exception:
+            pass
         db.close()
 
 
