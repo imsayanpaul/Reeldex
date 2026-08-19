@@ -1775,14 +1775,14 @@ export default function App() {
                                 </div>
                               )}
 
-                              {reel.status !== 'completed' && (
+                              {reel.status === 'failed' && (
                                 <button
                                   type="button"
                                   onClick={(e) => handleRetryReel(reel.id, e)}
                                   style={{
-                                    background: 'rgba(144, 164, 242, 0.12)',
-                                    border: '1px solid rgba(144, 164, 242, 0.25)',
-                                    color: '#90a4f2',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                                    color: '#f87171',
                                     cursor: 'pointer',
                                     padding: '5px 8px',
                                     borderRadius: '6px',
@@ -1794,7 +1794,7 @@ export default function App() {
                                   }}
                                   title="Retry Transcription"
                                 >
-                                  <RotateCw size={13} />
+                                  <RotateCw size={12} />
                                   <span>Retry</span>
                                 </button>
                               )}
@@ -2661,29 +2661,31 @@ export default function App() {
               </span>
             </div>
 
-            {/* Right: Actions (Retry & Delete) */}
+            {/* Right: Actions (Retry only if failed, Delete in sleek gray) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={(e) => handleRetryReel(selectedReel.id, e)}
-                style={{
-                  background: 'rgba(144, 164, 242, 0.12)',
-                  border: '1px solid rgba(144, 164, 242, 0.25)',
-                  color: '#90a4f2',
-                  cursor: 'pointer',
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '0.82rem',
-                  fontWeight: '600'
-                }}
-                title="Retry Transcription"
-              >
-                <RotateCw size={14} />
-                <span>Retry</span>
-              </button>
+              {selectedReel.status === 'failed' && (
+                <button
+                  type="button"
+                  onClick={(e) => handleRetryReel(selectedReel.id, e)}
+                  style={{
+                    background: 'rgba(144, 164, 242, 0.12)',
+                    border: '1px solid rgba(144, 164, 242, 0.25)',
+                    color: '#90a4f2',
+                    cursor: 'pointer',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '0.82rem',
+                    fontWeight: '600'
+                  }}
+                  title="Retry Transcription"
+                >
+                  <RotateCw size={14} />
+                  <span>Retry</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -2692,21 +2694,22 @@ export default function App() {
                   setSelectedReel(null);
                 }}
                 style={{
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#f87171',
+                  background: '#181c1f',
+                  border: '1px solid #282f34',
+                  color: '#e4e4e7',
                   cursor: 'pointer',
-                  padding: '6px 10px',
+                  padding: '6px 12px',
                   borderRadius: '8px',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '6px',
                   fontSize: '0.82rem',
-                  fontWeight: '600'
+                  fontWeight: '500',
+                  transition: 'background 0.15s ease'
                 }}
                 title="Delete Reel"
               >
-                <Trash2 size={14} />
+                <Trash2 size={14} color="#a1a1aa" />
                 <span>Delete</span>
               </button>
             </div>
@@ -2928,11 +2931,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* Retry & Delete Banner if Incomplete or Failed */}
-            {(selectedReel.status !== 'completed' || !selectedReel.summary) && (
+            {/* Retry Banner only if Failed */}
+            {selectedReel.status === 'failed' && (
               <div style={{
-                background: selectedReel.status === 'failed' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(144, 164, 242, 0.08)',
-                border: selectedReel.status === 'failed' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(144, 164, 242, 0.25)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
                 borderRadius: '12px',
                 padding: '14px 18px',
                 display: 'flex',
@@ -2942,56 +2945,32 @@ export default function App() {
                 flexWrap: 'wrap'
               }}>
                 <div>
-                  <div style={{ fontSize: '0.88rem', fontWeight: '600', color: selectedReel.status === 'failed' ? '#f87171' : '#90a4f2' }}>
-                    {selectedReel.status === 'failed' ? 'Transcription Incomplete' : 'Transcription In Progress'}
+                  <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f87171' }}>
+                    Transcription Incomplete
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#a1a1aa', marginTop: '2px' }}>
                     {selectedReel.error_message || 'Tap retry to re-process audio and generate AI summary.'}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleRetryReel(selectedReel.id, e)}
-                    style={{
-                      background: '#22272b',
-                      border: '1px solid #3f3f46',
-                      borderRadius: '8px',
-                      padding: '7px 14px',
-                      color: '#f8fafa',
-                      fontSize: '0.82rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <RotateCw size={13} /> Retry
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      handleDeleteReel(selectedReel.id, e);
-                      setSelectedReel(null);
-                    }}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '8px',
-                      padding: '7px 14px',
-                      color: '#f87171',
-                      fontSize: '0.82rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleRetryReel(selectedReel.id, e)}
+                  style={{
+                    background: '#22272b',
+                    border: '1px solid #3f3f46',
+                    borderRadius: '8px',
+                    padding: '7px 14px',
+                    color: '#f8fafa',
+                    fontSize: '0.82rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RotateCw size={13} /> Retry
+                </button>
               </div>
             )}
 
