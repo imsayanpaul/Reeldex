@@ -133,14 +133,31 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
             print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
             return cached_entry["response"]
 
-    # 2. Find the Top-4 most relevant reels (Top-K BM25 Token Compression)
-    top_reels = rank_reels_search(reels_context, user_question)[:4]
-    if not top_reels:
-        top_reels = reels_context[:3]
+    # 2. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
+    is_broad_query = any(w in clean_question for w in [
+        "all", "everything", "every", "list", "summarize", "overview", 
+        "what reels", "what are all", "my reels", "library", "all my", "tools", "compare"
+    ])
 
-    # 3. Build compressed context prompt
+    scored_reels = rank_reels_search(reels_context, user_question)
+    
+    if is_broad_query:
+        # Broad questions: Include up to 15-20 reels for comprehensive synthesis
+        top_reels = scored_reels[:16] if scored_reels else reels_context[:16]
+    else:
+        # Specific questions: Include all relevant reels (up to 12 reels)
+        positive_matches = [r for r in scored_reels if r.get("relevance_score", 0) > 0]
+        if positive_matches:
+            top_reels = positive_matches[:12]
+        else:
+            top_reels = scored_reels[:6] if scored_reels else reels_context[:6]
+
+    # 3. Build dynamic compressed context prompt with character budget guard (14k chars ~ 3.5k tokens)
     context_blocks = []
     citations = []
+    char_budget = 14000
+    current_chars = 0
+
     for idx, r in enumerate(top_reels, 1):
         citations.append({
             "id": r.get("id"),
@@ -163,17 +180,23 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Context compression: Include summary + top 350 chars of transcript
+        # Context compression: Include summary + top 300 chars of transcript
         summary_text = r.get("summary") or ""
-        transcript_snippet = (r.get("full_text") or "")[:350]
+        transcript_snippet = (r.get("full_text") or "")[:300]
 
-        context_blocks.append(
+        block = (
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"
             f"Category: {r.get('category', 'General')}\n"
             f"Summary: {summary_text}\n"
             f"Tools/Actions: {actions}\n"
             f"Key Excerpt: {transcript_snippet}\n"
         )
+        
+        if current_chars + len(block) > char_budget and idx > 4:
+            break
+
+        context_blocks.append(block)
+        current_chars += len(block)
 
     context_str = "\n---\n".join(context_blocks)
 
