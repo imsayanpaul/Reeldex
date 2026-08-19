@@ -703,7 +703,7 @@ export default function App() {
       {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
       {/* ======================================================== */}
       {isManageMode ? (
-        <header className="ig-top-navbar ig-manage-navbar" style={{ background: 'rgba(0, 0, 0, 0.95)', justifyContent: 'space-between' }}>
+        <header className="ig-top-navbar ig-manage-navbar" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
               onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
