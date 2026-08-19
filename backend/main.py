@@ -56,6 +56,10 @@ def terms_of_service():
         "contact": "support@instam.ai"
     }
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "ReelDex.io Engine"}
+
 # Serve Frontend static build if present
 frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
 if os.path.exists(frontend_dist):
@@ -66,14 +70,13 @@ if os.path.exists(frontend_dist):
         index_path = os.path.join(frontend_dist, "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path)
-        return {"message": "InstaM API is running. Build frontend for UI."}
+        return {"message": "ReelDex API is running."}
 else:
     @app.get("/")
     def root():
         return {
             "status": "online",
-            "service": "InstaM Transcriber Engine",
-            "api_docs": "/docs",
+            "service": "ReelDex.io API Engine",
             "webhook_endpoint": "/api/webhook/instagram"
         }
 
