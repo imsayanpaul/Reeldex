@@ -131,6 +131,7 @@ export default function App() {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [creatingCollection, setCreatingCollection] = useState(false);
   const [openCollectionPickerId, setOpenCollectionPickerId] = useState(null);
+  const [showDetailFolderPicker, setShowDetailFolderPicker] = useState(false);
 
   // Manage / Multi-Select Mode State (Instagram-native)
   const [isManageMode, setIsManageMode] = useState(false);
@@ -2186,7 +2187,7 @@ export default function App() {
               </span>
             </div>
 
-            {/* Right: Quick Action Buttons */}
+            {/* Right: Quick Action Buttons (Uncramped & Clean) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 onClick={() => copyText(
@@ -2199,40 +2200,19 @@ export default function App() {
                   border: '1px solid #282f34',
                   color: '#f8fafa',
                   borderRadius: '8px',
-                  padding: '6px 10px',
+                  padding: '7px 12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '0.8rem'
+                  gap: '6px',
+                  fontSize: '0.84rem',
+                  fontWeight: '500'
                 }}
                 title="Copy Transcript"
               >
                 {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                <span className="hidden sm:inline">Copy</span>
+                <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
-
-              {selectedReel.transcript && (
-                <button
-                  onClick={() => downloadSRT(selectedReel)}
-                  style={{
-                    background: '#181c1f',
-                    border: '1px solid #282f34',
-                    color: '#f8fafa',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.8rem'
-                  }}
-                  title="Download .SRT Subtitles"
-                >
-                  <Download size={14} />
-                  <span>.SRT</span>
-                </button>
-              )}
 
               {selectedReel.reel_url && (
                 <a
@@ -2244,14 +2224,15 @@ export default function App() {
                     border: '1px solid #282f34',
                     color: '#f8fafa',
                     borderRadius: '8px',
-                    padding: '6px 10px',
+                    padding: '7px 12px',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     textDecoration: 'none'
                   }}
                   title="Open on Instagram"
                 >
-                  <ExternalLink size={14} />
+                  <ExternalLink size={15} />
                 </a>
               )}
             </div>
@@ -2355,34 +2336,115 @@ export default function App() {
               borderRadius: '12px',
               padding: '10px 14px',
               flexWrap: 'wrap',
-              gap: '10px'
+              gap: '10px',
+              position: 'relative'
             }}>
-              {/* Folder Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: '#8e8e8e', fontWeight: '500' }}>
+              {/* Custom Folder Dropdown Picker */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                <span style={{ fontSize: '0.82rem', color: '#8e8e8e', fontWeight: '500' }}>
                   Folder:
                 </span>
-                <select
-                  value={selectedReel.collection_id || ''}
-                  onChange={(e) => handleAssignCollection(selectedReel.id, e.target.value ? parseInt(e.target.value) : null)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #282f34',
-                    fontSize: '0.82rem',
-                    background: '#121518',
-                    fontWeight: '500',
-                    color: '#f8fafa',
-                    outline: 'none'
-                  }}
-                >
-                  <option value="">(Unassigned)</option>
-                  {collections.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowDetailFolderPicker(prev => !prev)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: '#121518',
+                      border: '1px solid #282f34',
+                      borderRadius: '8px',
+                      padding: '7px 12px',
+                      color: '#f8fafa',
+                      fontSize: '0.82rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Folder size={14} color="#90a4f2" strokeWidth={2} />
+                    <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedReel.collection_name || '(Unassigned)'}
+                    </span>
+                    <ChevronDown size={14} color="#8e8e8e" />
+                  </button>
+
+                  {/* Floating Custom Dropdown Menu */}
+                  {showDetailFolderPicker && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: 0,
+                        zIndex: 60,
+                        minWidth: '210px',
+                        background: '#181c1f',
+                        border: '1px solid #282f34',
+                        borderRadius: '12px',
+                        padding: '6px',
+                        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.75)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px'
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAssignCollection(selectedReel.id, null);
+                          setShowDetailFolderPicker(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          background: !selectedReel.collection_id ? '#22272b' : 'transparent',
+                          border: 'none',
+                          color: '#f8fafa',
+                          fontSize: '0.84rem',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
+                        <span>(Unassigned)</span>
+                        {!selectedReel.collection_id && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
+                      </button>
+
+                      {collections.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            handleAssignCollection(selectedReel.id, c.id);
+                            setShowDetailFolderPicker(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            background: String(selectedReel.collection_id) === String(c.id) ? '#22272b' : 'transparent',
+                            border: 'none',
+                            color: '#f8fafa',
+                            fontSize: '0.84rem',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'background 0.15s ease'
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                          {String(selectedReel.collection_id) === String(c.id) && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* On-Demand Translation */}
