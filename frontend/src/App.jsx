@@ -686,7 +686,7 @@ export default function App() {
             {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
             {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
                     Collections
                   </h2>

@@ -563,10 +563,16 @@ body {
     overflow-x: hidden;
   }
 
+  .ig-section-header,
+  .ig-reels-header {
+    padding: 0 16px !important;
+    margin-bottom: 12px;
+  }
+
   .ig-categories-strip {
-    padding: 0 12px;
+    padding: 0 16px;
     margin-bottom: 18px;
-    gap: 6px;
+    gap: 8px;
   }
 
   .ig-filter-pill {
@@ -576,7 +582,7 @@ body {
   }
 
   .ig-collections-grid {
-    padding: 0 12px;
+    padding: 0 16px;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px 10px;
     margin-bottom: 22px;
