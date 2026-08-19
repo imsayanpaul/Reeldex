@@ -677,12 +677,12 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
               onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
               title="Cancel"
             >
               <X size={24} strokeWidth={2.2} />
             </button>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em' }}>
               {selectedReelIds.size > 0 ? `${selectedReelIds.size} selected` : 'All Posts'}
             </h1>
           </div>
@@ -691,7 +691,7 @@ export default function App() {
             <button
               onClick={handleSelectAll}
               className="ig-filter-pill"
-              style={{ fontSize: '0.82rem', fontWeight: '700', padding: '6px 14px' }}
+              style={{ fontSize: '0.82rem', fontWeight: '500', padding: '6px 14px' }}
             >
               {selectedReelIds.size === reels.length ? 'Deselect all' : 'Select all'}
             </button>
@@ -702,12 +702,12 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <button
               onClick={() => setSelectedCollection(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#ffffff', padding: '2px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '2px' }}
               title="Back"
             >
               <ArrowLeft size={24} strokeWidth={2.2} />
             </button>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
               {selectedCollection.name}
             </h1>
           </div>
@@ -715,7 +715,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               onClick={() => setShowCollectionMenuModal(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '4px', display: 'flex', alignItems: 'center' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
               title="Collection Options"
             >
               <MoreVertical size={24} strokeWidth={2.2} />
@@ -725,7 +725,7 @@ export default function App() {
       ) : (
         <header className="ig-top-navbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-heading)', letterSpacing: '-0.03em', fontFamily: 'var(--font-main)' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)' }}>
               ReelDex
             </h1>
           </div>
@@ -849,12 +849,12 @@ export default function App() {
               <div style={{ marginBottom: '28px' }}>
                 {activeViewFilter === 'All' && (
                   <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#ffffff' }}>
+                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#f8fafa' }}>
                       Collections
                     </h2>
                     <button
                       onClick={() => setActiveViewFilter('Collections')}
-                      style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '500', fontSize: '0.88rem', cursor: 'pointer' }}
                     >
                       See all
                     </button>
@@ -865,15 +865,15 @@ export default function App() {
                   <div style={{
                     padding: '24px 20px',
                     borderRadius: '14px',
-                    background: '#1c1c1e',
-                    border: '1px solid var(--border-light)',
+                    background: '#181c1f',
+                    border: '1px solid #282f34',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     margin: '0 16px'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#ffffff' }}>Organize with Collections</div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: '500', color: '#f8fafa' }}>Organize with Collections</div>
                       <div style={{ fontSize: '0.78rem', color: '#8e8e8e', marginTop: '2px' }}>Group your saved reels by theme, work, or project.</div>
                     </div>
                     <button onClick={() => setShowCreateCollectionModal(true)} className="btn-coral" style={{ fontSize: '0.78rem' }}>
@@ -1003,14 +1003,14 @@ export default function App() {
 
                 {!isManageMode && !selectedCollection && (
                   <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#ffffff' }}>
+                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#f8fafa' }}>
                       Reels and posts
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {reels.length > 0 && (
                         <button
                           onClick={() => setIsManageMode(true)}
-                          style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
+                          style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '500', fontSize: '0.88rem', cursor: 'pointer' }}
                         >
                           Manage
                         </button>
@@ -1044,7 +1044,7 @@ export default function App() {
                     margin: '30px auto'
                   }}>
                     <Bookmark size={28} color="var(--text-heading)" style={{ margin: '0 auto 12px' }} />
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-heading)', marginBottom: '6px' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--text-heading)', marginBottom: '6px' }}>
                       {selectedCollection ? `No reels in "${selectedCollection.name}" yet` : 'No Saved Reels Found'}
                     </h3>
                     <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '18px' }}>
@@ -1157,14 +1157,14 @@ export default function App() {
                         <div className="modern-card-body">
                           <div>
                             {/* Author Handle */}
-                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '400', marginBottom: '4px' }}>
                               @{reel.author || reel.sender_username || 'creator'}
                             </div>
 
                             {/* Video Title */}
                             <h3 style={{
-                              fontSize: '0.96rem',
-                              fontWeight: '800',
+                              fontSize: '0.94rem',
+                              fontWeight: '500',
                               color: 'var(--text-heading)',
                               lineHeight: '1.35',
                               letterSpacing: '-0.01em',
@@ -2014,10 +2014,10 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-heading)', marginTop: '6px', letterSpacing: '-0.02em' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', marginTop: '6px', letterSpacing: '-0.02em' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '400' }}>
                   by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
                 </p>
               </div>
