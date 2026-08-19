@@ -246,12 +246,30 @@ export default function App() {
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairingCode, setPairingCode] = useState(null);
 
-  // Vault, Collections & Search State
-  const [reels, setReels] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const getCachedReels = () => {
+    try {
+      const raw = getSafeStorage('reelmind_cached_reels');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getCachedCollections = () => {
+    try {
+      const raw = getSafeStorage('reelmind_cached_collections');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Vault, Collections & Search State (Instant 0ms Cache-First)
+  const [reels, setReels] = useState(getCachedReels);
+  const [initialLoading, setInitialLoading] = useState(() => getCachedReels().length === 0);
   const [reelsLoading, setReelsLoading] = useState(false);
   const [categories, setCategories] = useState(['All']);
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState(getCachedCollections);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReel, setSelectedReel] = useState(null);
@@ -322,10 +340,11 @@ export default function App() {
     fetchCollections(currentToken);
   }, []);
 
-  // 2. Fetch Reels when Category, Collection, or Search Query Changes
+  // 2. Fetch Reels when Category, Collection, or Search Query Changes (Smooth Background Update)
   useEffect(() => {
-    setReels([]);
-    setReelsLoading(true);
+    if (reels.length === 0) {
+      setReelsLoading(true);
+    }
     let isCancelled = false;
 
     const loadData = async () => {
@@ -343,6 +362,9 @@ export default function App() {
         if (res.ok && !isCancelled) {
           const data = await res.json();
           setReels(data || []);
+          if (!searchQuery.trim() && activeViewFilter === 'All' && !selectedCollection) {
+            setSafeStorage('reelmind_cached_reels', JSON.stringify(data || []));
+          }
         }
       } catch (err) {
         console.error('Error fetching reels:', err);

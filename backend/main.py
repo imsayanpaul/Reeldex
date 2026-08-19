@@ -28,6 +28,11 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.gzip import GZipMiddleware
+
+# GZip compression (compresses JSON payloads 5x faster)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +40,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Include API Router
