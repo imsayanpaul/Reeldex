@@ -490,45 +490,50 @@ export default function App() {
         </div>
 
         {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Ask AI Tab Toggle */}
           <button
             onClick={() => setActiveTab(activeTab === 'vault' ? 'chat' : 'vault')}
-            className={`ig-filter-pill ${activeTab === 'chat' ? 'active' : ''}`}
-            style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+            className={`header-ai-btn ${activeTab === 'chat' ? 'active' : ''}`}
+            title="Ask AI across your saved reels"
           >
-            <Sparkles size={14} color={activeTab === 'chat' ? '#0095f6' : 'currentColor'} />
+            <Sparkles size={14} color={activeTab === 'chat' ? '#38bdf8' : '#000000'} />
             <span>Ask AI</span>
           </button>
 
-          {/* User / Instagram Status Capsule */}
+          {/* User / Instagram Status Capsule with Story Ring */}
           <div
             onClick={handleGeneratePairingCode}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              background: '#efefef',
-              cursor: 'pointer',
-              fontSize: '0.78rem',
-              fontWeight: '700',
-              color: '#262626'
-            }}
-            title="Instagram Connection Status"
+            className="header-profile-capsule"
+            title="Instagram Connection Status - Click to Pair"
           >
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: session.is_instagram_linked ? '#10b981' : '#f59e0b' }} />
-            <span>{session.instagram_username || session.display_name || 'User #3832'}</span>
+            <div className="story-avatar-ring">
+              <div className="story-avatar-inner">
+                <InstagramIcon size={13} color="#000000" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
+                boxShadow: session.is_instagram_linked ? '0 0 6px rgba(16, 185, 129, 0.6)' : 'none'
+              }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#000000' }}>
+                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}
+              </span>
+            </div>
           </div>
 
           {/* + New Collection Button */}
           <button
             onClick={() => setShowCreateCollectionModal(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#000000' }}
-            title="Create Collection"
+            className="header-add-btn"
+            title="Create New Collection"
           >
-            <Plus size={22} />
+            <Plus size={14} />
+            <span>Collection</span>
           </button>
         </div>
       </header>
