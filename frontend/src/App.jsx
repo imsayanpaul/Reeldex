@@ -1136,31 +1136,95 @@ export default function App() {
                     </div>
                   ) : (
                     <div style={{
-                      padding: '48px 24px',
+                      padding: '70px 20px',
                       textAlign: 'center',
-                      background: '#181c1f',
-                      borderRadius: '18px',
-                      border: '1px solid #282f34',
-                      maxWidth: '460px',
-                      margin: '30px auto'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto'
                     }}>
-                      <Bookmark size={28} color="#f8fafa" style={{ margin: '0 auto 12px' }} />
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: '#f8fafa', marginBottom: '6px' }}>
-                        No Saved Reels Found
+                      {/* Circle Icon Badge */}
+                      <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        border: '2px solid #f8fafa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '18px'
+                      }}>
+                        <Bookmark size={28} color="#f8fafa" strokeWidth={1.8} />
+                      </div>
+
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
+                        {activeViewFilter !== 'All' ? `No reels in ${activeViewFilter}` : 'No Saved Reels Found'}
                       </h3>
-                      <p style={{ fontSize: '0.84rem', color: '#8e8e8e', lineHeight: '1.5', marginBottom: '18px' }}>
-                        {session.is_instagram_linked 
-                          ? 'Send any Instagram Reel in DM to @reeldex.io. Our AI engine transcribes audio and extracts tools automatically!'
-                          : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages!'}
+                      <p style={{ fontSize: '0.86rem', color: '#8e8e8e', maxWidth: '340px', lineHeight: '1.45', marginBottom: '20px' }}>
+                        {activeViewFilter !== 'All'
+                          ? `Reels tagged with "${activeViewFilter}" will automatically appear here once transcribed.`
+                          : session.is_instagram_linked 
+                            ? 'Send any Instagram Reel in DM to @reeldex.io to automatically transcribe audio and index tools.'
+                            : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages.'}
                       </p>
 
-                      {session.is_instagram_linked ? (
-                        <a href="https://ig.me/m/reeldex.io" target="_blank" rel="noreferrer" className="btn-primary" style={{ margin: '0 auto' }}>
-                          <InstagramIcon size={14} /> Open Instagram DM (@reeldex.io)
+                      {activeViewFilter !== 'All' ? (
+                        <button
+                          onClick={() => setActiveViewFilter('All')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#90a4f2',
+                            fontSize: '0.94rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px'
+                          }}
+                        >
+                          View all saved reels
+                        </button>
+                      ) : session.is_instagram_linked ? (
+                        <a
+                          href="https://ig.me/m/reeldex.io"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#90a4f2',
+                            fontSize: '0.94rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          <InstagramIcon size={16} /> Open Instagram DM (@reeldex.io)
                         </a>
                       ) : (
-                        <button onClick={handleGeneratePairingCode} className="btn-blue" style={{ margin: '0 auto' }}>
-                          <InstagramIcon size={14} /> Link Instagram Account
+                        <button
+                          onClick={handleGeneratePairingCode}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#90a4f2',
+                            fontSize: '0.94rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px'
+                          }}
+                        >
+                          <InstagramIcon size={16} /> Link Instagram Account
                         </button>
                       )}
                     </div>
