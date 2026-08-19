@@ -1,35 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Sparkles, 
   Search, 
-  Layers, 
-  MessageSquare, 
-  PlusCircle, 
-  Settings, 
-  Check, 
-  Copy, 
-  Download, 
-  Trash2, 
+  Sparkles, 
   ExternalLink, 
-  Bot, 
-  Zap, 
-  Link as LinkIcon, 
+  Copy, 
+  Check, 
+  Trash2, 
   Clock, 
-  Tag, 
-  ChevronRight, 
-  Sliders, 
-  HelpCircle,
-  FolderOpen
+  MessageSquare, 
+  Bot, 
+  Download, 
+  Send,
+  ArrowRight,
+  FolderOpen,
+  Share2,
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 
-const InstagramIcon = ({ size = 18, color = "currentColor", style }) => (
+const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
   </svg>
 );
-// Safe formatting helpers to prevent "Objects are not valid as React child" crashes
+
+// Safe formatting helpers
 const formatActionItem = (item) => {
   if (!item) return '';
   if (typeof item === 'string') return item;
@@ -53,7 +50,7 @@ const formatSummary = (summary) => {
   return String(summary);
 };
 
-// Safe storage access for sandboxed WebViews / In-App Browsers (Instagram/Facebook)
+// Safe storage access for sandboxed WebViews
 const getSafeStorage = (key) => {
   try {
     return window.localStorage?.getItem(key);
@@ -68,7 +65,6 @@ const setSafeStorage = (key, val) => {
   } catch (e) {}
 };
 
-// Safe initial token detection
 const getInitialToken = () => {
   try {
     const urlParams = new URLSearchParams(window.location.search);
@@ -87,9 +83,9 @@ const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.re
 
 export default function App() {
   // Navigation State
-  const [activeTab, setActiveTab] = useState('vault'); // 'vault' | 'chat' | 'transcribe' | 'settings'
+  const [activeTab, setActiveTab] = useState('vault'); // 'vault' | 'chat'
 
-  // User & Pairing State (Default initialized to prevent black-screen flash in In-App Browsers)
+  // User & Pairing State
   const initialToken = getInitialToken();
   const [session, setSession] = useState({ auth_token: initialToken, display_name: 'ReelDex User' });
   const [showPairModal, setShowPairModal] = useState(false);
@@ -101,7 +97,6 @@ export default function App() {
   const [categories, setCategories] = useState(['All']);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loadingReels, setLoadingReels] = useState(false);
   const [selectedReel, setSelectedReel] = useState(null);
 
   // Ask AI Chat State
@@ -109,25 +104,13 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
-      content: '👋 Hi! I am ReelDex AI. You can ask me anything across all the Instagram Reels you have saved in your library (e.g., "What tools or promo codes were mentioned in my job reels?").'
+      content: '👋 Hi! I am ReelDex AI. Ask me anything across your saved Instagram Reels — like "What tools or promo codes were mentioned in my tech reels?" or "Summarize my saved career advice".'
     }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
+  const chatBottomRef = useRef(null);
 
-  // Quick Transcribe State
-  const [inputUrl, setInputUrl] = useState('');
-  const [transcribing, setTranscribing] = useState(false);
-  const [transcribeMsg, setTranscribeMsg] = useState(null);
-
-  // Settings State
-  const [config, setConfig] = useState({});
-  const [groqKey, setGroqKey] = useState('');
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [pageToken, setPageToken] = useState('');
-  const [verifyToken, setVerifyToken] = useState('instam_secret_verify_token_2026');
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Utility state
+  // Utility State
   const [copied, setCopied] = useState(false);
 
   // 1. Initialize User Session
@@ -149,16 +132,21 @@ export default function App() {
       .catch(err => console.error('Session error:', err));
 
     fetchCategories();
-    fetchConfig();
     fetchReels(currentToken);
   }, []);
 
   // 2. Fetch Reels when Category or Search Query Changes
   useEffect(() => {
     fetchReels();
-    const interval = setInterval(fetchReels, 4000); // Live poll for new DM reels
+    const interval = setInterval(fetchReels, 4000); // Live sync polling
     return () => clearInterval(interval);
   }, [session?.auth_token, selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    if (activeTab === 'chat' && chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, activeTab]);
 
   const fetchCategories = async () => {
     try {
@@ -189,207 +177,126 @@ export default function App() {
     }
   };
 
-  const fetchConfig = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/config`);
-      if (res.ok) {
-        const data = await res.json();
-        setConfig(data);
-        if (data.verify_token) setVerifyToken(data.verify_token);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Generate Instagram Linking Code
   const handleGeneratePairingCode = async () => {
     setPairingLoading(true);
     try {
-      const token = session?.auth_token || '';
-      const res = await fetch(`${API_BASE}/auth/generate-code`, {
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/auth/pair-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setPairingCode(data.code);
-        setShowPairModal(true);
-      }
+      const data = await res.json();
+      setPairingCode(data.code);
+      setShowPairModal(true);
     } catch (err) {
-      console.error(err);
+      console.error('Pairing error:', err);
     } finally {
       setPairingLoading(false);
     }
   };
 
-  // "Ask Your Reels" AI Chat Handler
-  const handleAskAI = async (e) => {
-    e?.preventDefault();
-    if (!chatQuestion.trim() || chatLoading) return;
-
-    const userText = chatQuestion.trim();
-    setChatQuestion('');
-    const newHistory = [...chatMessages, { role: 'user', content: userText }];
-    setChatMessages(newHistory);
-    setChatLoading(true);
-
+  const handleDeleteReel = async (reelId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this reel from your vault?')) return;
     try {
-      const token = session?.auth_token || '';
-      const res = await fetch(`${API_BASE}/chat/ask`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'token': token
-        },
-        body: JSON.stringify({ question: userText })
-      });
-
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/reels/${reelId}?token=${token}`, { method: 'DELETE' });
       if (res.ok) {
-        const data = await res.json();
-        setChatMessages([
-          ...newHistory,
-          {
-            role: 'assistant',
-            content: data.answer,
-            citations: data.citations || []
-          }
-        ]);
-      } else {
-        setChatMessages([
-          ...newHistory,
-          { role: 'assistant', content: '❌ Failed to get answer. Please check if your GROQ_API_KEY is configured in Settings.' }
-        ]);
-      }
-    } catch (err) {
-      setChatMessages([
-        ...newHistory,
-        { role: 'assistant', content: '❌ Connection error while querying AI.' }
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  // Quick Transcribe URL
-  const handleTranscribeUrl = async (e) => {
-    e.preventDefault();
-    if (!inputUrl.trim()) return;
-
-    setTranscribing(true);
-    setTranscribeMsg(null);
-    try {
-      const token = session?.auth_token || '';
-      const res = await fetch(`${API_BASE}/transcribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'token': token
-        },
-        body: JSON.stringify({ url: inputUrl })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTranscribeMsg({ success: true, text: 'Processing started! It will appear in your Vault momentarily.' });
-        setInputUrl('');
-        setTimeout(() => {
-          fetchReels();
-          setActiveTab('vault');
-        }, 1500);
-      } else {
-        setTranscribeMsg({ success: false, text: data.detail || 'Failed to submit URL' });
-      }
-    } catch (err) {
-      setTranscribeMsg({ success: false, text: 'Failed to connect to backend server' });
-    } finally {
-      setTranscribing(false);
-    }
-  };
-
-  // Save Config
-  const handleSaveConfig = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        meta_verify_token: verifyToken,
-        ...(groqKey && { groq_api_key: groqKey }),
-        ...(openaiKey && { openai_api_key: openaiKey }),
-        ...(pageToken && { instagram_page_access_token: pageToken }),
-      };
-      const res = await fetch(`${API_BASE}/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-        fetchConfig();
+        setReels(prev => prev.filter(r => r.id !== reelId));
+        if (selectedReel?.id === reelId) setSelectedReel(null);
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Reel Detail Modal
   const openReelDetail = async (reel) => {
-    const reelId = reel?.id || reel?.reel_id;
-    if (!reelId) return;
     try {
-      const res = await fetch(`${API_BASE}/reels/${reelId}`);
+      const idToFetch = reel.id || reel.reel_id;
+      if (!idToFetch) {
+        setSelectedReel(reel);
+        return;
+      }
+      const res = await fetch(`${API_BASE}/reels/${idToFetch}`);
       if (res.ok) {
         const detail = await res.json();
         setSelectedReel(detail);
       } else {
         setSelectedReel(reel);
       }
-    } catch (e) {
+    } catch (err) {
       setSelectedReel(reel);
     }
   };
 
-  // Delete Reel
-  const handleDeleteReel = async (id, e) => {
-    e?.stopPropagation();
+  const handleAskAI = async (e) => {
+    if (e) e.preventDefault();
+    if (!chatQuestion.trim()) return;
+
+    const userMsg = { role: 'user', content: chatQuestion };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatQuestion('');
+    setChatLoading(true);
+
     try {
-      const res = await fetch(`${API_BASE}/reels/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setReels(prev => prev.filter(r => r.id !== id));
-        if (selectedReel?.id === id) setSelectedReel(null);
-      }
+      const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
+      const res = await fetch(`${API_BASE}/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: userMsg.content, token })
+      });
+      const data = await res.json();
+      const aiMsg = {
+        role: 'assistant',
+        content: data.answer,
+        citations: data.citations || []
+      };
+      setChatMessages(prev => [...prev, aiMsg]);
     } catch (err) {
-      console.error(err);
+      setChatMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: '⚠️ Sorry, I encountered an error searching your knowledge base. Please check your connection and try again.' }
+      ]);
+    } finally {
+      setChatLoading(false);
     }
   };
 
-  // Copy helper
-  const copyText = (txt) => {
-    navigator.clipboard.writeText(txt);
+  const copyText = (text) => {
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Download SRT
   const downloadSRT = (reel) => {
-    const transcript = reel?.transcript;
-    if (!transcript) return;
-    let srt = "";
-    const segments = transcript.segments || [];
-    if (segments.length > 0) {
-      segments.forEach((seg, idx) => {
-        const formatTime = (sec) => {
-          const date = new Date(0);
-          date.setMilliseconds(sec * 1000);
-          return date.toISOString().substr(11, 12).replace('.', ',');
-        };
-        srt += `${idx + 1}\n`;
-        srt += `${formatTime(seg.start)} --> ${formatTime(seg.end)}\n`;
-        srt += `${seg.text.trim()}\n\n`;
-      });
-    } else {
-      srt = `1\n00:00:00,000 --> 00:00:10,000\n${transcript.full_text}\n`;
+    let segs = [];
+    try {
+      if (Array.isArray(reel.transcript?.segments)) {
+        segs = reel.transcript.segments;
+      } else if (typeof reel.transcript?.segments === 'string') {
+        segs = JSON.parse(reel.transcript.segments);
+      }
+    } catch (e) {
+      segs = [];
     }
+
+    if (!segs || segs.length === 0) return;
+
+    const formatSRTTime = (seconds) => {
+      const date = new Date(0);
+      date.setSeconds(seconds);
+      const ms = Math.floor((seconds % 1) * 1000);
+      return date.toISOString().substr(11, 8) + ',' + ms.toString().padStart(3, '0');
+    };
+
+    let srt = '';
+    segs.forEach((seg, i) => {
+      srt += `${i + 1}\n`;
+      srt += `${formatSRTTime(seg.start || 0)} --> ${formatSRTTime(seg.end || seg.start + 2)}\n`;
+      srt += `${(seg.text || '').trim()}\n\n`;
+    });
+
     const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -400,257 +307,286 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      
       {/* ======================================================== */}
-      {/* TOP NAVIGATION BAR */}
+      {/* MODERN LINEAR-STYLE TOPBAR */}
       {/* ======================================================== */}
       <header style={{
-        borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(7, 9, 14, 0.85)',
-        backdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 50,
+        background: 'rgba(6, 7, 10, 0.85)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--border-hairline)'
       }}>
-        <div className="header-container" style={{ maxWidth: '1240px', margin: '0 auto', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }} className="header-content">
           
-          <div className="header-top-row">
-            {/* Logo & Slogan */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-                flexShrink: 0
-              }}>
-                <Sparkles size={20} color="#ffffff" />
-              </div>
-              <div>
-                <div style={{ fontSize: '1.15rem', fontWeight: '800', letterSpacing: '-0.02em', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  ReelDex
-                  <span style={{ fontSize: '0.65rem', fontWeight: '700', padding: '1px 6px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8' }}>
-                    REELDEX.IO
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  Second Brain for Instagram Reels
-                </p>
-              </div>
+          {/* Brand & Live Sync Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => setActiveTab('vault')}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: '#0d111a',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Sparkles size={16} color="#818cf8" />
             </div>
-
-            {/* Instagram Pairing Action on Mobile */}
-            <div className="header-action" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {session?.is_instagram_linked ? (
-                <div className="header-user-badge" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  fontSize: '0.78rem',
-                  color: '#10b981',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap'
-                }}>
-                  <InstagramIcon size={14} />
-                  <span>@{session.instagram_username || 'Linked'}</span>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: '700', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ReelDex
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '2px 7px', borderRadius: 'var(--radius-full)', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <div className="pulse-indicator" />
+                  <span style={{ fontSize: '0.65rem', fontWeight: '600', color: '#10b981', letterSpacing: '0.02em' }}>LIVE SYNC</span>
                 </div>
-              ) : (
-                <button
-                  onClick={handleGeneratePairingCode}
-                  className="btn-primary"
-                  style={{ fontSize: '0.8rem', padding: '7px 12px', whiteSpace: 'nowrap' }}
-                >
-                  <InstagramIcon size={14} /> Connect
-                </button>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="nav-bar no-scrollbar" style={{ display: 'flex', gap: '6px', background: 'rgba(255, 255, 255, 0.03)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-subtle)', overflowX: 'auto' }}>
+          {/* Segmented Switcher (Vault / Ask AI) */}
+          <nav style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            padding: '3px',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--border-hairline)'
+          }}>
             <button
               onClick={() => setActiveTab('vault')}
-              className={`pill-button ${activeTab === 'vault' ? 'active' : ''}`}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              className={`nav-segment ${activeTab === 'vault' ? 'active' : ''}`}
             >
-              <FolderOpen size={15} /> Vault ({reels.length})
+              <FolderOpen size={14} /> Vault ({reels.length})
             </button>
             <button
               onClick={() => setActiveTab('chat')}
-              className={`pill-button ${activeTab === 'chat' ? 'active' : ''}`}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              className={`nav-segment ${activeTab === 'chat' ? 'active' : ''}`}
             >
-              <Bot size={15} /> Ask AI
+              <Bot size={14} /> Ask AI
             </button>
           </nav>
+
+          {/* Instagram Account Link / Status */}
+          <div>
+            {session?.is_instagram_linked ? (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                fontSize: '0.78rem',
+                color: '#10b981',
+                fontWeight: '600'
+              }}>
+                <InstagramIcon size={14} color="#10b981" />
+                <span>@{session.instagram_username || 'Linked'}</span>
+              </div>
+            ) : (
+              <button
+                onClick={handleGeneratePairingCode}
+                className="btn-solid"
+                disabled={pairingLoading}
+              >
+                <InstagramIcon size={13} /> Connect Instagram
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       {/* ======================================================== */}
-      {/* MAIN CONTENT CONTAINER */}
+      {/* MAIN VIEWPORT CONTAINER */}
       {/* ======================================================== */}
-      <main className="main-content" style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '24px 16px', flex: 1 }}>
+      <main style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '24px 20px', flex: 1 }}>
 
-        {/* TAB 1: KNOWLEDGE VAULT (Semantic Search & Collections) */}
+        {/* TAB 1: KNOWLEDGE VAULT */}
         {activeTab === 'vault' && (
           <div>
-            {/* Hero Search Omnibar */}
-            <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ position: 'relative', width: '100%' }}>
-                  <Search size={18} color="var(--text-subtle)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search transcripts, tools, summaries (e.g. 'job referrals')..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="custom-input"
-                    style={{
-                      paddingLeft: '42px',
-                      fontSize: '0.92rem',
-                      paddingTop: '12px',
-                      paddingBottom: '12px',
-                      borderRadius: '12px'
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-subtle)', cursor: 'pointer' }}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+            
+            {/* Command-Bar Omnisearch */}
+            <div style={{ marginBottom: '18px' }}>
+              <div className="command-bar">
+                <Search size={16} color="var(--text-muted)" />
+                <input
+                  type="text"
+                  placeholder="Search across transcripts, tools, creators, and summaries..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="command-input"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '2px 6px' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
-                {/* Category Filter Pills */}
-                <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`pill-button ${selectedCategory === cat ? 'active' : ''}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+              {/* Horizontal Category Chips */}
+              <div className="no-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', marginTop: '10px', paddingBottom: '2px' }}>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`filter-chip ${selectedCategory === cat ? 'active' : ''}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Results Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            {/* Results Title Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                   {selectedCategory === 'All' ? 'All Saved Knowledge' : selectedCategory}
-                </h2>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: '6px' }}>
-                  {reels.length} {reels.length === 1 ? 'Reel' : 'Reels'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.04)', padding: '1px 6px', borderRadius: '4px' }}>
+                  {reels.length}
                 </span>
               </div>
 
               {searchQuery && (
-                <span style={{ fontSize: '0.78rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Sparkles size={13} /> Semantic Match
+                <span style={{ fontSize: '0.74rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Sparkles size={12} /> Semantic Search Active
                 </span>
               )}
             </div>
 
-            {/* Reel Cards Grid */}
+            {/* Reel Cards Grid / Anti-Slop Empty State */}
             {reels.length === 0 ? (
-              <div className="glass-panel" style={{ padding: '48px 18px', textAlign: 'center' }}>
-                <InstagramIcon size={38} color="#6366f1" style={{ margin: '0 auto 14px', opacity: 0.85 }} />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '8px' }}>Your Vault is Empty</h3>
-                <p style={{ color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: '1.6' }}>
-                  Send any Instagram Reel in DM to <strong>@reeldex.io</strong> to automatically transcribe, categorize, and save it to your personal knowledge base!
-                </p>
-                <div className="empty-vault-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <button onClick={handleGeneratePairingCode} className="btn-primary" style={{ padding: '10px 22px' }}>
-                    <InstagramIcon size={15} /> Link Instagram Account
-                  </button>
+              <div className="reeldex-card" style={{ padding: '40px 24px', textAlign: 'center', maxWidth: '640px', margin: '30px auto' }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <InstagramIcon size={22} color="#818cf8" />
                 </div>
+                
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '700', letterSpacing: '-0.02em', marginBottom: '8px' }}>
+                  Your Knowledge Vault is Ready
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: '1.6', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px' }}>
+                  Turn Instagram into your second brain. Send any Reel in DM to <strong>@reeldex.io</strong> — it will instantly transcribe audio, extract insights, and organize it here.
+                </p>
+
+                {/* 3-Step Flow Pills */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '10px',
+                  textAlign: 'left',
+                  marginBottom: '26px'
+                }}>
+                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 1</span>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Connect your Instagram account below</p>
+                  </div>
+                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 2</span>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Share any Reel in DM to <strong>@reeldex.io</strong></p>
+                  </div>
+                  <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-hairline)' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase' }}>Step 3</span>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Search, transcribe, and ask AI questions</p>
+                  </div>
+                </div>
+
+                <button onClick={handleGeneratePairingCode} className="btn-solid" style={{ padding: '9px 20px' }}>
+                  <InstagramIcon size={14} /> Connect Instagram Account
+                </button>
               </div>
             ) : (
-              <div className="reels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '18px' }}>
+              <div className="reels-grid-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
                 {reels.map((reel) => (
                   <div
                     key={reel.id}
-                    className="glass-panel glass-panel-hover"
-                    style={{ padding: '22px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                    className="reeldex-card reeldex-card-interactive"
+                    style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                     onClick={() => openReelDetail(reel)}
                   >
                     <div>
-                      {/* Top Header: Category & Actions */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: '700',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          padding: '3px 9px',
-                          borderRadius: '6px',
-                          background: 'rgba(99, 102, 241, 0.15)',
-                          color: '#a5b4fc',
-                          border: '1px solid rgba(99, 102, 241, 0.25)'
-                        }}>
+                      {/* Card Header: Category & Timestamp */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span className="badge-category">
                           {reel.category || 'General'}
                         </span>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)' }}>
-                            {new Date(reel.created_at).toLocaleDateString()}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            {reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
                           </span>
                           <button
                             onClick={(e) => handleDeleteReel(reel.id, e)}
-                            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-subtle)', cursor: 'pointer', padding: '2px' }}
                             title="Delete"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </div>
 
                       {/* Title & Creator */}
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '6px', color: '#ffffff', lineHeight: '1.4' }}>
-                        {reel.title || `Reel by ${reel.author || 'Creator'}`}
-                      </h3>
+                      <h4 style={{ fontSize: '0.98rem', fontWeight: '600', letterSpacing: '-0.01em', color: '#ffffff', marginBottom: '4px', lineHeight: '1.4' }}>
+                        {reel.title || `Reel by @${reel.author || 'Creator'}`}
+                      </h4>
                       
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
                         by @{reel.author || reel.sender_username || 'creator'} {reel.duration ? `• ${Math.round(reel.duration)}s` : ''}
                       </div>
 
                       {/* AI Summary Preview */}
-                      <p style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6', marginBottom: '14px' }}>
-                        {formatSummary(reel.summary) || reel.preview_text || 'Transcribing in progress...'}
+                      <p style={{
+                        fontSize: '0.84rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.5',
+                        marginBottom: '12px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {formatSummary(reel.summary) || reel.preview_text || 'Transcribing audio...'}
                       </p>
 
-                      {/* Extracted Action Items Pill */}
+                      {/* Action Item Pill */}
                       {reel.action_items?.length > 0 && (
-                        <div style={{
-                          marginBottom: '14px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          background: 'rgba(168, 85, 247, 0.08)',
-                          border: '1px solid rgba(168, 85, 247, 0.2)',
-                          fontSize: '0.78rem',
-                          color: '#e9d5ff'
-                        }}>
-                          <strong>🛠️ Action Item:</strong> {formatActionItem(reel.action_items[0])}
+                        <div style={{ marginBottom: '10px' }}>
+                          <span className="badge-action-item">
+                            🛠️ {formatActionItem(reel.action_items[0])}
+                          </span>
                         </div>
                       )}
 
                       {/* Tags */}
                       {reel.tags?.length > 0 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
                           {reel.tags.slice(0, 3).map((tag, idx) => (
-                            <span key={idx} className="tag-badge">
+                            <span key={idx} className="badge-tag">
                               {formatTag(tag)}
                             </span>
                           ))}
@@ -658,12 +594,20 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Bottom Status */}
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#818cf8' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={13} /> View Full Transcript
+                    {/* Card Footer Actions */}
+                    <div style={{
+                      borderTop: '1px solid var(--border-hairline)',
+                      paddingTop: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.74rem',
+                      color: 'var(--text-muted)'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#818cf8' }}>
+                        <Clock size={12} /> View Transcript
                       </span>
-                      <ChevronRight size={15} />
+                      <ArrowRight size={13} color="var(--text-muted)" />
                     </div>
                   </div>
                 ))}
@@ -672,104 +616,112 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: "ASK YOUR REELS" AI CHAT (RAG) */}
+        {/* TAB 2: ASK AI CONVERSATION */}
         {activeTab === 'chat' && (
-          <div style={{ maxWidth: '840px', margin: '0 auto' }}>
-            <div className="glass-panel" style={{ padding: '28px', minHeight: '620px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #a855f7, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Bot size={20} color="#fff" />
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>Ask Your Saved Reels</h2>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      Query your entire collection using Groq LLaMA 3.3 70B
-                    </p>
-                  </div>
-                </div>
+          <div style={{ maxWidth: '740px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)' }}>
+            
+            {/* Messages Feed */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px', marginBottom: '16px' }}>
+              {chatMessages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: msg.role === 'user' ? '82%' : '100%',
+                    padding: msg.role === 'user' ? '10px 16px' : '16px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    background: msg.role === 'user' ? 'var(--accent-indigo)' : 'var(--bg-surface-elevated)',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-hairline)',
+                    color: '#ffffff',
+                    fontSize: '0.88rem',
+                    lineHeight: '1.6'
+                  }}
+                >
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
 
-                {/* Messages Stream */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '420px', overflowY: 'auto', paddingRight: '6px', marginBottom: '20px' }}>
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                        maxWidth: '85%',
-                        padding: '14px 18px',
-                        borderRadius: '14px',
-                        background: msg.role === 'user' ? '#4f46e5' : 'rgba(255, 255, 255, 0.04)',
-                        border: msg.role === 'user' ? 'none' : '1px solid var(--border-subtle)',
-                        fontSize: '0.92rem',
-                        lineHeight: '1.6',
-                        color: msg.role === 'user' ? '#ffffff' : '#e2e8f0'
-                      }}
-                    >
-                      <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-
-                      {/* Citations Box */}
-                      {msg.citations?.length > 0 && (
-                        <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#a5b4fc', textTransform: 'uppercase' }}>
-                            Referenced Reels:
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                            {msg.citations.map((c, idx) => (
-                              <div
-                                key={idx}
-                                onClick={() => openReelDetail(c)}
-                                style={{ fontSize: '0.78rem', color: '#c084fc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                🎬 {c.title} by @{c.author}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {chatLoading && (
-                    <div style={{ alignSelf: 'flex-start', padding: '12px 18px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-subtle)', fontSize: '0.88rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Sparkles size={16} className="animate-spin" /> Analyzing your saved reels library...
+                  {/* Citations / Referenced Reel Chips */}
+                  {msg.citations && msg.citations.length > 0 && (
+                    <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-hairline)', paddingTop: '10px' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Referenced Reels:
+                      </span>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        {msg.citations.map((c, i) => (
+                          <button
+                            key={i}
+                            onClick={() => openReelDetail(c)}
+                            className="btn-subtle"
+                            style={{ fontSize: '0.74rem', padding: '4px 10px' }}
+                          >
+                            🎬 {c.title || `Reel #${c.reel_id || c.id}`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
+              ))}
 
-                {/* Suggested Prompts */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                  {[
-                    "What tools or promo codes were mentioned?",
-                    "Summarize all job advice I saved",
-                    "List all productivity rules"
-                  ].map((prompt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setChatQuestion(prompt)}
-                      style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: 'var(--radius-full)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', cursor: 'pointer' }}
-                    >
-                      ✨ {prompt}
-                    </button>
-                  ))}
+              {chatLoading && (
+                <div style={{
+                  alignSelf: 'flex-start',
+                  padding: '12px 18px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-hairline)',
+                  fontSize: '0.84rem',
+                  color: '#818cf8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Sparkles size={14} className="animate-spin" /> Synthesizing across your saved Reels...
                 </div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
 
-              {/* Chat Input Bar */}
-              <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '10px' }}>
+            {/* Suggested Prompts */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              {[
+                "What tools or promo codes were mentioned?",
+                "Summarize all job advice I saved",
+                "List all productivity rules"
+              ].map((prompt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setChatQuestion(prompt)}
+                  style={{
+                    fontSize: '0.74rem',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-hairline)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✨ {prompt}
+                </button>
+              ))}
+            </div>
+
+            {/* Chat Input Bar */}
+            <form onSubmit={handleAskAI} style={{ display: 'flex', gap: '8px' }}>
+              <div className="command-bar" style={{ flex: 1, padding: '10px 14px' }}>
                 <input
                   type="text"
-                  placeholder="Ask a question about any reel you have saved..."
+                  placeholder="Ask a question across all your saved Reels..."
                   value={chatQuestion}
                   onChange={(e) => setChatQuestion(e.target.value)}
-                  className="custom-input"
-                  style={{ borderRadius: '12px' }}
+                  className="command-input"
+                  style={{ margin: 0 }}
                 />
-                <button type="submit" disabled={chatLoading} className="btn-primary" style={{ padding: '0 22px' }}>
-                  Ask AI
-                </button>
-              </form>
-            </div>
+              </div>
+              <button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="btn-solid" style={{ padding: '0 18px' }}>
+                <Send size={14} />
+              </button>
+            </form>
           </div>
         )}
       </main>
@@ -779,38 +731,37 @@ export default function App() {
       {/* ======================================================== */}
       {showPairModal && (
         <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
-          <div className="glass-panel" style={{ maxWidth: '520px', width: '100%', padding: '32px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <InstagramIcon size={20} color="#fff" />
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <InstagramIcon size={18} color="#818cf8" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: '700' }}>Connect Your Instagram</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Link your account in 10 seconds</p>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', letterSpacing: '-0.01em' }}>Connect Your Instagram</h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sync your ReelDex library in 10 seconds</p>
                 </div>
               </div>
-              <button onClick={() => setShowPairModal(false)} className="btn-secondary" style={{ padding: '6px 10px' }}>✕</button>
+              <button onClick={() => setShowPairModal(false)} className="btn-subtle" style={{ padding: '4px 8px' }}>✕</button>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-md)', padding: '20px', textAlign: 'center', marginBottom: '18px' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Your Unique Linking Code
               </span>
-              <div style={{ fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#a5b4fc', margin: '8px 0' }}>
+              <div style={{ fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', color: '#ffffff', margin: '8px 0' }}>
                 {pairingCode || 'MIND-849201'}
               </div>
-              <button onClick={() => copyText(pairingCode)} className="btn-secondary" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>
-                {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />} Copy Code
+              <button onClick={() => copyText(pairingCode)} className="btn-subtle" style={{ fontSize: '0.78rem' }}>
+                {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />} Copy Code
               </button>
             </div>
 
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
-              <strong>How it works:</strong>
-              <ol style={{ paddingLeft: '20px', marginTop: '6px' }}>
-                <li>Open Instagram and search for <strong>@reeldex.io</strong> (or click below).</li>
-                <li>Send a Direct Message containing the code: <code style={{ color: '#818cf8' }}>{pairingCode}</code>.</li>
-                <li>The bot will reply with confirmation and connect your personal knowledge library!</li>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '20px' }}>
+              <ol style={{ paddingLeft: '18px' }}>
+                <li>Open Instagram and open DM with <strong>@reeldex.io</strong>.</li>
+                <li>Send your 6-digit code: <code style={{ color: '#818cf8', fontFamily: 'var(--font-mono)' }}>{pairingCode}</code></li>
+                <li>You're connected! Any Reel you share in DM will automatically sync here.</li>
               </ol>
             </div>
 
@@ -818,10 +769,10 @@ export default function App() {
               href="https://ig.me/m/reeldex.io"
               target="_blank"
               rel="noreferrer"
-              className="btn-primary"
+              className="btn-solid"
               style={{ width: '100%', justifyContent: 'center' }}
             >
-              Open Instagram & Send Code <ExternalLink size={16} />
+              Open Instagram DM <ExternalLink size={14} />
             </a>
           </div>
         </div>
@@ -832,93 +783,96 @@ export default function App() {
       {/* ======================================================== */}
       {selectedReel && (
         <div className="modal-overlay" onClick={() => setSelectedReel(null)}>
-          <div className="glass-panel" style={{ maxWidth: '780px', width: '100%', maxHeight: '88vh', overflowY: 'auto', padding: '32px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+            
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div>
-                <span style={{
-                  fontSize: '0.72rem',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  padding: '3px 9px',
-                  borderRadius: '6px',
-                  background: 'rgba(99, 102, 241, 0.15)',
-                  color: '#a5b4fc',
-                  border: '1px solid rgba(99, 102, 241, 0.25)'
-                }}>
+                <span className="badge-category">
                   {selectedReel.category || 'General'}
                 </span>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginTop: '8px', color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.02em', marginTop: '6px', color: '#ffffff' }}>
                   {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
                 </h3>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   by @{selectedReel.author || selectedReel.sender_username} {selectedReel.duration ? `• ${Math.round(selectedReel.duration)}s` : ''}
                 </p>
               </div>
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   onClick={() => copyText(selectedReel.transcript?.full_text || selectedReel.preview_text || '')}
-                  className="btn-secondary"
-                  title="Copy Full Text"
+                  className="btn-subtle"
+                  title="Copy Transcript"
                 >
-                  {copied ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
+                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
                 </button>
                 {selectedReel.transcript && (
                   <button
                     onClick={() => downloadSRT(selectedReel)}
-                    className="btn-secondary"
-                    title="Download SRT Subtitles"
+                    className="btn-subtle"
+                    title="Download .SRT"
                   >
-                    <Download size={16} /> .SRT
+                    <Download size={14} /> .SRT
                   </button>
                 )}
-                <button onClick={() => setSelectedReel(null)} className="btn-secondary">✕</button>
+                {selectedReel.reel_url && (
+                  <a
+                    href={selectedReel.reel_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-subtle"
+                    title="Open on Instagram"
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+                <button onClick={() => setSelectedReel(null)} className="btn-subtle">✕</button>
               </div>
             </div>
 
             {/* AI Summary Box */}
             {selectedReel.transcript?.summary && (
               <div style={{
-                padding: '18px',
-                borderRadius: '12px',
-                background: 'rgba(99, 102, 241, 0.08)',
-                border: '1px solid rgba(99, 102, 241, 0.2)',
-                marginBottom: '20px'
+                padding: '16px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(99, 102, 241, 0.05)',
+                border: '1px solid rgba(99, 102, 241, 0.15)',
+                marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: '700', color: '#818cf8', marginBottom: '8px' }}>
-                  <Sparkles size={16} /> AI SUMMARY & KEY TAKEAWAYS
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: '700', color: '#818cf8', marginBottom: '6px' }}>
+                  <Sparkles size={14} /> AI SUMMARY & KEY TAKEAWAYS
                 </div>
-                <p style={{ fontSize: '0.92rem', color: '#e2e8f0', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '12px' : '0' }}>
+                <p style={{ fontSize: '0.86rem', color: '#e2e8f0', lineHeight: '1.6', marginBottom: selectedReel.transcript.key_points?.length ? '10px' : '0' }}>
                   {formatSummary(selectedReel.transcript.summary)}
                 </p>
 
                 {selectedReel.transcript.key_points?.length > 0 && (
-                  <ul style={{ paddingLeft: '20px', fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
                     {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '4px' }}>{formatSummary(pt)}</li>
+                      <li key={i} style={{ marginBottom: '3px' }}>{formatSummary(pt)}</li>
                     ))}
                   </ul>
                 )}
               </div>
             )}
 
-            {/* Extracted Actions & Tools Box */}
+            {/* Extracted Actions & Tools */}
             {selectedReel.action_items?.length > 0 && (
               <div style={{
-                padding: '14px 18px',
-                borderRadius: '12px',
-                background: 'rgba(168, 85, 247, 0.08)',
-                border: '1px solid rgba(168, 85, 247, 0.2)',
-                marginBottom: '20px'
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(56, 189, 248, 0.04)',
+                border: '1px solid rgba(56, 189, 248, 0.15)',
+                marginBottom: '16px'
               }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#d8b4fe', marginBottom: '6px' }}>
-                  🛠️ EXTRACTED TOOLS, CODES & ACTION ITEMS
+                <div style={{ fontSize: '0.74rem', fontWeight: '700', color: '#7dd3fc', marginBottom: '6px' }}>
+                  🛠️ EXTRACTED TOOLS, PROMOS & ACTION ITEMS
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   {selectedReel.action_items.map((act, i) => (
-                    <div key={i} style={{ fontSize: '0.85rem', color: '#f3e8ff' }}>
+                    <div key={i} style={{ fontSize: '0.8rem', color: '#e0f2fe' }}>
                       • {formatActionItem(act)}
                     </div>
                   ))}
@@ -926,27 +880,27 @@ export default function App() {
               </div>
             )}
 
-            {/* Full Transcript Box */}
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                FULL WORD-FOR-WORD TRANSCRIPTION
-              </h4>
+            {/* Word-For-Word Transcript */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                FULL WORD-FOR-WORD TRANSCRIPT
+              </div>
               <div style={{
-                maxHeight: '260px',
+                maxHeight: '220px',
                 overflowY: 'auto',
-                padding: '16px',
-                borderRadius: '10px',
-                background: 'rgba(10, 14, 23, 0.8)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: '0.92rem',
+                padding: '14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-app)',
+                border: '1px solid var(--border-hairline)',
+                fontSize: '0.85rem',
                 lineHeight: '1.7',
                 whiteSpace: 'pre-wrap'
               }}>
-                {selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing in background...'}
+                {selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...'}
               </div>
             </div>
 
-            {/* Interactive Timestamps */}
+            {/* Timestamped Segments */}
             {(() => {
               let segs = [];
               try {
@@ -962,50 +916,35 @@ export default function App() {
               if (!segs || segs.length === 0) return null;
 
               return (
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                    TIMESTAMPED SEGMENTS ({segs.length})
-                  </h4>
-                  <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                    TIMESTAMPS ({segs.length})
+                  </div>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {segs.map((seg, idx) => (
                       <div
                         key={idx}
                         style={{
                           display: 'flex',
                           alignItems: 'baseline',
-                          gap: '12px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
+                          gap: '10px',
+                          padding: '6px 10px',
+                          borderRadius: 'var(--radius-xs)',
                           background: 'rgba(255, 255, 255, 0.02)',
-                          border: '1px solid rgba(255, 255, 255, 0.04)',
-                          fontSize: '0.85rem'
+                          border: '1px solid var(--border-hairline)',
+                          fontSize: '0.8rem'
                         }}
                       >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#a855f7', minWidth: '70px' }}>
-                          {Math.floor(seg.start || 0)}s - {Math.floor(seg.end || 0)}s
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#818cf8', minWidth: '60px' }}>
+                          {Math.floor(seg.start || 0)}s - {Math.floor(seg.end || seg.start + 2)}s
                         </span>
-                        <span style={{ color: '#e2e8f0' }}>{seg.text}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{seg.text}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               );
             })()}
-
-            {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '18px' }}>
-              <a
-                href={selectedReel.reel_url}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: '#818cf8', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
-              >
-                Open Reel on Instagram <ExternalLink size={14} />
-              </a>
-              <button onClick={() => setSelectedReel(null)} className="btn-primary" style={{ padding: '8px 24px' }}>
-                Done
-              </button>
-            </div>
           </div>
         </div>
       )}
