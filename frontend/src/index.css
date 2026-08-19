@@ -176,8 +176,8 @@ body {
   display: grid;
   grid-template-columns: repeat(2, 1fr) !important;
   gap: 12px 14px;
-  padding: 0 16px;
-  margin-bottom: 20px;
+  padding: 0;
+  margin-bottom: 24px;
 }
 
 .ig-shelf-card {
