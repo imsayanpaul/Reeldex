@@ -650,14 +650,26 @@ def list_reels(
     reels_db = query_builder.order_by(desc(ReelItem.created_at)).all()
     
     # Auto-recover stale reels stuck in processing for > 3 minutes
-    now_utc = datetime.datetime.utcnow()
-    for r in reels_db:
-        if r.status in ["processing", "downloading", "transcribing"] and r.created_at:
-            age_seconds = (now_utc - r.created_at).total_seconds()
-            if age_seconds > 180:
-                r.status = "failed"
-                r.error_message = "Transcription timed out. Tap retry."
-                db.commit()
+    try:
+        now_utc = datetime.datetime.utcnow()
+        for r in reels_db:
+            if r.status in ["processing", "downloading", "transcribing"] and r.created_at:
+                try:
+                    c_at = r.created_at
+                    if isinstance(c_at, str):
+                        c_at = datetime.datetime.fromisoformat(c_at.replace("Z", "+00:00"))
+                    if hasattr(c_at, "tzinfo") and c_at.tzinfo is not None:
+                        age_sec = (datetime.datetime.now(datetime.timezone.utc) - c_at).total_seconds()
+                    else:
+                        age_sec = (now_utc - c_at).total_seconds()
+                    if age_sec > 180:
+                        r.status = "failed"
+                        r.error_message = "Transcription timed out. Tap retry."
+                        db.commit()
+                except Exception:
+                    pass
+    except Exception as stale_err:
+        print(f"[Stale Recovery Safe Handler]: {stale_err}")
 
     # Format objects for search and frontend
     items = []
