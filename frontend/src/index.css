@@ -157,6 +157,35 @@ body {
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* Instagram Native User Status Capsule / Icon */
+.ig-user-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 6px 12px;
+  color: #f8fafa;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.ig-user-status-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ig-username-text {
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Instagram Categories Strip (Smooth Scroll) */
 .ig-categories-strip {
   display: flex;
@@ -695,6 +724,20 @@ body {
     padding: 6px 14px;
     font-size: 0.82rem;
     flex-shrink: 0;
+  }
+
+  .ig-user-status-btn {
+    padding: 7px !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .ig-username-text {
+    display: none !important;
   }
 
   .ig-collections-grid {

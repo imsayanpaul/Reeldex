@@ -26,7 +26,8 @@ import {
   ChevronRight,
   ChevronDown,
   MoreVertical,
-  Grid
+  Grid,
+  User
 } from 'lucide-react';
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
@@ -804,16 +805,25 @@ export default function App() {
             {/* User / Instagram Status Capsule */}
             <button
               onClick={handleGeneratePairingCode}
-              className="ig-filter-pill ig-user-pill"
+              className="ig-user-status-btn"
               title="Instagram Connection Status - Click to Pair"
             >
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: session.is_instagram_linked ? '#10b981' : '#f59e0b'
-              }} />
-              <span>{session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User #3832')}</span>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <User size={15} color="#e4e4e7" />
+                <span style={{
+                  position: 'absolute',
+                  bottom: '-1px',
+                  right: '-2px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
+                  border: '1.5px solid #0c0f14'
+                }} />
+              </div>
+              <span className="ig-username-text">
+                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
+              </span>
             </button>
 
             {/* + New Collection Icon Only */}
