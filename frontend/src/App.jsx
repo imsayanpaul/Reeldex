@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { 
   Search, 
@@ -317,6 +317,35 @@ export default function App() {
   const [addingReelsToCol, setAddingReelsToCol] = useState(false);
   const [collectionSubTab, setCollectionSubTab] = useState('all'); // 'all' | 'reels'
 
+  // 0ms Instant Client-Side Category, Collection & Search Filter
+  const displayedReels = useMemo(() => {
+    let list = Array.isArray(reels) ? reels : [];
+
+    // 1. Collection filter
+    if (selectedCollection?.id) {
+      list = list.filter(r => String(r.collection_id) === String(selectedCollection.id));
+    } else if (activeViewFilter && activeViewFilter !== 'All' && activeViewFilter !== 'Collections') {
+      // 2. Instant 0ms Category filter
+      const catLower = activeViewFilter.toLowerCase().trim();
+      list = list.filter(r => (r.category || '').toLowerCase().trim() === catLower);
+    }
+
+    // 3. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(r => {
+        const title = (r.title || '').toLowerCase();
+        const author = (r.author || r.sender_username || '').toLowerCase();
+        const category = (r.category || '').toLowerCase();
+        const summary = (typeof r.summary === 'string' ? r.summary : JSON.stringify(r.summary || '')).toLowerCase();
+        const tags = Array.isArray(r.tags) ? r.tags.join(' ').toLowerCase() : '';
+        return title.includes(q) || author.includes(q) || category.includes(q) || summary.includes(q) || tags.includes(q);
+      });
+    }
+
+    return list;
+  }, [reels, selectedCollection?.id, activeViewFilter, searchQuery]);
+
   // 1. Initialize User Session
   useEffect(() => {
     const currentToken = getInitialToken();
@@ -341,31 +370,18 @@ export default function App() {
     fetchCollections(currentToken);
   }, []);
 
-  // 2. Fetch Reels when Category, Collection, or Search Query Changes (Smooth Background Update)
+  // 2. Continuous Vault Sync (Instant Local Cache + Background Server Polling)
   useEffect(() => {
-    if (reels.length === 0) {
-      setReelsLoading(true);
-    }
     let isCancelled = false;
 
     const loadData = async () => {
       try {
         const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
-        const categoryParam = (activeViewFilter === 'All' || activeViewFilter === 'Collections' || selectedCollection) ? 'All' : activeViewFilter;
-        let url = `${API_BASE}/reels?token=${token}&category=${encodeURIComponent(categoryParam)}`;
-        if (selectedCollection?.id) {
-          url += `&collection_id=${selectedCollection.id}`;
-        }
-        if (searchQuery.trim()) {
-          url += `&q=${encodeURIComponent(searchQuery.trim())}`;
-        }
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}/reels?token=${token}&category=All`);
         if (res.ok && !isCancelled) {
           const data = await res.json();
           setReels(data || []);
-          if (!searchQuery.trim() && activeViewFilter === 'All' && !selectedCollection) {
-            setSafeStorage('reelmind_cached_reels', JSON.stringify(data || []));
-          }
+          setSafeStorage('reelmind_cached_reels', JSON.stringify(data || []));
         }
       } catch (err) {
         console.error('Error fetching reels:', err);
@@ -406,7 +422,7 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', handleVisibility);
     };
-  }, [session?.auth_token, activeViewFilter, selectedCollection?.id, searchQuery, reels.some(r => ['processing', 'downloading', 'transcribing'].includes(r.status))]);
+  }, [session?.auth_token, reels.some(r => ['processing', 'downloading', 'transcribing'].includes(r.status))]);
 
   useEffect(() => {
     if (activeTab === 'chat' && chatBottomRef.current) {
@@ -711,10 +727,10 @@ export default function App() {
   };
 
   const handleSelectAll = () => {
-    if (selectedReelIds.size === reels.length) {
+    if (selectedReelIds.size === displayedReels.length) {
       setSelectedReelIds(new Set());
     } else {
-      setSelectedReelIds(new Set(reels.map(r => r.id)));
+      setSelectedReelIds(new Set(displayedReels.map(r => r.id)));
     }
   };
 
@@ -1349,7 +1365,7 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                ) : reels.length === 0 ? (
+                ) : displayedReels.length === 0 ? (
                   selectedCollection ? (
                     <div style={{
                       padding: '70px 20px',
@@ -1499,7 +1515,7 @@ export default function App() {
                   )
                 ) : (
                   <div className="ig-reels-grid">
-                    {reels.map((reel) => (
+                    {displayedReels.map((reel) => (
                       <div
                         key={reel.id}
                         className="modern-reel-card"
