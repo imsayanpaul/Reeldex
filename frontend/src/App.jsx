@@ -697,12 +697,12 @@ export default function App() {
               <div style={{ marginBottom: '28px' }}>
                 {activeViewFilter === 'All' && (
                   <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-heading)' }}>
+                    <h2 style={{ fontSize: '0.98rem', fontWeight: '600', color: '#ffffff' }}>
                       Collections
                     </h2>
                     <button
                       onClick={() => setActiveViewFilter('Collections')}
-                      style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '700', fontSize: '0.84rem', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '600', fontSize: '0.88rem', cursor: 'pointer' }}
                     >
                       See all
                     </button>

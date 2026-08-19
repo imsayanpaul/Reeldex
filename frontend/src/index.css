@@ -132,13 +132,13 @@ body {
 
 /* Filter Pills (Instagram Native Style - Dark) */
 .ig-filter-pill {
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
+  padding: 7px 16px;
+  border-radius: 12px;
+  font-size: 0.86rem;
   font-weight: 600;
   background: #18181b;
-  color: #a1a1aa;
-  border: 1px solid #27272a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
@@ -149,11 +149,11 @@ body {
 .ig-filter-pill:hover {
   background: #27272a;
   color: #ffffff;
-  border-color: #3f3f46;
 }
 .ig-filter-pill.active {
   background: #ffffff;
   color: #000000;
+  font-weight: 700;
   border-color: #ffffff;
 }
 
@@ -172,11 +172,10 @@ body {
   display: none;
 }
 
-
 /* Instagram Native Home Shelf (2 Columns of Horizontal Compact Cards) */
 .ig-collections-shelf {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: 12px 14px;
   padding: 0 16px;
   margin-bottom: 24px;
@@ -222,8 +221,8 @@ body {
 }
 
 .ig-shelf-title {
-  font-size: 0.94rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 600;
   color: #ffffff;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -238,7 +237,7 @@ body {
   align-items: center;
   gap: 4px;
   margin-top: 2px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* Instagram Native Full Page 2-Column Square Collection Grid */
