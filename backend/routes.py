@@ -6,7 +6,7 @@ import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Header, Request, Response
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, desc
 
 from backend.database import get_db, engine, Base
@@ -178,7 +178,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN and not reel.dm_replied:
                 user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
                 frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
-                vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
+                vault_url = f"{frontend_base}/?token={user.auth_token}&new_reel={reel.id}" if user else frontend_base
 
                 video_title = reel.title or "Instagram Reel"
                 creator_tag = f" by @{reel.author}" if reel.author else ""
@@ -270,7 +270,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         if source == "instagram_dm" and sender_id and settings.INSTAGRAM_PAGE_ACCESS_TOKEN and not reel.dm_replied:
             user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
             frontend_base = (settings.FRONTEND_URL or "https://reeldex-io.vercel.app").rstrip("/")
-            vault_url = f"{frontend_base}/?token={user.auth_token}" if user else frontend_base
+            vault_url = f"{frontend_base}/?token={user.auth_token}&new_reel={reel.id}" if user else frontend_base
 
             video_title = reel.title or "Instagram Reel"
             creator_tag = f" by @{reel.author}" if reel.author else ""
@@ -647,7 +647,10 @@ def list_reels(
         query_builder = query_builder.filter(ReelItem.collection_id == collection_id)
         category = "All"
 
-    reels_db = query_builder.order_by(desc(ReelItem.created_at)).all()
+    reels_db = query_builder.options(
+        joinedload(ReelItem.transcript),
+        joinedload(ReelItem.collection)
+    ).order_by(desc(ReelItem.created_at)).all()
     
     # Auto-recover stale reels stuck in processing for > 3 minutes
     try:

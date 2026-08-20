@@ -366,6 +366,27 @@ export default function App() {
       })
       .catch(err => console.error('Session error:', err));
 
+    // Fast-track latest reel if opened directly from Instagram DM (?new_reel=123)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const newReelId = urlParams.get('new_reel');
+      if (newReelId) {
+        fetch(`${API_BASE}/reels/${newReelId}`)
+          .then(res => res.json())
+          .then(newReel => {
+            if (newReel && newReel.id) {
+              setReels(prev => {
+                if (prev.some(r => r.id === newReel.id)) return prev;
+                const updated = [newReel, ...prev];
+                setSafeStorage('reelmind_cached_reels', updated);
+                return updated;
+              });
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {}
+
     fetchCategories();
     fetchCollections(currentToken);
   }, []);
