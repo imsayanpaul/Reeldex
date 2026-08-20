@@ -383,6 +383,9 @@ export default function App() {
           setReels(data || []);
           setSafeStorage('reelmind_cached_reels', JSON.stringify(data || []));
         }
+        if (!isCancelled) {
+          fetchCollections(token);
+        }
       } catch (err) {
         console.error('Error fetching reels:', err);
       } finally {
@@ -449,6 +452,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setCollections(data || []);
+        setSafeStorage('reelmind_cached_collections', data || []);
       }
     } catch (e) {
       console.error('Error fetching collections:', e);
@@ -514,6 +518,11 @@ export default function App() {
         setSelectedCollection(newCol);
         setSelectedReelIdsForAdd(new Set());
         setShowAddToThisCollectionModal(true);
+        setCollections(prev => {
+          const next = [newCol, ...prev.filter(c => c.id !== newCol.id)];
+          setSafeStorage('reelmind_cached_collections', next);
+          return next;
+        });
         // Background fetch data
         fetchAllVaultReels(newCol);
         fetchCollections(token);
@@ -596,6 +605,16 @@ export default function App() {
         const data = await res.json();
         setSelectedCollection(prev => ({ ...prev, name: data.name }));
         setShowEditCollectionModal(false);
+        setCollections(prev => {
+          const next = prev.map(c => c.id === selectedCollection.id ? { ...c, name: data.name } : c);
+          setSafeStorage('reelmind_cached_collections', next);
+          return next;
+        });
+        setReels(prev => {
+          const next = prev.map(r => String(r.collection_id) === String(selectedCollection.id) ? { ...r, collection_name: data.name } : r);
+          setSafeStorage('reelmind_cached_reels', next);
+          return next;
+        });
         fetchCollections(token);
       }
     } catch (err) {
