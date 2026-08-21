@@ -1030,115 +1030,112 @@ export default function App() {
         </header>
       ) : activeTab === 'vault' ? (
         <header className="ig-top-navbar">
-          <div className="ig-navbar-inner">
-            {/* Left: Brand Logo / Name */}
-            <div
-              onClick={() => {
-                setActiveTab('vault');
-                setActiveViewFilter('All');
-                setSelectedCollection(null);
-                setSearchQuery('');
-                setSelectedReel(null);
-                setIsManageMode(false);
-                setSelectedReelIds(new Set());
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
-              title="Go to All Saved"
-            >
-              <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
-                ReelDex
-              </h1>
-            </div>
+          <div
+            onClick={() => {
+              setActiveTab('vault');
+              setActiveViewFilter('All');
+              setSelectedCollection(null);
+              setSearchQuery('');
+              setSelectedReel(null);
+              setIsManageMode(false);
+              setSelectedReelIds(new Set());
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
+            title="Go to All Saved"
+          >
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
+              ReelDex
+            </h1>
+          </div>
 
-            {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
-              <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
-                  <input
-                    type="text"
-                    placeholder="Search transcripts & tools..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '7px 32px 7px 34px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-light)',
-                      background: 'var(--bg-input)',
-                      fontSize: '0.84rem',
-                      outline: 'none',
-                      color: 'var(--text-main)'
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
-                    >
-                      <X size={13} />
-                    </button>
-                  )}
-                </div>
+          {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
+            <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+                <input
+                  type="text"
+                  placeholder="Search transcripts & tools..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '7px 32px 7px 34px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-input)',
+                    fontSize: '0.84rem',
+                    outline: 'none',
+                    color: 'var(--text-main)'
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
-
-              {/* Highlighted Ask Dex AI Button */}
-              <button
-                onClick={() => setActiveTab('chat')}
-                className="ig-ask-ai-center-btn"
-                title="Ask Dex AI across your saved reels"
-              >
-                <span>Ask Dex AI</span>
-              </button>
             </div>
 
-            {/* Right Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {/* Highlighted Ask Dex AI Button */}
+            <button
+              onClick={() => setActiveTab('chat')}
+              className="ig-ask-ai-center-btn"
+              title="Ask Dex AI across your saved reels"
+            >
+              <span>Ask Dex AI</span>
+            </button>
+          </div>
 
-              {/* User / Instagram Status Capsule */}
-              <button
-                onClick={handleGeneratePairingCode}
-                className="ig-user-status-btn"
-                title="Instagram Connection Status - Click to Pair"
-              >
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={15} color="#e4e4e7" />
-                  <span style={{
-                    position: 'absolute',
-                    bottom: '-1px',
-                    right: '-2px',
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
-                    border: '1.5px solid #0c0f14'
-                  }} />
-                </div>
-                <span className="ig-username-text">
-                  {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
-                </span>
-              </button>
+          {/* Right Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
-              {/* + New Collection Icon Only */}
-              <button
-                onClick={() => setShowCreateCollectionModal(true)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '2px',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginLeft: '4px'
-                }}
-                title="Create New Collection"
-              >
-                <Plus size={28} strokeWidth={2.4} />
-              </button>
-            </div>
+            {/* User / Instagram Status Capsule */}
+            <button
+              onClick={handleGeneratePairingCode}
+              className="ig-user-status-btn"
+              title="Instagram Connection Status - Click to Pair"
+            >
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <User size={15} color="#e4e4e7" />
+                <span style={{
+                  position: 'absolute',
+                  bottom: '-1px',
+                  right: '-2px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
+                  border: '1.5px solid #0c0f14'
+                }} />
+              </div>
+              <span className="ig-username-text">
+                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
+              </span>
+            </button>
+
+            {/* + New Collection Icon Only */}
+            <button
+              onClick={() => setShowCreateCollectionModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: '4px'
+              }}
+              title="Create New Collection"
+            >
+              <Plus size={28} strokeWidth={2.4} />
+            </button>
           </div>
         </header>
       ) : null}

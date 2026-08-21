@@ -112,24 +112,13 @@ body {
   background: rgba(12, 15, 20, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none !important;
   min-height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  z-index: 50;
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.ig-navbar-inner {
-  max-width: 1180px;
-  width: 100%;
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  height: 60px;
+  padding: 10px 16px;
+  z-index: 50;
   box-sizing: border-box;
 }
 
@@ -143,13 +132,13 @@ body {
 
 /* Filter Pills (Instagram Native Style - Dark) */
 .ig-filter-pill {
-  padding: 6px 16px;
+  padding: 7px 18px;
   border-radius: 9999px;
-  font-size: 0.83rem;
+  font-size: 0.86rem;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
@@ -158,17 +147,14 @@ body {
   gap: 6px;
 }
 .ig-filter-pill:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
 }
 .ig-filter-pill.active {
-  background: #ffffff;
-  color: #0c0f14;
+  background: #27282c;
+  color: #ffffff;
   font-weight: 600;
-  border-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 /* Instagram Native User Status Capsule / Icon */
@@ -177,7 +163,7 @@ body {
   align-items: center;
   gap: 6px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
   padding: 6px 12px;
   color: #f8fafa;
@@ -194,7 +180,7 @@ body {
 }
 
 .ig-username-text {
-  max-width: 100px;
+  max-width: 85px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -208,24 +194,26 @@ body {
   padding: 6px 16px;
   border-radius: 9999px;
   background: rgba(144, 164, 242, 0.08);
-  border: 1px solid rgba(144, 164, 242, 0.3);
-  color: #c7d2fe;
-  font-size: 0.84rem;
+  border: 1.5px solid #90a4f2;
+  box-shadow: 0 0 12px rgba(144, 164, 242, 0.18), inset 0 0 6px rgba(144, 164, 242, 0.05);
+  color: #f8fafa;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
 
 .ig-ask-ai-center-btn:hover {
   background: rgba(144, 164, 242, 0.16);
-  border-color: #90a4f2;
+  border-color: #b0c0ff;
+  box-shadow: 0 0 20px rgba(144, 164, 242, 0.38), inset 0 0 10px rgba(144, 164, 242, 0.12);
   transform: translateY(-1px);
 }
 
 .ig-ask-ai-center-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 /* Mobile Search Bar */
@@ -241,53 +229,54 @@ body {
   }
 }
 
-/* Categories Filter Pills Strip (Flex-wrap on desktop so pills never get cut) */
+/* Instagram Categories Strip (Smooth Scroll) */
 .ig-categories-strip {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   padding: 0;
 }
+.ig-categories-strip::-webkit-scrollbar {
+  display: none;
+}
 
-/* Instagram Native Home Shelf (Compact clean cards on desktop) */
+/* Instagram Native Home Shelf (2 Columns of Horizontal Compact Cards) */
 .ig-collections-shelf {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 240px));
-  gap: 12px 16px;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px 14px;
   padding: 0;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .ig-shelf-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 8px 12px 8px 8px;
+  background: transparent;
   min-width: 0;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  transition: opacity 0.15s ease;
 }
 .ig-shelf-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0.85;
 }
 
 .ig-shelf-cover {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
   aspect-ratio: 1 / 1;
   border-radius: 8px;
   overflow: hidden;
   background: #141820;
   flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .ig-shelf-cover img {
   width: 100%;
@@ -304,9 +293,9 @@ body {
 }
 
 .ig-shelf-title {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #ffffff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -316,11 +305,11 @@ body {
 
 .ig-shelf-meta {
   font-size: 0.72rem;
-  color: #64748b;
+  color: #8e8e8e;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 3px;
+  margin-top: 2px;
   font-weight: 400;
 }
 
@@ -771,18 +760,9 @@ body {
   }
 
   .ig-categories-strip {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
     padding: 0 !important;
-    margin-bottom: 18px !important;
-    gap: 8px !important;
-  }
-  .ig-categories-strip::-webkit-scrollbar {
-    display: none !important;
+    margin-bottom: 18px;
+    gap: 8px;
   }
 
   .ig-filter-pill {
@@ -809,12 +789,6 @@ body {
     flex: initial;
     padding: 6px 14px !important;
     font-size: 0.82rem !important;
-  }
-
-  .ig-collections-shelf {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px 14px !important;
-    margin-bottom: 24px !important;
   }
 
   .ig-collections-grid {
