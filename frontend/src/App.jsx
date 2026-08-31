@@ -265,6 +265,16 @@ export default function App() {
     }
   };
 
+  const handleThumbnailError = (e, shortcode) => {
+    const img = e.currentTarget;
+    if (shortcode && !img.dataset.retried) {
+      img.dataset.retried = 'true';
+      img.src = `https://www.instagram.com/p/${shortcode}/media/?size=l`;
+    } else {
+      img.style.display = 'none';
+    }
+  };
+
   // Vault, Collections & Search State (Instant 0ms Cache-First)
   const [reels, setReels] = useState(getCachedReels);
   const [initialLoading, setInitialLoading] = useState(() => getCachedReels().length === 0);
@@ -1278,7 +1288,7 @@ export default function App() {
                         >
                           <div className="ig-shelf-cover">
                             {coverImg ? (
-                              <img src={coverImg} alt={col.name} />
+                              <img src={coverImg} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#141820' }}>
                                 <Folder size={20} color="#8e8e8e" />
@@ -1311,11 +1321,11 @@ export default function App() {
                             {thumbs.length >= 4 ? (
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', width: '100%', height: '100%', gap: '1px' }}>
                                 {thumbs.map((img, idx) => (
-                                  <img key={idx} src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <img key={idx} src={img} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ))}
                               </div>
                             ) : thumbs.length > 0 ? (
-                              <img src={thumbs[0]} alt={col.name} />
+                              <img src={thumbs[0]} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             ) : (
                               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1c1e' }}>
                                 <Folder size={32} color="#71717a" />
@@ -1591,61 +1601,71 @@ export default function App() {
                         }}
                       >
                         {/* Video Thumbnail Box */}
-                        {reel.thumbnail_url ? (
-                          <div className="modern-card-thumbnail-box">
-                            <img src={reel.thumbnail_url} alt={reel.title || 'Reel Thumbnail'} />
-                            
-                            {/* Instagram 3-Grid Top-Right Reel Icon */}
-                            <div className="ig-reel-media-badge">
-                              <Play size={13} color="#ffffff" fill="#ffffff" />
-                            </div>
+                        {(() => {
+                          const thumbUrl = reel.thumbnail_url || (reel.shortcode ? `https://www.instagram.com/p/${reel.shortcode}/media/?size=l` : null);
+                          return (
+                            <div className="modern-card-thumbnail-box">
+                              {thumbUrl ? (
+                                <img
+                                  src={thumbUrl}
+                                  alt={reel.title || 'Reel Thumbnail'}
+                                  referrerPolicy="no-referrer"
+                                  onError={(e) => handleThumbnailError(e, reel.shortcode)}
+                                />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #181c20 0%, #0c0f14 100%)' }}>
+                                  <Play size={28} color="#90a4f2" opacity={0.6} />
+                                </div>
+                              )}
+                              
+                              {/* Instagram 3-Grid Top-Right Reel Icon */}
+                              <div className="ig-reel-media-badge">
+                                <Play size={13} color="#ffffff" fill="#ffffff" />
+                              </div>
 
-                            <div className="modern-card-overlay">
-                              {!isManageMode && (
-                                <div className="play-circle-badge">
-                                  <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
+                              <div className="modern-card-overlay">
+                                {!isManageMode && (
+                                  <div className="play-circle-badge">
+                                    <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Top Floating Badges (Desktop) */}
+                              <div className="modern-card-badges">
+                                <span className="pill-category-badge">
+                                  {reel.category || 'General'}
+                                </span>
+                                {reel.duration && (
+                                  <span className="pill-duration-badge">
+                                    {Math.round(reel.duration)}s
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Manage Mode Multi-Select Checkbox Overlay (Instagram Native) */}
+                              {isManageMode && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '10px',
+                                  right: '10px',
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '4px',
+                                  background: selectedReelIds.has(reel.id) ? '#ffffff' : 'rgba(0, 0, 0, 0.65)',
+                                  border: selectedReelIds.has(reel.id) ? '2px solid #ffffff' : '2px solid rgba(255, 255, 255, 0.7)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 10,
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
+                                }}>
+                                  {selectedReelIds.has(reel.id) && <Check size={16} color="#000000" strokeWidth={3.5} />}
                                 </div>
                               )}
                             </div>
-
-                            {/* Top Floating Badges (Desktop) */}
-                            <div className="modern-card-badges">
-                              <span className="pill-category-badge">
-                                {reel.category || 'General'}
-                              </span>
-                              {reel.duration && (
-                                <span className="pill-duration-badge">
-                                  {Math.round(reel.duration)}s
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Manage Mode Multi-Select Checkbox Overlay (Instagram Native) */}
-                            {isManageMode && (
-                              <div style={{
-                                position: 'absolute',
-                                bottom: '10px',
-                                right: '10px',
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '4px',
-                                background: selectedReelIds.has(reel.id) ? '#ffffff' : 'rgba(0, 0, 0, 0.65)',
-                                border: selectedReelIds.has(reel.id) ? '2px solid #ffffff' : '2px solid rgba(255, 255, 255, 0.7)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 10,
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
-                              }}>
-                                {selectedReelIds.has(reel.id) && <Check size={16} color="#000000" strokeWidth={3.5} />}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div style={{ height: '140px', background: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Play size={24} color="#ffffff" />
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Card Body with High-End Typography */}
                         <div className="modern-card-body">
@@ -2844,7 +2864,7 @@ export default function App() {
             </div>
 
             {/* Video Thumbnail Preview Banner */}
-            {selectedReel.thumbnail_url && (
+            {(selectedReel.thumbnail_url || selectedReel.shortcode) && (
               <div style={{
                 position: 'relative',
                 width: '100%',
@@ -2856,10 +2876,11 @@ export default function App() {
                 border: '1px solid #282f34'
               }}>
                 <img
-                  src={selectedReel.thumbnail_url}
+                  src={selectedReel.thumbnail_url || (selectedReel.shortcode ? `https://www.instagram.com/p/${selectedReel.shortcode}/media/?size=l` : '')}
                   alt={selectedReel.title || 'Reel Thumbnail'}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleThumbnailError(e, selectedReel.shortcode)}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                 />
                 {selectedReel.reel_url && (
                   <div
