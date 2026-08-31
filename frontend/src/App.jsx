@@ -248,15 +248,16 @@ export default function App() {
   const [pairingCode, setPairingCode] = useState(null);
 
   const formatSanitizedMarkdown = (text) => {
-  if (!text) return '';
-  // Auto-close unclosed markdown link parentheses if truncated
-  return text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)/g, (match, label, url) => {
-    if (!url.endsWith(')')) {
-      return `[${label}](${url.replace(/[.;,]+$/, '')})`;
-    }
-    return match;
-  });
-};
+    if (!text) return '';
+    let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    // Auto-close unclosed markdown link parentheses if truncated
+    return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)/g, (match, label, url) => {
+      if (!url.endsWith(')')) {
+        return `[${label}](${url.replace(/[.;,]+$/, '')})`;
+      }
+      return match;
+    });
+  };
 
 const getCachedReels = () => {
     try {
@@ -349,7 +350,7 @@ const getCachedReels = () => {
   const formatForWhatsAppAndNotes = (rawMarkdown) => {
     if (!rawMarkdown) return '';
 
-    let text = rawMarkdown;
+    let text = rawMarkdown.replace(/<think>[\s\S]*?<\/think>/gi, '');
 
     // 1. Strip incomplete trailing broken link at end
     text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
@@ -380,7 +381,7 @@ const getCachedReels = () => {
   const formatForMarkdownExport = (rawMarkdown) => {
     if (!rawMarkdown) return '';
 
-    let text = rawMarkdown;
+    let text = rawMarkdown.replace(/<think>[\s\S]*?<\/think>/gi, '');
 
     // 1. Strip incomplete trailing broken link at end
     text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');

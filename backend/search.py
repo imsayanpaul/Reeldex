@@ -109,16 +109,20 @@ AI_QUERY_CACHE: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
 def sanitize_ai_response(text: str) -> str:
-    """Post-processes AI response to remove broken trailing links, fix parentheses, and ensure valid markdown."""
+    """Post-processes AI response to remove internal thinking blocks, broken trailing links, fix parentheses, and ensure valid markdown."""
     if not text:
         return text
 
     cleaned = text
-    # 1. Remove incomplete trailing broken link at very end of output
+
+    # 1. Strip AI internal reasoning / thinking process blocks (<think>...</think>)
+    cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
+
+    # 2. Remove incomplete trailing broken link at very end of output
     cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
 
-    # 2. Fix markdown link syntax and strip extra closing parens
+    # 3. Fix markdown link syntax and strip extra closing parens
     def clean_link_syntax(match):
         label = match.group(1).strip()
         url = match.group(2).rstrip(').;,')
@@ -126,7 +130,7 @@ def sanitize_ai_response(text: str) -> str:
 
     cleaned = re.sub(r'\[([^\]]+)\]\((https?://[^\s\)]+)\)*', clean_link_syntax, cleaned)
 
-    # 3. Clean double closed parentheses
+    # 4. Clean double closed parentheses
     cleaned = re.sub(r'\)\)+', ')', cleaned)
 
     return cleaned.strip()
@@ -153,8 +157,8 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     if cache_key in AI_QUERY_CACHE:
         cached_entry = AI_QUERY_CACHE[cache_key]
         cached_ans = cached_entry.get("response", {}).get("answer", "")
-        # Validate cache: ensure cached answer is valid and does NOT end with a broken truncated link
-        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and not re.search(r'\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', cached_ans):
+        # Validate cache: purge entries containing internal <think> blocks or truncated links
+        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and "<think>" not in cached_ans.lower() and not re.search(r'\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', cached_ans):
             print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
             return cached_entry["response"]
         else:
