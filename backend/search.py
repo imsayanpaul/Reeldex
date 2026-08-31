@@ -183,10 +183,10 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
         else:
             top_reels = scored_reels[:10] if scored_reels else reels_context[:10]
 
-    # 3. Build dynamic compressed context prompt with character budget guard (35k chars ~ 8k tokens)
+    # 3. Build dynamic compressed context prompt with character budget guard (18k chars max ~ 4.5k tokens)
     context_blocks = []
     citations = []
-    char_budget = 35000
+    char_budget = 18000
     current_chars = 0
 
     for idx, r in enumerate(top_reels, 1):
@@ -211,18 +211,16 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Context compression: Include summary + top 300 chars of transcript
-        summary_text = r.get("summary") or ""
-        transcript_snippet = (r.get("full_text") or "")[:300]
+        # Efficient compression: 200 chars summary + 150 chars excerpt
+        summary_text = (r.get("summary") or "")[:200]
+        transcript_snippet = (r.get("full_text") or "")[:150]
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"
-            f"Video Link: {reel_url}\n"
-            f"Category: {r.get('category', 'General')}\n"
+            f"Link: {reel_url} | Category: {r.get('category', 'General')}\n"
             f"Summary: {summary_text}\n"
-            f"Tools/Actions: {actions}\n"
-            f"Key Excerpt: {transcript_snippet}\n"
+            f"Tools: {actions}\n"
         )
         
         if current_chars + len(block) > char_budget:
@@ -285,7 +283,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.3,
-                        max_tokens=2500
+                        max_tokens=2200
                     )
                     answer = response.choices[0].message.content
                     if answer:
@@ -296,6 +294,26 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                     continue
         except Exception as groq_err:
             last_error = groq_err
+
+    # Fallback retry if payload size error occurred (413 Request Entity Too Large)
+    if not answer and ("413" in str(last_error) or "request_too_large" in str(last_error)):
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            trimmed_context = context_str[:12000]
+            trimmed_prompt = f"""User Question: {user_question}\n\nRelevant Saved Reels Context:\n\"\"\"\n{trimmed_context}\n\"\"\"\n\nProvide a direct, comprehensive answer listing ALL relevant items with specific citations."""
+            response = client.chat.completions.create(
+                model="groq/compound-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": trimmed_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            answer = response.choices[0].message.content
+        except Exception as retry_err:
+            last_error = retry_err
 
     # Fallback to OpenAI if Groq fails or is not available
     if not answer and settings.OPENAI_API_KEY:
