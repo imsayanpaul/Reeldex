@@ -451,8 +451,11 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #18181b;
+  background: radial-gradient(circle at 50% 30%, rgba(144, 164, 242, 0.15) 0%, #121519 100%);
   overflow: hidden;
+}
+.modern-card-thumbnail-box.has-fallback-poster {
+  background: radial-gradient(circle at 50% 40%, rgba(144, 164, 242, 0.22) 0%, #0d1117 100%);
 }
 .modern-card-thumbnail-box img {
   width: 100%;

@@ -268,10 +268,16 @@ export default function App() {
   const handleThumbnailError = (e, shortcode) => {
     const img = e.currentTarget;
     if (shortcode && !img.dataset.retried) {
-      img.dataset.retried = 'true';
+      img.dataset.retried = '1';
+      img.src = `https://www.instagram.com/reel/${shortcode}/media/?size=l`;
+    } else if (shortcode && img.dataset.retried === '1') {
+      img.dataset.retried = '2';
       img.src = `https://www.instagram.com/p/${shortcode}/media/?size=l`;
     } else {
       img.style.display = 'none';
+      if (img.parentElement) {
+        img.parentElement.classList.add('has-fallback-poster');
+      }
     }
   };
 
