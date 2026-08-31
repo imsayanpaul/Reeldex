@@ -346,16 +346,71 @@ const getCachedReels = () => {
   const [copied, setCopied] = useState(false);
   const [copiedMsgIdx, setCopiedMsgIdx] = useState(null);
 
-  const handleCopyMessageText = (text, idx) => {
+  const formatForWhatsAppAndNotes = (rawMarkdown) => {
+    if (!rawMarkdown) return '';
+
+    let text = rawMarkdown;
+
+    // 1. Strip incomplete trailing broken link at end
+    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+
+    // 2. Normalize headers H1-H4 to WhatsApp bold text (*Header Name*)
+    text = text.replace(/^#{1,4}\s+(.+)$/gm, '\n*$1*\n');
+
+    // 3. Convert markdown links [Watch Video](url) into clean direct URLs for WhatsApp & Notes
+    text = text.replace(/(?:\*?Source:\*?\s*)?\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)\)*\s*(?:by|•)?\s*(@\w+)?/gi, (match, label, url, creator) => {
+      const cleanUrl = url.replace(/\)+$/, '').trim();
+      const cleanCreator = creator ? `(${creator.trim()})` : '';
+      return cleanCreator ? `🔗 ${cleanUrl} ${cleanCreator}` : `🔗 ${cleanUrl}`;
+    });
+
+    // 4. Convert markdown bold **Text** to WhatsApp bold *Text*
+    text = text.replace(/\*\*([^*]+)\*\*/g, '*$1*');
+
+    // 5. Normalize bullet points to clean unicode dots •
+    text = text.replace(/^[\s]*[-*+]\s+/gm, '• ');
+
+    // 6. Clean up extra newlines or spaces
+    text = text.replace(/\n{3,}/g, '\n\n');
+
+    return text.trim();
+  };
+
+  const formatForMarkdownExport = (rawMarkdown) => {
+    if (!rawMarkdown) return '';
+
+    let text = rawMarkdown;
+
+    // 1. Strip incomplete trailing broken link at end
+    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+
+    // 2. Fix double parentheses and clean markdown links
+    text = text.replace(/(?:\*?Source:\*?\s*)?\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)\)*\s*(?:by|•)?\s*(@\w+)?/gi, (match, label, url, creator) => {
+      const cleanUrl = url.replace(/\)+$/, '').trim();
+      const cleanCreator = creator ? `by ${creator.trim()}` : '';
+      return cleanCreator ? `[Watch Video](${cleanUrl}) ${cleanCreator}` : `[Watch Video](${cleanUrl})`;
+    });
+
+    // 3. Clean up extra newlines
+    text = text.replace(/\n{3,}/g, '\n\n');
+
+    return text.trim();
+  };
+
+  const handleCopyMessageText = (text, idx, mode = 'whatsapp') => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedMsgIdx(idx);
+    const formatted = mode === 'whatsapp' ? formatForWhatsAppAndNotes(text) : formatForMarkdownExport(text);
+    navigator.clipboard.writeText(formatted);
+    setCopiedMsgIdx(`${idx}-${mode}`);
     setTimeout(() => setCopiedMsgIdx(null), 2000);
   };
 
   const handleDownloadMessageText = (text, idx) => {
     if (!text) return;
-    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const formatted = formatForMarkdownExport(text);
+    const blob = new Blob([formatted], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -2125,18 +2180,53 @@ const getCachedReels = () => {
                         </ReactMarkdown>
                       </div>
 
-                      {/* Action Bar: Copy & Save Output Options */}
+                      {/* Action Bar: Copy for WhatsApp / Notes, Copy MD & Save .md Options */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
+                        flexWrap: 'wrap',
                         gap: '8px',
                         marginTop: '12px',
                         paddingTop: '10px',
                         borderTop: '1px solid rgba(255, 255, 255, 0.08)'
                       }}>
                         <button
-                          onClick={() => handleCopyMessageText(msg.content, idx)}
+                          onClick={() => handleCopyMessageText(msg.content, idx, 'whatsapp')}
+                          className="ig-chat-action-btn"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(55, 151, 240, 0.15)',
+                            border: '1px solid rgba(55, 151, 240, 0.3)',
+                            color: '#70b5f9',
+                            fontSize: '0.78rem',
+                            fontWeight: '600',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            outline: 'none',
+                            userSelect: 'none'
+                          }}
+                          title="Copy formatted text ready for WhatsApp and Notes app"
+                        >
+                          {copiedMsgIdx === `${idx}-whatsapp` ? (
+                            <>
+                              <Check size={13} color="#10b981" />
+                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied for WhatsApp!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} color="#70b5f9" />
+                              <span>Copy for WhatsApp / Notes</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleCopyMessageText(msg.content, idx, 'markdown')}
                           className="ig-chat-action-btn"
                           style={{
                             display: 'inline-flex',
@@ -2154,17 +2244,17 @@ const getCachedReels = () => {
                             outline: 'none',
                             userSelect: 'none'
                           }}
-                          title="Copy output text to clipboard"
+                          title="Copy raw Markdown format"
                         >
-                          {copiedMsgIdx === idx ? (
+                          {copiedMsgIdx === `${idx}-markdown` ? (
                             <>
                               <Check size={13} color="#10b981" />
-                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied!</span>
+                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied MD!</span>
                             </>
                           ) : (
                             <>
                               <Copy size={13} color="#a1a1aa" />
-                              <span>Copy</span>
+                              <span>Copy MD</span>
                             </>
                           )}
                         </button>
@@ -2188,10 +2278,10 @@ const getCachedReels = () => {
                             outline: 'none',
                             userSelect: 'none'
                           }}
-                          title="Save output as Markdown (.md) file"
+                          title="Save clean Markdown (.md) file"
                         >
                           <Download size={13} color="#a1a1aa" />
-                          <span>Save as .md</span>
+                          <span>Save .md</span>
                         </button>
                       </div>
                     </>

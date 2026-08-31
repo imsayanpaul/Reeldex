@@ -115,11 +115,19 @@ def sanitize_ai_response(text: str) -> str:
 
     cleaned = text
     # 1. Remove incomplete trailing broken link at very end of output
-    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(Source:?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(Source:?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
 
-    # 2. Fix double closed parentheses
-    cleaned = cleaned.replace('))', ')')
+    # 2. Fix markdown link syntax and strip extra closing parens
+    def clean_link_syntax(match):
+        label = match.group(1).strip()
+        url = match.group(2).rstrip(').;,')
+        return f"[{label}]({url})"
+
+    cleaned = re.sub(r'\[([^\]]+)\]\((https?://[^\s\)]+)\)*', clean_link_syntax, cleaned)
+
+    # 3. Clean double closed parentheses
+    cleaned = re.sub(r'\)\)+', ')', cleaned)
 
     return cleaned.strip()
 
