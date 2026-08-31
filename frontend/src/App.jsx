@@ -382,10 +382,17 @@ const getCachedReels = () => {
 
   const hasMoreItemsToShow = (content) => {
     if (!content) return false;
-    // Count bullet items (- **, • **)
-    const bulletCount = (content.match(/[-*•]\s+\*\*/g) || []).length;
-    // Show only when response is a long list (4+ items) or categorized summary (>450 chars)
-    return bulletCount >= 4 || (content.length > 450 && /#{2,4}|🎨|📦|🛠️|✨|🚀|📚/.test(content));
+    // Count bullet items (- **, • **, 1. **)
+    const bulletCount = (content.match(/(?:[-*•]|\d+\.)\s+\*\*/g) || []).length;
+    // Show when response contains 3+ structured bullet points or long multi-item summary
+    return bulletCount >= 2 || (content.length > 400 && /(?:[-*•]|\d+\.)\s+/.test(content));
+  };
+
+  const handleShowMoreResults = (idx) => {
+    // Find the user question that requested this answer
+    const previousUserMsg = chatMessages.slice(0, idx + 1).reverse().find(m => m.role === 'user');
+    const questionTopic = previousUserMsg?.content ? `"${previousUserMsg.content.trim()}"` : 'my previous question';
+    sendChatMessageText(`Show more results for ${questionTopic}: list any remaining items, tips, advice, or resources from my saved reels that were NOT mentioned in your previous answer above.`);
   };
 
   const formatForWhatsAppAndNotes = (rawMarkdown) => {
@@ -2353,7 +2360,7 @@ const getCachedReels = () => {
 
                         {hasMoreItemsToShow(msg.content) && (
                           <button
-                            onClick={() => sendChatMessageText("List the remaining tools, repos, and design assets from my saved reels starting after the ones listed above.")}
+                            onClick={() => handleShowMoreResults(idx)}
                             className="ig-chat-action-btn"
                             style={{
                               display: 'inline-flex',
