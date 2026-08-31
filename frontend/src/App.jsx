@@ -2445,15 +2445,27 @@ const getCachedReels = () => {
             }}>
               {/* Suggested Prompt Chips */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                {[
-                  "Summarize all job interview tips from my reels",
-                  "What AI & design tools were mentioned?",
-                  "List all workout and fitness routines",
-                  "Summarize all career & communication advice"
-                ].map((prompt, idx) => (
+                {(() => {
+                  const activeCats = categories.filter(c => c && c !== 'All');
+                  const prompts = [];
+                  if (activeCats.length > 0) {
+                    prompts.push(`Summarize top ${activeCats[0]} insights`);
+                    if (activeCats.length > 1) {
+                      prompts.push(`Key takeaways from ${activeCats[1]} reels`);
+                    }
+                  }
+                  prompts.push("What AI & design tools were mentioned?");
+                  prompts.push("List all key websites and tools mentioned");
+                  prompts.push("What are the top health & wellness tips?");
+                  return prompts.slice(0, 4);
+                })().map((prompt, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setChatQuestion(prompt)}
+                    type="button"
+                    onClick={() => {
+                      setChatQuestion(prompt);
+                      sendChatMessageText(prompt);
+                    }}
                     style={{
                       fontSize: '0.8rem',
                       padding: '6px 12px',

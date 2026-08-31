@@ -248,16 +248,17 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], 
     context_str = "\n---\n".join(context_blocks)
 
     system_prompt = (
-        "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
-        "Answer the user's question accurately using ONLY the provided reels context. "
+        "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels vault. "
+        "Answer the user's question accurately using the provided reels context. "
         "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (`| ... |`). "
-        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories`). "
+        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 🌿 Health & Wellness Tips`). "
         "Format each item as a short, punchy 1-sentence bullet point:\n"
-        "- **Tool / Project Name** — Brief 1-sentence explanation of what it does.\n"
+        "- **Tool / Project Name / Tip** — Brief 1-sentence explanation of what it does.\n"
         "  [Watch Video](url) • @creator\n\n"
         "COMPACTNESS RULE: Keep bullet descriptions concise (1 sentence max) so all items fit cleanly without running out of tokens. "
         "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open. "
-        "NO THINKING OUTPUT: Do NOT output any <think>, <thinking>, or internal reasoning blocks. Respond with ONLY the final formatted answer."
+        "NO THINKING OUTPUT: Do NOT output any <think>, <thinking>, or internal reasoning blocks. Respond with ONLY the final formatted answer. "
+        "NO MATCH GUIDANCE: If the requested topic is NOT present in the saved reels, politely explain that no reels on that topic were found, and briefly list what categories/topics ARE present in their saved vault so they know what to ask."
     )
 
     user_prompt = f"""User Question: {user_question}
@@ -289,10 +290,10 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
     messages_payload.append({"role": "user", "content": user_prompt})
 
     models_to_try = [
-        "openai/gpt-oss-120b",
-        "qwen/qwen3.6-27b",
-        "groq/compound",
-        "groq/compound-mini"
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it"
     ]
 
     answer = None

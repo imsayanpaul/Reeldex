@@ -30,8 +30,27 @@ if "sqlite" in settings.DATABASE_URL:
         with engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL;"))
             conn.execute(text("PRAGMA synchronous=NORMAL;"))
+            
+            # Ensure new columns exist on SQLite
+            try:
+                conn.execute(text("ALTER TABLE reels ADD COLUMN collection_id INTEGER;"))
+            except Exception:
+                pass
+            try:
+                conn.execute(text("ALTER TABLE reels ADD COLUMN collection_name TEXT;"))
+            except Exception:
+                pass
+            try:
+                conn.execute(text("ALTER TABLE transcripts ADD COLUMN translated_text TEXT;"))
+            except Exception:
+                pass
+            try:
+                conn.execute(text("ALTER TABLE transcripts ADD COLUMN translated_summary TEXT;"))
+            except Exception:
+                pass
+            conn.commit()
     except Exception as e:
-        print(f"[DB WAL Init]: {e}")
+        print(f"[DB Init Migrations]: {e}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
