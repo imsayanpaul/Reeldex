@@ -352,9 +352,11 @@ const getCachedReels = () => {
 
     let text = rawMarkdown.replace(/<think>[\s\S]*?<\/think>/gi, '');
 
-    // 1. Strip incomplete trailing broken link at end
-    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
-    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+    // 1. Strip incomplete trailing broken link or unclosed bullet title at end
+    text = text.replace(/(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s*\*\*[^*]+$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s+[^.\n\)\s]+$/gi, '');
 
     // 2. Normalize headers H1-H4 to WhatsApp bold text (*Header Name*)
     text = text.replace(/^#{1,4}\s+(.+)$/gm, '\n*$1*\n');
@@ -383,9 +385,11 @@ const getCachedReels = () => {
 
     let text = rawMarkdown.replace(/<think>[\s\S]*?<\/think>/gi, '');
 
-    // 1. Strip incomplete trailing broken link at end
-    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
-    text = text.replace(/(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+    // 1. Strip incomplete trailing broken link or unclosed bullet title at end
+    text = text.replace(/(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?:\/\/[^\)\s]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s*\*\*[^*]+$/gi, '');
+    text = text.replace(/(\n|\s)*[-*•]?\s+[^.\n\)\s]+$/gi, '');
 
     // 2. Fix double parentheses and clean markdown links
     text = text.replace(/(?:\*?Source:\*?\s*)?\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)\)*\s*(?:by|•)?\s*(@\w+)?/gi, (match, label, url, creator) => {

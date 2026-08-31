@@ -109,18 +109,20 @@ AI_QUERY_CACHE: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
 def sanitize_ai_response(text: str) -> str:
-    """Post-processes AI response to remove internal thinking blocks, broken trailing links, fix parentheses, and ensure valid markdown."""
+    """Post-processes AI response to remove internal thinking blocks, incomplete trailing lines, fix parentheses, and ensure valid markdown."""
     if not text:
         return text
 
     cleaned = text
 
-    # 1. Strip AI internal reasoning / thinking process blocks (<think>...</think>)
+    # 1. Strip AI internal reasoning / thinking process blocks (<think>...<\/think>)
     cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
 
-    # 2. Remove incomplete trailing broken link at very end of output
-    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
+    # 2. Remove incomplete trailing broken links or unclosed bullet items at very end of output
+    cleaned = re.sub(r'(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'(\n|\s)*[-*•]\s+\*\*[^*]+$', '', cleaned)
+    cleaned = re.sub(r'(\n|\s)*[-*•]\s+[^.\n\)\s]+$', '', cleaned)
 
     # 3. Fix markdown link syntax and strip extra closing parens
     def clean_link_syntax(match):
