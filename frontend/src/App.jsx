@@ -2123,16 +2123,32 @@ export default function App() {
                         <button
                           onClick={() => handleCopyMessageText(msg.content, idx)}
                           className="ig-chat-action-btn"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            color: '#d4d4d8',
+                            fontSize: '0.78rem',
+                            fontWeight: '500',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            outline: 'none',
+                            userSelect: 'none'
+                          }}
                           title="Copy output text to clipboard"
                         >
                           {copiedMsgIdx === idx ? (
                             <>
                               <Check size={13} color="#10b981" />
-                              <span style={{ color: '#10b981' }}>Copied!</span>
+                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied!</span>
                             </>
                           ) : (
                             <>
-                              <Copy size={13} />
+                              <Copy size={13} color="#a1a1aa" />
                               <span>Copy</span>
                             </>
                           )}
@@ -2141,9 +2157,25 @@ export default function App() {
                         <button
                           onClick={() => handleDownloadMessageText(msg.content, idx)}
                           className="ig-chat-action-btn"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            color: '#d4d4d8',
+                            fontSize: '0.78rem',
+                            fontWeight: '500',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            outline: 'none',
+                            userSelect: 'none'
+                          }}
                           title="Save output as Markdown (.md) file"
                         >
-                          <Download size={13} />
+                          <Download size={13} color="#a1a1aa" />
                           <span>Save as .md</span>
                         </button>
                       </div>
