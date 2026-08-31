@@ -109,22 +109,19 @@ AI_QUERY_CACHE: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
 def sanitize_ai_response(text: str) -> str:
-    """Post-processes AI response to ensure all markdown links are properly closed and valid."""
+    """Post-processes AI response to remove broken trailing links, fix parentheses, and ensure valid markdown."""
     if not text:
         return text
 
-    # Fix unclosed markdown links like [Watch Video](https://www.instagram.com/reel/DcQ
-    def fix_link(match):
-        label = match.group(1)
-        url = match.group(2)
-        if not url.endswith(')'):
-            clean_url = url.rstrip(' .;,')
-            return f"[{label}]({clean_url})"
-        return match.group(0)
+    cleaned = text
+    # 1. Remove incomplete trailing broken link at very end of output
+    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(Source:?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'(\n|\s)*[-*]?\s*(Source:?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
 
-    # Match markdown link patterns and ensure closing parenthesis
-    cleaned = re.sub(r'\[([^\]]+)\]\((https?://[^\s\)]+)', fix_link, text)
-    return cleaned
+    # 2. Fix double closed parentheses
+    cleaned = cleaned.replace('))', ')')
+
+    return cleaned.strip()
 
 async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
@@ -148,8 +145,8 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     if cache_key in AI_QUERY_CACHE:
         cached_entry = AI_QUERY_CACHE[cache_key]
         cached_ans = cached_entry.get("response", {}).get("answer", "")
-        # Validate cache: ensure cached answer is un-expired and does NOT have truncated unclosed links
-        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and not re.search(r'\[([^\]]+)\]\((https?://[^\s\)]+)$', cached_ans):
+        # Validate cache: ensure cached answer is valid and does NOT end with a broken truncated link
+        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and not re.search(r'\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', cached_ans):
             print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
             return cached_entry["response"]
         else:
@@ -202,9 +199,9 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Context compression: Include summary + top 400 chars of transcript
+        # Context compression: Include summary + top 350 chars of transcript
         summary_text = r.get("summary") or ""
-        transcript_snippet = (r.get("full_text") or "")[:400]
+        transcript_snippet = (r.get("full_text") or "")[:350]
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
@@ -227,12 +224,13 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     system_prompt = (
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
-        "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (do NOT use `| ... |`). "
-        "STRICT FORMATTING RULE 2 (CLEAN CATEGORIZED BULLET POINTS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories & UI Kits`). "
-        "Format each item as a clean, spacious bullet point:\n"
-        "- **Tool / Project Name** — Concise description of what it does and why it's useful.\n"
-        "  *Source:* [Watch Video](url) by @creator\n\n"
-        "CRITICAL URL & LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or omit closing parenthesis `)`."
+        "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (`| ... |`). "
+        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories`). "
+        "Format each item as a short, punchy 1-sentence bullet point:\n"
+        "- **Tool / Project Name** — Brief 1-sentence explanation of what it does.\n"
+        "  [Watch Video](url) • @creator\n\n"
+        "COMPACTNESS RULE: Keep bullet descriptions concise (1 sentence max) so all items fit cleanly without running out of tokens. "
+        "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open."
     )
 
     user_prompt = f"""User Question: {user_question}
@@ -274,7 +272,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.3,
-                        max_tokens=3000
+                        max_tokens=2500
                     )
                     answer = response.choices[0].message.content
                     if answer:
@@ -298,7 +296,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=3000
+                max_tokens=2500
             )
             answer = response.choices[0].message.content
         except Exception as oai_err:
@@ -310,7 +308,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
             "citations": citations
         }
 
-    # Post-process answer to ensure all markdown links are properly closed
+    # Post-process answer to remove broken trailing links and ensure valid markdown
     answer = sanitize_ai_response(answer)
 
     res_payload = {
