@@ -108,6 +108,24 @@ import hashlib
 AI_QUERY_CACHE: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
+def sanitize_ai_response(text: str) -> str:
+    """Post-processes AI response to ensure all markdown links are properly closed and valid."""
+    if not text:
+        return text
+
+    # Fix unclosed markdown links like [Watch Video](https://www.instagram.com/reel/DcQ
+    def fix_link(match):
+        label = match.group(1)
+        url = match.group(2)
+        if not url.endswith(')'):
+            clean_url = url.rstrip(' .;,')
+            return f"[{label}]({clean_url})"
+        return match.group(0)
+
+    # Match markdown link patterns and ensure closing parenthesis
+    cleaned = re.sub(r'\[([^\]]+)\]\((https?://[^\s\)]+)', fix_link, text)
+    return cleaned
+
 async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     RAG (Retrieval-Augmented Generation) Chat Engine:
@@ -129,9 +147,13 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     now = time.time()
     if cache_key in AI_QUERY_CACHE:
         cached_entry = AI_QUERY_CACHE[cache_key]
-        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS:
+        cached_ans = cached_entry.get("response", {}).get("answer", "")
+        # Validate cache: ensure cached answer is un-expired and does NOT have truncated unclosed links
+        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and not re.search(r'\[([^\]]+)\]\((https?://[^\s\)]+)$', cached_ans):
             print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
             return cached_entry["response"]
+        else:
+            AI_QUERY_CACHE.pop(cache_key, None)
 
     # 2. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
     is_broad_query = any(w in clean_question for w in [
@@ -205,13 +227,12 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     system_prompt = (
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
-        "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (do NOT use `| ... |`). Markdown tables wrap awkwardly into messy unreadable text in chat cards. "
+        "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (do NOT use `| ... |`). "
         "STRICT FORMATTING RULE 2 (CLEAN CATEGORIZED BULLET POINTS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories & UI Kits`). "
         "Format each item as a clean, spacious bullet point:\n"
         "- **Tool / Project Name** — Concise description of what it does and why it's useful.\n"
         "  *Source:* [Watch Video](url) by @creator\n\n"
-        "IMPORTANT EXHAUSTIVE ANSWER RULE: Provide a complete, comprehensive list covering ALL relevant items in the provided context without omitting any. "
-        "IMPORTANT CITATION RULE: For every item, ALWAYS cite creator (@handle) and exact markdown video link (`Source: [Watch Video](url) by @creator`). Never leave markdown link parentheses unclosed or truncated."
+        "CRITICAL URL & LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or omit closing parenthesis `)`."
     )
 
     user_prompt = f"""User Question: {user_question}
@@ -288,6 +309,9 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
             "answer": f"I encountered an error connecting to the AI engine: {str(last_error)}",
             "citations": citations
         }
+
+    # Post-process answer to ensure all markdown links are properly closed
+    answer = sanitize_ai_response(answer)
 
     res_payload = {
         "answer": answer,

@@ -247,7 +247,18 @@ export default function App() {
   const [showPairModal, setShowPairModal] = useState(false);
   const [pairingCode, setPairingCode] = useState(null);
 
-  const getCachedReels = () => {
+  const formatSanitizedMarkdown = (text) => {
+  if (!text) return '';
+  // Auto-close unclosed markdown link parentheses if truncated
+  return text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)/g, (match, label, url) => {
+    if (!url.endsWith(')')) {
+      return `[${label}](${url.replace(/[.;,]+$/, '')})`;
+    }
+    return match;
+  });
+};
+
+const getCachedReels = () => {
     try {
       const raw = getSafeStorage('reelmind_cached_reels');
       return raw ? JSON.parse(raw) : [];
@@ -2106,7 +2117,7 @@ export default function App() {
                             }
                           }}
                         >
-                          {msg.content}
+                          {formatSanitizedMarkdown(msg.content)}
                         </ReactMarkdown>
                       </div>
 
