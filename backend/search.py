@@ -118,13 +118,7 @@ def sanitize_ai_response(text: str) -> str:
     # 1. Strip AI internal reasoning / thinking process blocks (<think>...<\/think>)
     cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
 
-    # 2. Remove incomplete trailing broken links or unclosed bullet items at very end of output
-    cleaned = re.sub(r'(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'(\n|\s)*[-*•]?\s*(?:\*?Source:\*?\s*)?\[[^\]]*$', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'(\n|\s)*[-*•]\s+\*\*[^*]+$', '', cleaned)
-    cleaned = re.sub(r'(\n|\s)*[-*•]\s+[^.\n\)\s]+$', '', cleaned)
-
-    # 3. Fix markdown link syntax and strip extra closing parens
+    # 2. Fix markdown link syntax and strip extra closing parens
     def clean_link_syntax(match):
         label = match.group(1).strip()
         url = match.group(2).rstrip(').;,')
@@ -132,8 +126,22 @@ def sanitize_ai_response(text: str) -> str:
 
     cleaned = re.sub(r'\[([^\]]+)\]\((https?://[^\s\)]+)\)*', clean_link_syntax, cleaned)
 
-    # 4. Clean double closed parentheses
+    # 3. Clean double closed parentheses
     cleaned = re.sub(r'\)\)+', ')', cleaned)
+
+    # 4. Remove incomplete trailing broken links or unclosed lines at very end of output
+    lines = cleaned.rstrip().split('\n')
+    while lines:
+        last = lines[-1].strip()
+        if not last:
+            lines.pop()
+            continue
+        # If last line does not end with valid punctuation (.), (!), (?), (") or closing paren ), trim it
+        if not re.search(r'[\.\!\?\)\"]$', last) and not re.search(r'\]$', last):
+            lines.pop()
+        else:
+            break
+    cleaned = '\n'.join(lines)
 
     return cleaned.strip()
 

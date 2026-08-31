@@ -1003,11 +1003,10 @@ const getCachedReels = () => {
     }
   };
 
-  const handleAskAI = async (e) => {
-    if (e) e.preventDefault();
-    if (!chatQuestion.trim()) return;
+  const sendChatMessageText = async (questionText) => {
+    if (!questionText || !questionText.trim()) return;
 
-    const userMsg = { role: 'user', content: chatQuestion.trim() };
+    const userMsg = { role: 'user', content: questionText.trim() };
     setChatMessages(prev => [...prev, userMsg]);
     setChatQuestion('');
     setChatLoading(true);
@@ -1039,11 +1038,17 @@ const getCachedReels = () => {
     } catch (err) {
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, there was a network error communicating with the AI copilot. Please try again.'
+        content: 'Failed to connect to the server. Please check your network connection.'
       }]);
     } finally {
       setChatLoading(false);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
+  };
+
+  const handleAskAI = async (e) => {
+    if (e) e.preventDefault();
+    sendChatMessageText(chatQuestion);
   };
 
   const copyText = (text) => {
@@ -2262,6 +2267,31 @@ const getCachedReels = () => {
                               <span>Copy MD</span>
                             </>
                           )}
+                        </button>
+
+                        <button
+                          onClick={() => sendChatMessageText("List the remaining tools, repos, and design assets from my saved reels starting after the ones listed above.")}
+                          className="ig-chat-action-btn"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#34d399',
+                            fontSize: '0.78rem',
+                            fontWeight: '600',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            outline: 'none',
+                            userSelect: 'none'
+                          }}
+                          title="Ask Dex AI to list remaining results starting from where it left off"
+                        >
+                          <Plus size={13} color="#34d399" />
+                          <span>Show More Results</span>
                         </button>
 
                         <button
