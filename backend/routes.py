@@ -383,7 +383,7 @@ def list_collections(token: Optional[str] = None, db: Session = Depends(get_db))
         
         thumbnails = []
         for r in reels_in_col:
-            thumb = r.thumbnail_url or (f"https://www.instagram.com/p/{r.shortcode}/media/?size=l" if r.shortcode else None)
+            thumb = f"/api/thumbnail/{r.shortcode}" if r.shortcode else r.thumbnail_url
             if thumb and thumb not in thumbnails:
                 thumbnails.append(thumb)
             if len(thumbnails) >= 4:

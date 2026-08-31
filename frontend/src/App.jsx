@@ -975,30 +975,40 @@ export default function App() {
 
   // Find cover thumbnail for collection
   const getCollectionCover = (collectionId) => {
-    // 1. Direct collection thumbnail from API
-    const col = collections.find(c => String(c.id) === String(collectionId));
-    if (col?.cover_thumbnail) return col.cover_thumbnail;
-    if (col?.thumbnails && col.thumbnails.length > 0) return col.thumbnails[0];
-
-    // 2. Search loaded reels state with type-safe string comparison
     const matchingReel = reels.find(r => String(r.collection_id) === String(collectionId) && (r.thumbnail_url || r.shortcode));
-    if (matchingReel?.thumbnail_url) return matchingReel.thumbnail_url;
-    if (matchingReel?.shortcode) return `https://www.instagram.com/p/${matchingReel.shortcode}/media/?size=l`;
+    if (matchingReel) {
+      return getReelThumbnail(matchingReel);
+    }
+
+    const col = collections.find(c => String(c.id) === String(collectionId));
+    if (col?.cover_thumbnail) {
+      if (col.cover_thumbnail.startsWith('/api/')) return `${API_BASE}${col.cover_thumbnail.replace('/api', '')}`;
+      return col.cover_thumbnail;
+    }
+    if (col?.thumbnails && col.thumbnails.length > 0) {
+      const t = col.thumbnails[0];
+      if (t.startsWith('/api/')) return `${API_BASE}${t.replace('/api', '')}`;
+      return t;
+    }
 
     return null;
   };
 
   const getCollectionThumbnails = (collectionId) => {
-    const col = collections.find(c => String(c.id) === String(collectionId));
-    if (col?.thumbnails && col.thumbnails.length > 0) return col.thumbnails;
-
-    const reelThumbs = reels
+    const matchingReels = reels
       .filter(r => String(r.collection_id) === String(collectionId))
-      .map(r => r.thumbnail_url || (r.shortcode ? `https://www.instagram.com/p/${r.shortcode}/media/?size=l` : null))
-      .filter(Boolean)
       .slice(0, 4);
 
-    return reelThumbs;
+    if (matchingReels.length > 0) {
+      return matchingReels.map(r => getReelThumbnail(r)).filter(Boolean);
+    }
+
+    const col = collections.find(c => String(c.id) === String(collectionId));
+    if (col?.thumbnails && col.thumbnails.length > 0) {
+      return col.thumbnails.map(t => t.startsWith('/api/') ? `${API_BASE}${t.replace('/api', '')}` : t);
+    }
+
+    return [];
   };
 
   return (
