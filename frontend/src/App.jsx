@@ -28,8 +28,24 @@ import {
   MoreVertical,
   Grid,
   User,
-  RotateCw
+  RotateCw,
+  Command as CommandIcon,
+  MessageSquare
 } from 'lucide-react';
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 
 const InstagramIcon = ({ size = 16, color = "currentColor", style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -350,6 +366,20 @@ const getCachedReels = () => {
   const [copied, setCopied] = useState(false);
   const [copiedMsgIdx, setCopiedMsgIdx] = useState(null);
 
+  // Global ShadCN Command Dialog State (⌘K / Ctrl+K)
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
+
   const hasMoreItemsToShow = (content) => {
     if (!content) return false;
     // Count bullet items (- **, • **)
@@ -418,9 +448,14 @@ const getCachedReels = () => {
   const handleCopyMessageText = (text, idx, mode = 'whatsapp') => {
     if (!text) return;
     const formatted = mode === 'whatsapp' ? formatForWhatsAppAndNotes(text) : formatForMarkdownExport(text);
-    navigator.clipboard.writeText(formatted);
-    setCopiedMsgIdx(`${idx}-${mode}`);
-    setTimeout(() => setCopiedMsgIdx(null), 2000);
+    try {
+      navigator.clipboard.writeText(formatted);
+      setCopiedMsgIdx(`${idx}-${mode}`);
+      toast.success(mode === 'whatsapp' ? 'Formatted for WhatsApp & Notes copied!' : 'Markdown copied to clipboard!');
+      setTimeout(() => setCopiedMsgIdx(null), 2000);
+    } catch (e) {
+      toast.error('Failed to copy to clipboard');
+    }
   };
 
   const handleDownloadMessageText = (text, idx) => {
@@ -665,6 +700,7 @@ const getCachedReels = () => {
       if (res.ok) {
         const newCol = await res.json();
         setNewCollectionName('');
+        toast.success(`Created collection "${newCol.name}"`);
         // Instantly transition into "Add from saved" without exposing empty background
         setShowCreateCollectionModal(false);
         setSelectedCollection(newCol);
@@ -693,6 +729,7 @@ const getCachedReels = () => {
     }
     // 1. Instant 0ms Optimistic UI Removal
     setShowCollectionMenuModal(false);
+    toast.success('Collection deleted');
     if (selectedCollection?.id === collectionId) {
       setSelectedCollection(null);
     }
@@ -826,6 +863,7 @@ const getCachedReels = () => {
           }));
         }
         setOpenCollectionPickerId(null);
+        toast.success(collectionId ? `Moved to ${data.collection_name || 'collection'}` : 'Removed from collection');
         fetchCollections(token);
       }
     } catch (err) {
@@ -873,6 +911,7 @@ const getCachedReels = () => {
     if (selectedReel?.id === reelId) {
       setSelectedReel(null);
     }
+    toast.success('Reel removed from vault');
     
     // Background server sync
     try {
@@ -893,6 +932,7 @@ const getCachedReels = () => {
         method: 'POST'
       });
       if (res.ok) {
+        toast.info('Retrying audio transcription...');
         setReels(prev => prev.map(r => r.id === reelId ? { ...r, status: 'processing', error_message: null } : r));
         if (selectedReel?.id === reelId) {
           setSelectedReel(prev => prev ? { ...prev, status: 'processing', error_message: null } : null);
@@ -1062,11 +1102,16 @@ const getCachedReels = () => {
     sendChatMessageText(chatQuestion);
   };
 
-  const copyText = (text) => {
+  const copyText = (text, label = "Text") => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success(`${label} copied to clipboard!`);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      toast.error('Failed to copy');
+    }
   };
 
   const downloadSRT = (reel) => {
@@ -1120,7 +1165,8 @@ const getCachedReels = () => {
   };
 
   return (
-    <div className="ig-app-wrapper">
+    <TooltipProvider>
+      <div className="ig-app-wrapper">
       {/* ======================================================== */}
       {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
       {/* ======================================================== */}
@@ -1207,7 +1253,7 @@ const getCachedReels = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '7px 32px 7px 34px',
+                    padding: '7px 55px 7px 34px',
                     borderRadius: 'var(--radius-sm)',
                     border: '1px solid var(--border-light)',
                     background: 'var(--bg-input)',
@@ -1216,6 +1262,31 @@ const getCachedReels = () => {
                     color: 'var(--text-main)'
                   }}
                 />
+                {!searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setCommandOpen(true)}
+                    style={{
+                      position: 'absolute',
+                      right: '8px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.14)',
+                      color: '#a1a1aa',
+                      borderRadius: '5px',
+                      fontSize: '0.7rem',
+                      fontWeight: '600',
+                      padding: '1px 6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      userSelect: 'none'
+                    }}
+                    title="Open Spotlight Command Palette (⌘K)"
+                  >
+                    <span>⌘K</span>
+                  </button>
+                )}
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
@@ -3562,6 +3633,134 @@ const getCachedReels = () => {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* SHADCN SPOTLIGHT COMMAND PALETTE (⌘K / Ctrl+K) */}
+      {/* ======================================================== */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Search reels, tools, creators, or folders... (⌘K)" />
+        <CommandList className="max-h-[380px] p-1">
+          <CommandEmpty className="py-6 text-center text-sm text-zinc-400">
+            No matching reels or collections found.
+          </CommandEmpty>
+
+          <CommandGroup heading="⚡ Quick Navigation">
+            <CommandItem
+              onSelect={() => {
+                setActiveTab('chat');
+                setCommandOpen(false);
+              }}
+              className="cursor-pointer"
+            >
+              <Sparkles className="mr-2 h-4 w-4 text-emerald-400" />
+              <span className="font-medium">Ask Dex AI Copilot</span>
+              <CommandShortcut>↵</CommandShortcut>
+            </CommandItem>
+
+            <CommandItem
+              onSelect={() => {
+                setActiveTab('vault');
+                setActiveViewFilter('All');
+                setSelectedCollection(null);
+                setCommandOpen(false);
+              }}
+              className="cursor-pointer"
+            >
+              <Layers className="mr-2 h-4 w-4 text-blue-400" />
+              <span>All Saved Reels</span>
+            </CommandItem>
+
+            <CommandItem
+              onSelect={() => {
+                setShowCreateCollectionModal(true);
+                setCommandOpen(false);
+              }}
+              className="cursor-pointer"
+            >
+              <Plus className="mr-2 h-4 w-4 text-indigo-400" />
+              <span>Create New Collection</span>
+            </CommandItem>
+
+            <CommandItem
+              onSelect={() => {
+                handleGeneratePairingCode();
+                setCommandOpen(false);
+              }}
+              className="cursor-pointer"
+            >
+              <InstagramIcon size={14} style={{ marginRight: '8px' }} />
+              <span>Link Instagram Account</span>
+            </CommandItem>
+          </CommandGroup>
+
+          {collections.length > 0 && (
+            <>
+              <CommandSeparator className="my-1 bg-zinc-800" />
+              <CommandGroup heading="📁 Collections">
+                {collections.map(col => (
+                  <CommandItem
+                    key={col.id}
+                    onSelect={() => {
+                      setActiveTab('vault');
+                      setSelectedCollection(col);
+                      setCommandOpen(false);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Folder className="mr-2 h-4 w-4 text-amber-400" />
+                    <span className="font-medium">{col.name}</span>
+                    <span className="ml-auto text-xs text-zinc-500">{col.reel_count || 0} reels</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {reels.length > 0 && (
+            <>
+              <CommandSeparator className="my-1 bg-zinc-800" />
+              <CommandGroup heading="🎬 Saved Reels & Tools">
+                {reels.slice(0, 40).map(r => (
+                  <CommandItem
+                    key={r.id}
+                    onSelect={() => {
+                      setSelectedReel(r);
+                      setCommandOpen(false);
+                    }}
+                    className="cursor-pointer py-2"
+                  >
+                    <Play className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="font-medium text-sm text-zinc-100 truncate">
+                        {r.title || `Reel by @${r.author || 'Creator'}`}
+                      </span>
+                      {r.summary && (
+                        <span className="text-[11px] text-zinc-400 truncate">
+                          {typeof r.summary === 'string' ? r.summary : (r.summary.main_topic || '')}
+                        </span>
+                      )}
+                    </div>
+                    {r.category && (
+                      <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-zinc-700 text-zinc-400 shrink-0">
+                        {r.category}
+                      </Badge>
+                    )}
+                    <span className="ml-2 text-xs text-zinc-500 font-mono shrink-0">
+                      @{r.author || r.sender_username || 'creator'}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+        </CommandList>
+      </CommandDialog>
+
+      {/* ======================================================== */}
+      {/* SHADCN FLUID TOASTER */}
+      {/* ======================================================== */}
+      <Toaster position="bottom-right" richColors />
     </div>
+  </TooltipProvider>
   );
 }

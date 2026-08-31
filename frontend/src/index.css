@@ -1,7 +1,29 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 :root {
+  /* ShadCN UI Theme Variables (OLED Dark Mode) */
+  --background: #0c0f14;
+  --foreground: #f8fafa;
+  --card: #181c1f;
+  --card-foreground: #f8fafa;
+  --popover: #181c1f;
+  --popover-foreground: #f8fafa;
+  --primary: #f8fafa;
+  --primary-foreground: #0c0f14;
+  --secondary: #22272b;
+  --secondary-foreground: #f8fafa;
+  --muted: #22272b;
+  --muted-foreground: #a1a1aa;
+  --accent: #22272b;
+  --accent-foreground: #f8fafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafa;
+  --border: #282f34;
+  --input: #282f34;
+  --ring: #90a4f2;
+  --radius: 0.75rem;
+
   /* Instagram OLED Dark Mode Palette */
   --bg-app: #0c0f14;
   --bg-page: #0c0f14;

@@ -11,7 +11,15 @@ import { Toaster as Sonner } from "sonner";
 const Toaster = ({
   ...props
 }) => {
-  const { theme = "system" } = useTheme()
+  let theme = "dark"
+  try {
+    const themeContext = useTheme()
+    if (themeContext && themeContext.theme) {
+      theme = themeContext.theme
+    }
+  } catch (e) {
+    theme = "dark"
+  }
 
   return (
     <Sonner
