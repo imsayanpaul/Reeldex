@@ -167,26 +167,26 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     # 2. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
     is_broad_query = any(w in clean_question for w in [
         "all", "everything", "every", "list", "summarize", "overview", 
-        "what reels", "what are all", "my reels", "library", "all my", "tools", "compare", "repos", "github"
+        "what reels", "what are all", "my reels", "library", "all my", "tools", "compare"
     ])
 
     scored_reels = rank_reels_search(reels_context, user_question)
     
     if is_broad_query:
-        # Broad / library-wide questions: Include ALL saved reels (up to 50 reels) for exhaustive synthesis
-        top_reels = scored_reels[:50] if scored_reels else reels_context[:50]
+        # Broad questions: Include up to 15-20 reels for comprehensive synthesis
+        top_reels = scored_reels[:16] if scored_reels else reels_context[:16]
     else:
-        # Specific questions: Include all relevant reels (up to 15 reels)
+        # Specific questions: Include all relevant reels (up to 12 reels)
         positive_matches = [r for r in scored_reels if r.get("relevance_score", 0) > 0]
         if positive_matches:
-            top_reels = positive_matches[:20]
+            top_reels = positive_matches[:12]
         else:
-            top_reels = scored_reels[:10] if scored_reels else reels_context[:10]
+            top_reels = scored_reels[:6] if scored_reels else reels_context[:6]
 
-    # 3. Build dynamic compressed context prompt with character budget guard (18k chars max ~ 4.5k tokens)
+    # 3. Build dynamic compressed context prompt with character budget guard (35k chars ~ 8k tokens)
     context_blocks = []
     citations = []
-    char_budget = 18000
+    char_budget = 35000
     current_chars = 0
 
     for idx, r in enumerate(top_reels, 1):
@@ -211,16 +211,18 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Efficient compression: 200 chars summary + 150 chars excerpt
-        summary_text = (r.get("summary") or "")[:200]
-        transcript_snippet = (r.get("full_text") or "")[:150]
+        # Context compression: Include summary + top 350 chars of transcript
+        summary_text = r.get("summary") or ""
+        transcript_snippet = (r.get("full_text") or "")[:350]
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"
-            f"Link: {reel_url} | Category: {r.get('category', 'General')}\n"
+            f"Video Link: {reel_url}\n"
+            f"Category: {r.get('category', 'General')}\n"
             f"Summary: {summary_text}\n"
-            f"Tools: {actions}\n"
+            f"Tools/Actions: {actions}\n"
+            f"Key Excerpt: {transcript_snippet}\n"
         )
         
         if current_chars + len(block) > char_budget:
@@ -235,11 +237,10 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
         "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (`| ... |`). "
-        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design & UI Tools`, `### 📦 GitHub Repos & Developer Utilities`, `### ✨ Motion & Animation`). "
+        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories`). "
         "Format each item as a short, punchy 1-sentence bullet point:\n"
         "- **Tool / Project Name** — Brief 1-sentence explanation of what it does.\n"
         "  [Watch Video](url) • @creator\n\n"
-        "EXHAUSTIVE INVENTORY RULE: Inspect EVERY SINGLE reel in the provided context and list ALL tools, repos, CLI utilities, libraries, and design resources mentioned. Do NOT skip any reel or tool.\n"
         "COMPACTNESS RULE: Keep bullet descriptions concise (1 sentence max) so all items fit cleanly without running out of tokens. "
         "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open."
     )
@@ -283,7 +284,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.3,
-                        max_tokens=2200
+                        max_tokens=2500
                     )
                     answer = response.choices[0].message.content
                     if answer:
@@ -294,26 +295,6 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                     continue
         except Exception as groq_err:
             last_error = groq_err
-
-    # Fallback retry if payload size error occurred (413 Request Entity Too Large)
-    if not answer and ("413" in str(last_error) or "request_too_large" in str(last_error)):
-        try:
-            from groq import Groq
-            client = Groq(api_key=api_key)
-            trimmed_context = context_str[:12000]
-            trimmed_prompt = f"""User Question: {user_question}\n\nRelevant Saved Reels Context:\n\"\"\"\n{trimmed_context}\n\"\"\"\n\nProvide a direct, comprehensive answer listing ALL relevant items with specific citations."""
-            response = client.chat.completions.create(
-                model="groq/compound-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": trimmed_prompt}
-                ],
-                temperature=0.3,
-                max_tokens=2000
-            )
-            answer = response.choices[0].message.content
-        except Exception as retry_err:
-            last_error = retry_err
 
     # Fallback to OpenAI if Groq fails or is not available
     if not answer and settings.OPENAI_API_KEY:
