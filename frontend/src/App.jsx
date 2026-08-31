@@ -2074,7 +2074,11 @@ const getCachedReels = () => {
                   key={idx}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
+                    maxWidth: msg.role === 'user' ? '82%' : '92%',
+                    minWidth: 0,
+                    boxSizing: 'border-box',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
                     padding: msg.role === 'user' ? '10px 16px' : '14px 18px',
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     background: msg.role === 'user' ? '#3797f0' : '#181c1f',

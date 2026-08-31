@@ -888,6 +888,14 @@ body {
   color: #f8fafa;
   font-size: 0.92rem;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.markdown-prose a, .markdown-prose code, .markdown-prose p, .markdown-prose li, .markdown-prose h3, .markdown-prose h4 {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .markdown-prose h3 {
@@ -947,6 +955,8 @@ body {
   border-radius: 4px;
   font-size: 0.84rem;
   color: #e4e4e7;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .markdown-prose hr {
