@@ -152,10 +152,10 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
         else:
             top_reels = scored_reels[:6] if scored_reels else reels_context[:6]
 
-    # 3. Build dynamic compressed context prompt with character budget guard (14k chars ~ 3.5k tokens)
+    # 3. Build dynamic compressed context prompt with character budget guard (35k chars ~ 8k tokens)
     context_blocks = []
     citations = []
-    char_budget = 14000
+    char_budget = 35000
     current_chars = 0
 
     for idx, r in enumerate(top_reels, 1):
@@ -180,9 +180,9 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Context compression: Include summary + top 300 chars of transcript
+        # Context compression: Include summary + top 400 chars of transcript
         summary_text = r.get("summary") or ""
-        transcript_snippet = (r.get("full_text") or "")[:300]
+        transcript_snippet = (r.get("full_text") or "")[:400]
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
@@ -194,7 +194,7 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
             f"Key Excerpt: {transcript_snippet}\n"
         )
         
-        if current_chars + len(block) > char_budget and idx > 4:
+        if current_chars + len(block) > char_budget:
             break
 
         context_blocks.append(block)
@@ -205,8 +205,9 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     system_prompt = (
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
-        "IMPORTANT CITATION RULE: For each fact, advice, tool, routine, or point you mention, ALWAYS cite the source with the creator (@handle) AND include the direct markdown video link using the provided Video Link (e.g., `Source: [Watch Video](https://www.instagram.com/reel/...) by @creator` or `Source: [Reel Title](https://www.instagram.com/reel/...) by @creator`). "
-        "Be concise, helpful, formatted in clean markdown bullet points, and do NOT use emojis anywhere in your response."
+        "IMPORTANT EXHAUSTIVE ANSWER RULE: When asked to find, list, or summarize tools, repositories, tips, or topics across saved reels, ALWAYS provide a complete, comprehensive, and exhaustive list covering ALL relevant items in the provided context without omitting any. "
+        "IMPORTANT CITATION RULE: For each fact, tool, repo, or advice item, ALWAYS cite the source with creator (@handle) AND direct markdown video link using the provided Video Link (e.g. `Source: [Watch Video](url) by @creator`). Never truncate markdown links or leave parenthesis unclosed. "
+        "Be clear, helpful, formatted in clean markdown bullet points, and do NOT use emojis anywhere in your response."
     )
 
     user_prompt = f"""User Question: {user_question}
@@ -216,7 +217,7 @@ Relevant Saved Reels Context:
 {context_str}
 \"\"\"
 
-Provide a direct, clear answer with specific citations."""
+Provide a direct, comprehensive answer listing ALL relevant items with specific citations."""
 
     api_key = settings.GROQ_API_KEY
     if not api_key:
@@ -227,7 +228,6 @@ Provide a direct, clear answer with specific citations."""
 
     models_to_try = [
         "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
         "qwen/qwen3.6-27b",
         "groq/compound",
         "groq/compound-mini"
@@ -249,7 +249,7 @@ Provide a direct, clear answer with specific citations."""
                             {"role": "user", "content": user_prompt}
                         ],
                         temperature=0.3,
-                        max_tokens=600
+                        max_tokens=3000
                     )
                     answer = response.choices[0].message.content
                     if answer:
@@ -273,7 +273,7 @@ Provide a direct, clear answer with specific citations."""
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=600
+                max_tokens=3000
             )
             answer = response.choices[0].message.content
         except Exception as oai_err:
