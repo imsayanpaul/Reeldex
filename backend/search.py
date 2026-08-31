@@ -145,11 +145,11 @@ def sanitize_ai_response(text: str) -> str:
 
     return cleaned.strip()
 
-async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) -> Dict[str, Any]:
+async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     RAG (Retrieval-Augmented Generation) Chat Engine:
     Answers a user's question by synthesizing information across their saved reels library.
-    Includes Top-K BM25 token compression and 0-token semantic response caching.
+    Supports multi-turn conversation history and 0-token semantic response caching.
     """
     if not reels_context:
         return {
@@ -159,32 +159,32 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
 
     clean_question = user_question.strip().lower()
 
-    # 1. Check Query Response Cache (0 Token Consumption)
-    reel_ids_key = ",".join(str(r.get("id")) for r in sorted(reels_context, key=lambda x: x.get("id") or 0))
-    cache_key = hashlib.md5(f"{clean_question}::{reel_ids_key}".encode()).hexdigest()
-
-    now = time.time()
-    if cache_key in AI_QUERY_CACHE:
-        cached_entry = AI_QUERY_CACHE[cache_key]
-        cached_ans = cached_entry.get("response", {}).get("answer", "")
-        # Validate cache: purge entries containing internal <think> blocks or truncated links
-        if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and "<think>" not in cached_ans.lower() and not re.search(r'\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', cached_ans):
-            print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
-            return cached_entry["response"]
-        else:
-            AI_QUERY_CACHE.pop(cache_key, None)
-
-    # 2. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
-    is_broad_query = any(w in clean_question for w in [
+    # 1. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
+    is_followup = bool(history) or any(w in clean_question for w in ["remaining", "more", "additional", "next", "after", "continue", "show more", "else", "other", "rest"])
+    is_broad_query = is_followup or any(w in clean_question for w in [
         "all", "everything", "every", "list", "summarize", "overview", 
         "what reels", "what are all", "my reels", "library", "all my", "tools", "compare"
     ])
 
+    # Check Query Response Cache (0 Token Consumption) - only for single-turn non-followup queries
+    if not is_followup:
+        reel_ids_key = ",".join(str(r.get("id")) for r in sorted(reels_context, key=lambda x: x.get("id") or 0))
+        cache_key = hashlib.md5(f"{clean_question}::{reel_ids_key}".encode()).hexdigest()
+        now = time.time()
+        if cache_key in AI_QUERY_CACHE:
+            cached_entry = AI_QUERY_CACHE[cache_key]
+            cached_ans = cached_entry.get("response", {}).get("answer", "")
+            if now - cached_entry.get("timestamp", 0) < CACHE_TTL_SECONDS and "<think>" not in cached_ans.lower() and not re.search(r'\[[^\]]*\]?\s*\(?\s*https?://[^\)\s]*$', cached_ans):
+                print(f"[Ask AI Cache HIT] Returning cached response for '{user_question[:30]}...' (0 tokens used)")
+                return cached_entry["response"]
+            else:
+                AI_QUERY_CACHE.pop(cache_key, None)
+
     scored_reels = rank_reels_search(reels_context, user_question)
     
     if is_broad_query:
-        # Broad questions: Include up to 15-20 reels for comprehensive synthesis
-        top_reels = scored_reels[:16] if scored_reels else reels_context[:16]
+        # Broad / follow-up questions: Include up to 20 reels for comprehensive synthesis
+        top_reels = scored_reels[:20] if scored_reels else reels_context[:20]
     else:
         # Specific questions: Include all relevant reels (up to 12 reels)
         positive_matches = [r for r in scored_reels if r.get("relevance_score", 0) > 0]
@@ -271,6 +271,18 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
             "citations": citations
         }
 
+    # Construct multi-turn messages payload for conversational continuity
+    messages_payload = [{"role": "system", "content": system_prompt}]
+    if history:
+        for h in history[-4:]:
+            r = h.get("role")
+            c = h.get("content")
+            if r in ["user", "assistant"] and c:
+                # Trim assistant message to avoid context overload
+                messages_payload.append({"role": r, "content": c[:1500]})
+
+    messages_payload.append({"role": "user", "content": user_prompt})
+
     models_to_try = [
         "openai/gpt-oss-120b",
         "qwen/qwen3.6-27b",
@@ -289,10 +301,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                 try:
                     response = client.chat.completions.create(
                         model=model_id,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
+                        messages=messages_payload,
                         temperature=0.3,
                         max_tokens=2500
                     )
@@ -313,32 +322,28 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+                messages=messages_payload,
                 temperature=0.3,
                 max_tokens=2500
             )
             answer = response.choices[0].message.content
-        except Exception as oai_err:
-            last_error = oai_err
+        except Exception as openai_err:
+            last_error = openai_err
+            print(f"[RAG OpenAI error]: {openai_err}")
 
     if not answer:
-        return {
-            "answer": f"I encountered an error connecting to the AI engine: {str(last_error)}",
-            "citations": citations
-        }
+        answer = f"I encountered an error generating an answer across your reels context: {str(last_error or 'Unknown AI error')}"
 
-    # Post-process answer to remove broken trailing links and ensure valid markdown
-    answer = sanitize_ai_response(answer)
-
-    res_payload = {
-        "answer": answer,
+    sanitized_answer = sanitize_ai_response(answer)
+    result = {
+        "answer": sanitized_answer,
         "citations": citations
     }
-    # Save in Cache
-    AI_QUERY_CACHE[cache_key] = {"timestamp": now, "response": res_payload}
-    if len(AI_QUERY_CACHE) > 500:
-        AI_QUERY_CACHE.pop(next(iter(AI_QUERY_CACHE)))
-    return res_payload
+    if not is_followup:
+        reel_ids_key = ",".join(str(r.get("id")) for r in sorted(reels_context, key=lambda x: x.get("id") or 0))
+        cache_key = hashlib.md5(f"{clean_question}::{reel_ids_key}".encode()).hexdigest()
+        AI_QUERY_CACHE[cache_key] = {"timestamp": time.time(), "response": result}
+        if len(AI_QUERY_CACHE) > 500:
+            AI_QUERY_CACHE.pop(next(iter(AI_QUERY_CACHE)))
+
+    return result

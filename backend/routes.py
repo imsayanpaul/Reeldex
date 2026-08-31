@@ -316,6 +316,7 @@ class AskChatRequest(BaseModel):
     question: str
     category: Optional[str] = None
     token: Optional[str] = None
+    history: Optional[List[Dict[str, Any]]] = None
 
 class AuthSessionRequest(BaseModel):
     token: Optional[str] = None
@@ -901,7 +902,7 @@ async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(N
             "full_text": full_text
         })
 
-    result = await ask_reels_ai(req.question, reels_context)
+    result = await ask_reels_ai(req.question, reels_context, history=req.history)
     return result
 
 

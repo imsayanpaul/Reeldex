@@ -1027,7 +1027,7 @@ const getCachedReels = () => {
           'Content-Type': 'application/json',
           'token': token
         },
-        body: JSON.stringify({ question: userMsg.content, token })
+        body: JSON.stringify({ question: userMsg.content, history: chatMessages, token })
       });
       if (res.ok) {
         const data = await res.json();
