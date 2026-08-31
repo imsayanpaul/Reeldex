@@ -717,6 +717,7 @@ body {
 .ig-manage-checkbox {
   position: absolute;
   bottom: 8px;
+  
   right: 8px;
   width: 22px;
   height: 22px;
@@ -761,7 +762,6 @@ body {
     padding: 0 !important;
     margin-bottom: 12px;
   }
-
   .ig-categories-strip {
     padding: 0 !important;
     margin-bottom: 18px;

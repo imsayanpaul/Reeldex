@@ -3,8 +3,10 @@ import re
 import json
 import uuid
 import datetime
+import urllib.request
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Header, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, desc
@@ -612,6 +614,51 @@ async def translate_reel(reel_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(last_err)}")
 
 
+THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "downloads", "thumbnails")
+os.makedirs(THUMBNAIL_DIR, exist_ok=True)
+
+@router.get("/thumbnail/{shortcode}")
+def get_thumbnail_proxy(shortcode: str):
+    """Proxy and cache Instagram reel thumbnails locally so they never expire or get blocked by CORS/Referrer policies."""
+    clean_code = shortcode.strip()
+    if not clean_code:
+        raise HTTPException(status_code=400, detail="Invalid shortcode")
+
+    cache_path = os.path.join(THUMBNAIL_DIR, f"{clean_code}.jpg")
+
+    # 1. Return cached thumbnail file if already downloaded on disk
+    if os.path.exists(cache_path) and os.path.getsize(cache_path) > 1000:
+        return FileResponse(cache_path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800"})
+
+    # 2. Fetch fresh og:image URL from Instagram using Crawler User-Agent
+    try:
+        url = f"https://www.instagram.com/p/{clean_code}/"
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"}
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            html = resp.read().decode('utf-8', errors='ignore')
+            m = re.search(r'property="og:image"\s+content="([^"]+)"', html)
+            if not m:
+                m = re.search(r'content="([^"]+)"\s+property="og:image"', html)
+
+            if m:
+                img_url = m.group(1).replace('&amp;', '&')
+                img_req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(img_req, timeout=10) as img_resp:
+                    img_data = img_resp.read()
+                    if len(img_data) > 1000:
+                        with open(cache_path, "wb") as f:
+                            f.write(img_data)
+                        return FileResponse(cache_path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800"})
+    except Exception as err:
+        print(f"[Thumbnail Proxy Error for {clean_code}]: {err}")
+
+    # Fallback to direct Instagram CDN media URL if proxy fetch fails
+    return Response(status_code=302, headers={"Location": f"https://www.instagram.com/p/{clean_code}/media/?size=l"})
+
+
 # --- Core Reels & Search Endpoints ---
 
 @router.get("/categories")
@@ -684,7 +731,7 @@ def list_reels(
             "shortcode": r.shortcode,
             "title": r.title or (f"Reel {r.shortcode}" if r.shortcode else f"Reel #{r.id}"),
             "author": r.author,
-            "thumbnail_url": r.thumbnail_url or (f"https://www.instagram.com/p/{r.shortcode}/media/?size=l" if r.shortcode else None),
+            "thumbnail_url": f"/api/thumbnail/{r.shortcode}" if r.shortcode else (r.thumbnail_url or None),
             "duration": r.duration,
             "collection_id": r.collection_id,
             "collection_name": r.collection.name if r.collection else None,
@@ -762,7 +809,7 @@ def get_reel_detail(reel_id: int, db: Session = Depends(get_db)):
         "shortcode": reel.shortcode,
         "title": reel.title,
         "author": reel.author,
-        "thumbnail_url": reel.thumbnail_url or (f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None),
+        "thumbnail_url": f"/api/thumbnail/{reel.shortcode}" if reel.shortcode else (reel.thumbnail_url or None),
         "duration": reel.duration,
         "collection_id": reel.collection_id,
         "collection_name": reel.collection.name if reel.collection else None,

@@ -265,14 +265,26 @@ export default function App() {
     }
   };
 
+  const getReelThumbnail = (reel) => {
+    if (!reel) return null;
+    let url = reel.thumbnail_url;
+    if (!url && reel.shortcode) {
+      url = `/api/thumbnail/${reel.shortcode}`;
+    }
+    if (url && url.startsWith('/api/')) {
+      return `${API_BASE}${url.replace('/api', '')}`;
+    }
+    return url;
+  };
+
   const handleThumbnailError = (e, shortcode) => {
     const img = e.currentTarget;
     if (shortcode && !img.dataset.retried) {
       img.dataset.retried = '1';
-      img.src = `https://www.instagram.com/reel/${shortcode}/media/?size=l`;
+      img.src = `${API_BASE}/thumbnail/${shortcode}`;
     } else if (shortcode && img.dataset.retried === '1') {
       img.dataset.retried = '2';
-      img.src = `https://www.instagram.com/p/${shortcode}/media/?size=l`;
+      img.src = `https://www.instagram.com/reel/${shortcode}/media/?size=l`;
     } else {
       img.style.display = 'none';
       if (img.parentElement) {
@@ -1608,7 +1620,7 @@ export default function App() {
                       >
                         {/* Video Thumbnail Box */}
                         {(() => {
-                          const thumbUrl = reel.thumbnail_url || (reel.shortcode ? `https://www.instagram.com/p/${reel.shortcode}/media/?size=l` : null);
+                          const thumbUrl = getReelThumbnail(reel);
                           return (
                             <div className="modern-card-thumbnail-box">
                               {thumbUrl ? (
