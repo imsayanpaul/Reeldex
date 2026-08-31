@@ -59,7 +59,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-[#282f34] bg-[#121518] text-[#f8fafa] p-6 shadow-2xl duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-xl",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-[#262c32] bg-[#101316] text-[#f8fafa] p-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-2xl",
           className
         )}
         {...props}
@@ -68,7 +68,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-md p-1 opacity-70 text-zinc-400 hover:text-zinc-100 hover:bg-[#20262b] transition-all focus:outline-none focus:ring-1 focus:ring-zinc-600 disabled:pointer-events-none"
+            className="absolute top-4 right-4 rounded-md p-1 opacity-70 text-zinc-400 hover:text-zinc-100 hover:bg-[#1a2026] transition-all focus:outline-none disabled:pointer-events-none"
           >
             <XIcon className="h-4 w-4" />
             <span className="sr-only">Close</span>
