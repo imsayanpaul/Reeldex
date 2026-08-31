@@ -115,8 +115,12 @@ def sanitize_ai_response(text: str) -> str:
 
     cleaned = text
 
-    # 1. Strip AI internal reasoning / thinking process blocks (<think>...<\/think>)
-    cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
+    # 1. Strip AI internal reasoning / thinking process blocks
+    # Case A: Paired <think>...</think> or <thinking>...</thinking> tags
+    cleaned = re.sub(r'<think(?:ing)?>.*?</think(?:ing)?>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
+    # Case B: Unclosed <think> or <thinking> tag (model hit token limit before closing)
+    if re.search(r'<think(?:ing)?>', cleaned, re.IGNORECASE):
+        cleaned = re.sub(r'<think(?:ing)?>[\s\S]*', '', cleaned, flags=re.IGNORECASE)
 
     # 2. Fix markdown link syntax and strip extra closing parens
     def clean_link_syntax(match):
@@ -252,7 +256,8 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], 
         "- **Tool / Project Name** — Brief 1-sentence explanation of what it does.\n"
         "  [Watch Video](url) • @creator\n\n"
         "COMPACTNESS RULE: Keep bullet descriptions concise (1 sentence max) so all items fit cleanly without running out of tokens. "
-        "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open."
+        "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open. "
+        "NO THINKING OUTPUT: Do NOT output any <think>, <thinking>, or internal reasoning blocks. Respond with ONLY the final formatted answer."
     )
 
     user_prompt = f"""User Question: {user_question}

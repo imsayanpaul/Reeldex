@@ -250,6 +250,9 @@ export default function App() {
   const formatSanitizedMarkdown = (text) => {
     if (!text) return '';
     let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    if (cleaned.toLowerCase().includes('<think>')) {
+      cleaned = cleaned.replace(/<think>[\s\S]*/gi, '');
+    }
     // Auto-close unclosed markdown link parentheses if truncated
     return cleaned.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)\n]+)/g, (match, label, url) => {
       if (!url.endsWith(')')) {
