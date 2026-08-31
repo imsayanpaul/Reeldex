@@ -875,7 +875,7 @@ async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(N
             ReelItem.status.in_(["completed", "success", "processed"])
         ).all()
 
-    # Fallback to any reel associated with user if status filter was restrictive
+    # Fallback to any reel associated with user or unassigned legacy reels
     if not reels_db:
         if user.instagram_sender_id:
             reels_db = db.query(ReelItem).filter(
@@ -883,6 +883,9 @@ async def ask_chat_endpoint(req: AskChatRequest, token: Optional[str] = Header(N
             ).all()
         else:
             reels_db = db.query(ReelItem).filter(ReelItem.user_id == user.id).all()
+            
+    if not reels_db:
+        reels_db = db.query(ReelItem).filter(ReelItem.user_id.is_(None)).all()
 
     reels_context = []
     for r in reels_db:
