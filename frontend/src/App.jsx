@@ -347,6 +347,14 @@ const getCachedReels = () => {
   const [copied, setCopied] = useState(false);
   const [copiedMsgIdx, setCopiedMsgIdx] = useState(null);
 
+  const hasMoreItemsToShow = (content) => {
+    if (!content) return false;
+    // Count bullet items (- **, • **)
+    const bulletCount = (content.match(/[-*•]\s+\*\*/g) || []).length;
+    // Show only when response is a long list (4+ items) or categorized summary (>450 chars)
+    return bulletCount >= 4 || (content.length > 450 && /#{2,4}|🎨|📦|🛠️|✨|🚀|📚/.test(content));
+  };
+
   const formatForWhatsAppAndNotes = (rawMarkdown) => {
     if (!rawMarkdown) return '';
 
@@ -2269,30 +2277,32 @@ const getCachedReels = () => {
                           )}
                         </button>
 
-                        <button
-                          onClick={() => sendChatMessageText("List the remaining tools, repos, and design assets from my saved reels starting after the ones listed above.")}
-                          className="ig-chat-action-btn"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: 'rgba(16, 185, 129, 0.15)',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            color: '#34d399',
-                            fontSize: '0.78rem',
-                            fontWeight: '600',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            outline: 'none',
-                            userSelect: 'none'
-                          }}
-                          title="Ask Dex AI to list remaining results starting from where it left off"
-                        >
-                          <Plus size={13} color="#34d399" />
-                          <span>Show More Results</span>
-                        </button>
+                        {hasMoreItemsToShow(msg.content) && (
+                          <button
+                            onClick={() => sendChatMessageText("List the remaining tools, repos, and design assets from my saved reels starting after the ones listed above.")}
+                            className="ig-chat-action-btn"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              color: '#34d399',
+                              fontSize: '0.78rem',
+                              fontWeight: '600',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              outline: 'none',
+                              userSelect: 'none'
+                            }}
+                            title="Ask Dex AI to list remaining results starting from where it left off"
+                          >
+                            <Plus size={13} color="#34d399" />
+                            <span>Show More Results</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => handleDownloadMessageText(msg.content, idx)}
