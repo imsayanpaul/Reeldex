@@ -3746,27 +3746,33 @@ const getCachedReels = () => {
                       setSelectedReel(r);
                       setCommandOpen(false);
                     }}
-                    className="cursor-pointer py-2"
+                    className="cursor-pointer py-2.5 px-3 flex items-center justify-between gap-3"
                   >
-                    <Play className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-medium text-sm text-zinc-100 truncate">
-                        {r.title || `Reel by @${r.author || 'Creator'}`}
-                      </span>
-                      {r.summary && (
-                        <span className="text-[11px] text-zinc-400 truncate">
-                          {typeof r.summary === 'string' ? r.summary : (r.summary.main_topic || '')}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded-lg bg-[#1f2428] border border-[#2e353b] flex items-center justify-center shrink-0">
+                        <Play className="h-3 w-3 text-zinc-300 fill-zinc-300/40" />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-medium text-sm text-zinc-100 truncate">
+                          {r.title || `Reel by @${r.author || 'Creator'}`}
                         </span>
-                      )}
+                        {r.summary && (
+                          <span className="text-[11px] text-zinc-400 truncate">
+                            {typeof r.summary === 'string' ? r.summary : (r.summary.main_topic || '')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {r.category && (
-                      <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-zinc-700 text-zinc-400 shrink-0">
-                        {r.category}
-                      </Badge>
-                    )}
-                    <span className="ml-2 text-xs text-zinc-500 font-mono shrink-0">
-                      @{r.author || r.sender_username || 'creator'}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {r.category && (
+                        <Badge variant="outline" className="text-[10px] py-0 px-2 bg-[#181c1f] border-zinc-700 text-zinc-300">
+                          {r.category}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-zinc-500 font-mono hidden sm:inline">
+                        @{r.author || r.sender_username || 'creator'}
+                      </span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
