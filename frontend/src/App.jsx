@@ -333,6 +333,27 @@ export default function App() {
 
   // Utility State
   const [copied, setCopied] = useState(false);
+  const [copiedMsgIdx, setCopiedMsgIdx] = useState(null);
+
+  const handleCopyMessageText = (text, idx) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedMsgIdx(idx);
+    setTimeout(() => setCopiedMsgIdx(null), 2000);
+  };
+
+  const handleDownloadMessageText = (text, idx) => {
+    if (!text) return;
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dex-ai-summary-${idx}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // Collection Detail View & Options State (Instagram Native)
   const [showCollectionMenuModal, setShowCollectionMenuModal] = useState(false);
@@ -2056,37 +2077,77 @@ export default function App() {
                   {msg.role === 'user' ? (
                     msg.content
                   ) : (
-                    <div className="markdown-prose" style={{ color: '#f8fafa' }}>
-                      <ReactMarkdown
-                        components={{
-                          a: ({ node, href, ...props }) => {
-                            const isIg = isInstagramUrl(href);
-                            return (
-                              <a
-                                {...props}
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  if (isIg) {
-                                    openInstagramUrl(href, e);
-                                  }
-                                }}
-                                style={{
-                                  color: '#90a4f2',
-                                  textDecoration: 'underline',
-                                  textUnderlineOffset: '3px',
-                                  fontWeight: '500',
-                                  cursor: 'pointer'
-                                }}
-                              />
-                            );
-                          }
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
+                    <>
+                      <div className="markdown-prose" style={{ color: '#f8fafa' }}>
+                        <ReactMarkdown
+                          components={{
+                            a: ({ node, href, ...props }) => {
+                              const isIg = isInstagramUrl(href);
+                              return (
+                                <a
+                                  {...props}
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    if (isIg) {
+                                      openInstagramUrl(href, e);
+                                    }
+                                  }}
+                                  style={{
+                                    color: '#90a4f2',
+                                    textDecoration: 'underline',
+                                    textUnderlineOffset: '3px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer'
+                                  }}
+                                />
+                              );
+                            }
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+
+                      {/* Action Bar: Copy & Save Output Options */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: '8px',
+                        marginTop: '12px',
+                        paddingTop: '10px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+                      }}>
+                        <button
+                          onClick={() => handleCopyMessageText(msg.content, idx)}
+                          className="ig-chat-action-btn"
+                          title="Copy output text to clipboard"
+                        >
+                          {copiedMsgIdx === idx ? (
+                            <>
+                              <Check size={13} color="#10b981" />
+                              <span style={{ color: '#10b981' }}>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleDownloadMessageText(msg.content, idx)}
+                          className="ig-chat-action-btn"
+                          title="Save output as Markdown (.md) file"
+                        >
+                          <Download size={13} />
+                          <span>Save as .md</span>
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               ))}
