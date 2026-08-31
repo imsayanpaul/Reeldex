@@ -167,21 +167,21 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
     # 2. Dynamic Top-K Selection with Score Thresholding & Broad-Query Awareness
     is_broad_query = any(w in clean_question for w in [
         "all", "everything", "every", "list", "summarize", "overview", 
-        "what reels", "what are all", "my reels", "library", "all my", "tools", "compare"
+        "what reels", "what are all", "my reels", "library", "all my", "tools", "compare", "repos", "github"
     ])
 
     scored_reels = rank_reels_search(reels_context, user_question)
     
     if is_broad_query:
-        # Broad questions: Include up to 15-20 reels for comprehensive synthesis
-        top_reels = scored_reels[:16] if scored_reels else reels_context[:16]
+        # Broad / library-wide questions: Include ALL saved reels (up to 50 reels) for exhaustive synthesis
+        top_reels = scored_reels[:50] if scored_reels else reels_context[:50]
     else:
-        # Specific questions: Include all relevant reels (up to 12 reels)
+        # Specific questions: Include all relevant reels (up to 15 reels)
         positive_matches = [r for r in scored_reels if r.get("relevance_score", 0) > 0]
         if positive_matches:
-            top_reels = positive_matches[:12]
+            top_reels = positive_matches[:20]
         else:
-            top_reels = scored_reels[:6] if scored_reels else reels_context[:6]
+            top_reels = scored_reels[:10] if scored_reels else reels_context[:10]
 
     # 3. Build dynamic compressed context prompt with character budget guard (35k chars ~ 8k tokens)
     context_blocks = []
@@ -211,9 +211,9 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
                     action_strs.append(val)
         actions = ", ".join(action_strs)
 
-        # Context compression: Include summary + top 350 chars of transcript
+        # Context compression: Include summary + top 300 chars of transcript
         summary_text = r.get("summary") or ""
-        transcript_snippet = (r.get("full_text") or "")[:350]
+        transcript_snippet = (r.get("full_text") or "")[:300]
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
@@ -237,10 +237,11 @@ async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]]) 
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels. "
         "Answer the user's question accurately using ONLY the provided reels context. "
         "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (`| ... |`). "
-        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 📦 GitHub Repositories`). "
+        "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design & UI Tools`, `### 📦 GitHub Repos & Developer Utilities`, `### ✨ Motion & Animation`). "
         "Format each item as a short, punchy 1-sentence bullet point:\n"
         "- **Tool / Project Name** — Brief 1-sentence explanation of what it does.\n"
         "  [Watch Video](url) • @creator\n\n"
+        "EXHAUSTIVE INVENTORY RULE: Inspect EVERY SINGLE reel in the provided context and list ALL tools, repos, CLI utilities, libraries, and design resources mentioned. Do NOT skip any reel or tool.\n"
         "COMPACTNESS RULE: Keep bullet descriptions concise (1 sentence max) so all items fit cleanly without running out of tokens. "
         "CRITICAL LINK RULE: EVERY markdown link MUST be strictly completed with a closing parenthesis `)`. Example: `[Watch Video](https://www.instagram.com/reel/CODE/)`. Never truncate URLs or leave link parentheses open."
     )
