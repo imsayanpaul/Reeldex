@@ -882,3 +882,75 @@ body {
     padding: 20px 16px 36px;
   }
 }
+
+/* Premium Ask Dex AI Clean Organized Markdown Prose */
+.markdown-prose {
+  color: #f8fafa;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.markdown-prose h3 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #90a4f2;
+  margin: 18px 0 10px 0;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.markdown-prose h4 {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #f8fafa;
+  margin: 14px 0 6px 0;
+}
+
+.markdown-prose p {
+  margin-bottom: 10px;
+}
+
+.markdown-prose ul, .markdown-prose ol {
+  margin: 8px 0 16px 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.markdown-prose li {
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.markdown-prose li strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.markdown-prose a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.markdown-prose a:hover {
+  color: #93c5fd;
+}
+
+.markdown-prose code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.84rem;
+  color: #e4e4e7;
+}
+
+.markdown-prose hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 18px 0;
+}
