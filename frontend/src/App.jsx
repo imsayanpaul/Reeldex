@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { 
-  Search, 
-  Sparkles, 
-  ExternalLink, 
-  Copy, 
-  Check, 
-  Trash2, 
-  Bot, 
-  Download, 
+import {
+  Search,
+  Sparkles,
+  ExternalLink,
+  Copy,
+  Check,
+  Trash2,
+  Bot,
+  Download,
   Send,
   ArrowLeft,
   Folder,
@@ -147,7 +147,7 @@ const renderWithClickableLinks = (text) => {
   if (!str) return '';
 
   const urlRegex = /(https?:\/\/[^\s,)]+|(?:[a-zA-Z0-9-]+\.)+(?:com|dev|ai|io|net|org|app|co|xyz|so|me|tech|site|online|space|store|design|tools|club|live|pro|agency|studio)(?:\/[^\s,)]*)?)/gi;
-  
+
   const elements = [];
   let lastIndex = 0;
   let match;
@@ -159,8 +159,8 @@ const renderWithClickableLinks = (text) => {
     const rawUrl = match[1];
     const cleanUrl = rawUrl.replace(/[.,;:)]+$/, '');
     const trailing = rawUrl.substring(cleanUrl.length);
-    const href = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') 
-      ? cleanUrl 
+    const href = cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
+      ? cleanUrl
       : `https://${cleanUrl}`;
 
     const isIg = isInstagramUrl(href);
@@ -217,7 +217,7 @@ const setSafeStorage = (key, val) => {
   try {
     const serialized = typeof val === 'string' ? val : JSON.stringify(val);
     window.localStorage?.setItem(key, serialized);
-  } catch (e) {}
+  } catch (e) { }
 };
 
 const getInitialToken = () => {
@@ -245,8 +245,8 @@ export default function App() {
   const initialToken = getInitialToken();
   const cachedName = getSafeStorage('reelmind_display_name') || 'User #3832';
   const cachedLinked = getSafeStorage('reelmind_is_linked') === 'true';
-  const [session, setSession] = useState({ 
-    auth_token: initialToken, 
+  const [session, setSession] = useState({
+    auth_token: initialToken,
     display_name: cachedName,
     is_instagram_linked: cachedLinked
   });
@@ -268,7 +268,7 @@ export default function App() {
     });
   };
 
-const getCachedReels = () => {
+  const getCachedReels = () => {
     try {
       const raw = getSafeStorage('reelmind_cached_reels');
       return raw ? JSON.parse(raw) : [];
@@ -532,9 +532,9 @@ const getCachedReels = () => {
               });
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
-    } catch {}
+    } catch { }
 
     fetchCategories();
     fetchCollections(currentToken);
@@ -833,15 +833,15 @@ const getCachedReels = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setReels(prev => prev.map(r => r.id === reelId ? { 
-          ...r, 
-          collection_id: data.collection_id, 
+        setReels(prev => prev.map(r => r.id === reelId ? {
+          ...r,
+          collection_id: data.collection_id,
           collection_name: data.collection_name
         } : r));
         if (selectedReel?.id === reelId) {
-          setSelectedReel(prev => ({ 
-            ...prev, 
-            collection_id: data.collection_id, 
+          setSelectedReel(prev => ({
+            ...prev,
+            collection_id: data.collection_id,
             collection_name: data.collection_name
           }));
         }
@@ -895,7 +895,7 @@ const getCachedReels = () => {
       setSelectedReel(null);
     }
     toast.success('Reel removed from vault');
-    
+
     // Background server sync
     try {
       const token = session?.auth_token || getSafeStorage('reelmind_token') || '';
@@ -1150,262 +1150,262 @@ const getCachedReels = () => {
   return (
     <TooltipProvider>
       <div className="ig-app-wrapper">
-      {/* ======================================================== */}
-      {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
-      {/* ======================================================== */}
-      {isManageMode ? (
-        <header className="ig-top-navbar ig-manage-navbar" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
-              title="Cancel"
-            >
-              <X size={24} strokeWidth={2.2} />
-            </button>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em' }}>
-              {selectedReelIds.size > 0 ? `${selectedReelIds.size} selected` : 'All Posts'}
-            </h1>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              onClick={handleSelectAll}
-              className="ig-filter-pill"
-              style={{ fontSize: '0.82rem', fontWeight: '500', padding: '6px 14px' }}
-            >
-              {selectedReelIds.size === reels.length ? 'Deselect all' : 'Select all'}
-            </button>
-          </div>
-        </header>
-      ) : selectedCollection ? (
-        <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button
-              onClick={() => setSelectedCollection(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '2px' }}
-              title="Back"
-            >
-              <ArrowLeft size={24} strokeWidth={2.2} />
-            </button>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
-              {selectedCollection.name}
-            </h1>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={() => setShowCollectionMenuModal(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
-              title="Collection Options"
-            >
-              <MoreVertical size={24} strokeWidth={2.2} />
-            </button>
-          </div>
-        </header>
-      ) : activeTab === 'vault' ? (
-        <header className="ig-top-navbar">
-          <div
-            onClick={() => {
-              setActiveTab('vault');
-              setActiveViewFilter('All');
-              setSelectedCollection(null);
-              setSearchQuery('');
-              setSelectedReel(null);
-              setIsManageMode(false);
-              setSelectedReelIds(new Set());
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
-            title="Go to All Saved"
-          >
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
-              ReelDex
-            </h1>
-          </div>
-
-          {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
-            <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
-                <input
-                  type="text"
-                  placeholder="Search transcripts & tools..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '7px 30px 7px 34px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-input)',
-                    fontSize: '0.84rem',
-                    outline: 'none',
-                    color: 'var(--text-main)'
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
-                  >
-                    <X size={13} />
-                  </button>
-                )}
-              </div>
+        {/* ======================================================== */}
+        {/* INSTAGRAM-STYLE STICKY TOP NAVBAR */}
+        {/* ======================================================== */}
+        {isManageMode ? (
+          <header className="ig-top-navbar ig-manage-navbar" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={() => { setIsManageMode(false); setSelectedReelIds(new Set()); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
+                title="Cancel"
+              >
+                <X size={24} strokeWidth={2.2} />
+              </button>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em' }}>
+                {selectedReelIds.size > 0 ? `${selectedReelIds.size} selected` : 'All Posts'}
+              </h1>
             </div>
 
-            {/* Highlighted Ask Dex AI Button */}
-            <button
-              onClick={() => setActiveTab('chat')}
-              className="ig-ask-ai-center-btn"
-              title="Ask Dex AI across your saved reels"
-            >
-              <span>Ask Dex AI</span>
-            </button>
-          </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={handleSelectAll}
+                className="ig-filter-pill"
+                style={{ fontSize: '0.82rem', fontWeight: '500', padding: '6px 14px' }}
+              >
+                {selectedReelIds.size === reels.length ? 'Deselect all' : 'Select all'}
+              </button>
+            </div>
+          </header>
+        ) : selectedCollection ? (
+          <header className="ig-top-navbar" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button
+                onClick={() => setSelectedCollection(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '2px' }}
+                title="Back"
+              >
+                <ArrowLeft size={24} strokeWidth={2.2} />
+              </button>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
+                {selectedCollection.name}
+              </h1>
+            </div>
 
-          {/* Right Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-
-            {/* User / Instagram Status Capsule */}
-            <button
-              onClick={handleGeneratePairingCode}
-              className="ig-user-status-btn"
-              title="Instagram Connection Status - Click to Pair"
-            >
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={15} color="#e4e4e7" />
-                <span style={{
-                  position: 'absolute',
-                  bottom: '-1px',
-                  right: '-2px',
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
-                  border: '1.5px solid #0c0f14'
-                }} />
-              </div>
-              <span className="ig-username-text">
-                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
-              </span>
-            </button>
-
-            {/* + New Collection Icon Only */}
-            <button
-              onClick={() => setShowCreateCollectionModal(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginLeft: '4px'
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => setShowCollectionMenuModal(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
+                title="Collection Options"
+              >
+                <MoreVertical size={24} strokeWidth={2.2} />
+              </button>
+            </div>
+          </header>
+        ) : activeTab === 'vault' ? (
+          <header className="ig-top-navbar">
+            <div
+              onClick={() => {
+                setActiveTab('vault');
+                setActiveViewFilter('All');
+                setSelectedCollection(null);
+                setSearchQuery('');
+                setSelectedReel(null);
+                setIsManageMode(false);
+                setSelectedReelIds(new Set());
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              title="Create New Collection"
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
+              title="Go to All Saved"
             >
-              <Plus size={28} strokeWidth={2.4} />
-            </button>
-          </div>
-        </header>
-      ) : null}
+              <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
+                ReelDex
+              </h1>
+            </div>
 
-      {/* ======================================================== */}
-      {/* MAIN CONTENT AREA */}
-      {/* ======================================================== */}
-      {activeTab === 'vault' && (
-        <div
-          className="ig-content-container"
-          style={{
-            padding: isManageMode ? '14px 16px 100px' : '14px 16px 60px',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Mobile Search Bar (prominently available on mobile devices) */}
-          {!isManageMode && (
-            <div className="ig-mobile-search-bar" style={{ marginBottom: '14px' }}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                background: '#181c1f',
-                borderRadius: '10px',
-                border: '1px solid #282f34',
-                padding: '0 12px',
-                height: '40px'
-              }}>
-                <Search size={15} color="#8e8e8e" style={{ marginRight: '8px', flexShrink: 0 }} />
-                <input
-                  type="text"
-                  placeholder={selectedCollection ? `Search in ${selectedCollection.name}...` : "Search transcripts, tools, creators..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    flex: 1,
-                    background: 'none',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#f8fafa',
-                    fontSize: '0.88rem',
-                    padding: 0
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
+            {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
+              <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+                  <input
+                    type="text"
+                    placeholder="Search transcripts & tools..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     style={{
+                      width: '100%',
+                      padding: '7px 30px 7px 34px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-light)',
+                      background: 'var(--bg-input)',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                      color: 'var(--text-main)'
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Highlighted Ask Dex AI Button */}
+              <button
+                onClick={() => setActiveTab('chat')}
+                className="ig-ask-ai-center-btn"
+                title="Ask Dex AI across your saved reels"
+              >
+                <span>Ask Dex AI</span>
+              </button>
+            </div>
+
+            {/* Right Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+
+              {/* User / Instagram Status Capsule */}
+              <button
+                onClick={handleGeneratePairingCode}
+                className="ig-user-status-btn"
+                title="Instagram Connection Status - Click to Pair"
+              >
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={15} color="#e4e4e7" />
+                  <span style={{
+                    position: 'absolute',
+                    bottom: '-1px',
+                    right: '-2px',
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
+                    border: '1.5px solid #0c0f14'
+                  }} />
+                </div>
+                <span className="ig-username-text">
+                  {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
+                </span>
+              </button>
+
+              {/* + New Collection Icon Only */}
+              <button
+                onClick={() => setShowCreateCollectionModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: '4px'
+                }}
+                title="Create New Collection"
+              >
+                <Plus size={28} strokeWidth={2.4} />
+              </button>
+            </div>
+          </header>
+        ) : null}
+
+        {/* ======================================================== */}
+        {/* MAIN CONTENT AREA */}
+        {/* ======================================================== */}
+        {activeTab === 'vault' && (
+          <div
+            className="ig-content-container"
+            style={{
+              padding: isManageMode ? '14px 16px 100px' : '14px 16px 60px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Mobile Search Bar (prominently available on mobile devices) */}
+            {!isManageMode && (
+              <div className="ig-mobile-search-bar" style={{ marginBottom: '14px' }}>
+                <div style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#181c1f',
+                  borderRadius: '10px',
+                  border: '1px solid #282f34',
+                  padding: '0 12px',
+                  height: '40px'
+                }}>
+                  <Search size={15} color="#8e8e8e" style={{ marginRight: '8px', flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder={selectedCollection ? `Search in ${selectedCollection.name}...` : "Search transcripts, tools, creators..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      flex: 1,
                       background: 'none',
                       border: 'none',
-                      color: '#8e8e8e',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center'
+                      outline: 'none',
+                      color: '#f8fafa',
+                      fontSize: '0.88rem',
+                      padding: 0
                     }}
-                    title="Clear search"
-                  >
-                    <X size={15} />
-                  </button>
-                )}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#8e8e8e',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Clear search"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
-          {!selectedCollection && !isManageMode && (
-          <div className="ig-categories-strip">
-            <button
-              onClick={() => setActiveViewFilter('All')}
-              className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveViewFilter('Collections')}
-              className={`ig-filter-pill ${activeViewFilter === 'Collections' ? 'active' : ''}`}
-            >
-              Collections
-            </button>
-            {categories.filter(c => c !== 'All').map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveViewFilter(cat)}
-                className={`ig-filter-pill ${activeViewFilter === cat ? 'active' : ''}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        )}
+            {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
+            {!selectedCollection && !isManageMode && (
+              <div className="ig-categories-strip">
+                <button
+                  onClick={() => setActiveViewFilter('All')}
+                  className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setActiveViewFilter('Collections')}
+                  className={`ig-filter-pill ${activeViewFilter === 'Collections' ? 'active' : ''}`}
+                >
+                  Collections
+                </button>
+                {categories.filter(c => c !== 'All').map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveViewFilter(cat)}
+                    className={`ig-filter-pill ${activeViewFilter === cat ? 'active' : ''}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
 
-        {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
+            {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
             {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
               <div style={{ marginBottom: '28px' }}>
                 {activeViewFilter === 'All' && (
@@ -1680,7 +1680,7 @@ const getCachedReels = () => {
                       <p style={{ fontSize: '0.86rem', color: '#8e8e8e', maxWidth: '340px', lineHeight: '1.45', marginBottom: '20px' }}>
                         {activeViewFilter !== 'All'
                           ? `Reels tagged with "${activeViewFilter}" will automatically appear here once transcribed.`
-                          : session.is_instagram_linked 
+                          : session.is_instagram_linked
                             ? 'Send any Instagram Reel in DM to @reeldex.io to automatically transcribe audio and index tools.'
                             : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages.'}
                       </p>
@@ -1782,7 +1782,7 @@ const getCachedReels = () => {
                                   <Play size={28} color="#90a4f2" opacity={0.6} />
                                 </div>
                               )}
-                              
+
                               {/* Instagram 3-Grid Top-Right Reel Icon */}
                               <div className="ig-reel-media-badge">
                                 <Play size={13} color="#ffffff" fill="#ffffff" />
@@ -2485,178 +2485,362 @@ const getCachedReels = () => {
           </div>
         )}
 
-      {/* ======================================================== */}
-      {/* MANAGE MODE STICKY BOTTOM ACTION BAR (Instagram Native) */}
-      {/* ======================================================== */}
-      {isManageMode && (
-        <div className="ig-manage-bottom-bar">
-          {/* Unsave Button */}
-          <button
-            onClick={handleBatchDelete}
-            disabled={selectedReelIds.size === 0 || batchActionLoading}
-            className="ig-manage-bottom-btn"
-            style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
-          >
-            Unsave
-          </button>
+        {/* ======================================================== */}
+        {/* MANAGE MODE STICKY BOTTOM ACTION BAR (Instagram Native) */}
+        {/* ======================================================== */}
+        {isManageMode && (
+          <div className="ig-manage-bottom-bar">
+            {/* Unsave Button */}
+            <button
+              onClick={handleBatchDelete}
+              disabled={selectedReelIds.size === 0 || batchActionLoading}
+              className="ig-manage-bottom-btn"
+              style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
+            >
+              Unsave
+            </button>
 
-          {/* Add to Collection Button */}
-          <button
-            onClick={() => setShowBatchCollectionModal(true)}
-            disabled={selectedReelIds.size === 0 || batchActionLoading}
-            className="ig-manage-bottom-btn"
-            style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
-          >
-            Add to collection
-          </button>
-        </div>
-      )}
+            {/* Add to Collection Button */}
+            <button
+              onClick={() => setShowBatchCollectionModal(true)}
+              disabled={selectedReelIds.size === 0 || batchActionLoading}
+              className="ig-manage-bottom-btn"
+              style={{ color: selectedReelIds.size > 0 ? '#ffffff' : '#71717a' }}
+            >
+              Add to collection
+            </button>
+          </div>
+        )}
 
-      {/* ======================================================== */}
-      {/* BATCH ADD TO COLLECTION BOTTOM SHEET (Exact Instagram Native Layout) */}
-      {/* ======================================================== */}
-      {showBatchCollectionModal && (
-        <div className="modal-overlay" onClick={() => setShowBatchCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', padding: '16px 18px 28px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
-            {/* Top Drag Handle */}
-            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
-            
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0 }}>
-                Add to collection
-              </h3>
-              <button
-                onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
-                title="Create New Collection"
-              >
-                <Plus size={26} strokeWidth={2.4} />
-              </button>
-            </div>
+        {/* ======================================================== */}
+        {/* BATCH ADD TO COLLECTION BOTTOM SHEET (Exact Instagram Native Layout) */}
+        {/* ======================================================== */}
+        {showBatchCollectionModal && (
+          <div className="modal-overlay" onClick={() => setShowBatchCollectionModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', padding: '16px 18px 28px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
+              {/* Top Drag Handle */}
+              <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
 
-            {collections.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                  No collections yet. Create your first collection to group these reels!
-                </p>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0 }}>
+                  Add to collection
+                </h3>
                 <button
                   onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
-                  className="btn-primary"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f8fafa', padding: '4px', display: 'flex', alignItems: 'center' }}
+                  title="Create New Collection"
                 >
-                  <Plus size={14} /> Create New Collection
+                  <Plus size={26} strokeWidth={2.4} />
                 </button>
               </div>
-            ) : (
-              <div style={{
-                display: 'flex',
-                gap: '14px',
-                overflowX: 'auto',
-                padding: '4px 2px 12px',
-                scrollbarWidth: 'none'
-              }}>
-                {collections.map(col => {
-                  const coverImg = getCollectionCover(col.id);
-                  return (
-                    <div
-                      key={col.id}
-                      onClick={() => handleBatchAssign(col.id)}
-                      style={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        width: '74px',
-                        minWidth: '74px',
-                        gap: '8px',
-                        textAlign: 'center'
-                      }}
-                    >
-                      <div style={{
-                        width: '74px',
-                        height: '74px',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        background: '#121518',
-                        border: '1px solid #282f34'
-                      }}>
-                        {coverImg ? (
-                          <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#121518' }}>
-                            <Folder size={26} color="#8e8e8e" />
-                          </div>
-                        )}
+
+              {collections.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                    No collections yet. Create your first collection to group these reels!
+                  </p>
+                  <button
+                    onClick={() => { setShowBatchCollectionModal(false); setShowCreateCollectionModal(true); }}
+                    className="btn-primary"
+                  >
+                    <Plus size={14} /> Create New Collection
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  gap: '14px',
+                  overflowX: 'auto',
+                  padding: '4px 2px 12px',
+                  scrollbarWidth: 'none'
+                }}>
+                  {collections.map(col => {
+                    const coverImg = getCollectionCover(col.id);
+                    return (
+                      <div
+                        key={col.id}
+                        onClick={() => handleBatchAssign(col.id)}
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '74px',
+                          minWidth: '74px',
+                          gap: '8px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <div style={{
+                          width: '74px',
+                          height: '74px',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          background: '#121518',
+                          border: '1px solid #282f34'
+                        }}>
+                          {coverImg ? (
+                            <img src={coverImg} alt={col.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#121518' }}>
+                              <Folder size={26} color="#8e8e8e" />
+                            </div>
+                          )}
+                        </div>
+                        <div style={{
+                          fontSize: '0.84rem',
+                          fontWeight: '500',
+                          color: '#f8fafa',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          width: '100%'
+                        }}>
+                          {col.name}
+                        </div>
                       </div>
-                      <div style={{
-                        fontSize: '0.84rem',
-                        fontWeight: '500',
-                        color: '#f8fafa',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        width: '100%'
-                      }}>
-                        {col.name}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* CREATE COLLECTION MODAL (Exact Instagram Native Bottom Sheet) */}
+        {/* ======================================================== */}
+        {showCreateCollectionModal && (
+          <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
+              {/* Top Handle Bar */}
+              <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+              {/* Header: Cancel | New collection | Next */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateCollectionModal(false); setNewCollectionName(''); }}
+                  style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+                >
+                  Cancel
+                </button>
+
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
+                  New collection
+                </h3>
+
+                <button
+                  type="button"
+                  onClick={handleCreateCollection}
+                  disabled={!newCollectionName.trim() || creatingCollection}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: newCollectionName.trim() ? '#90a4f2' : '#52525b',
+                    fontSize: '0.96rem',
+                    fontWeight: '700',
+                    cursor: newCollectionName.trim() ? 'pointer' : 'not-allowed',
+                    padding: 0
+                  }}
+                >
+                  {creatingCollection ? 'Adding...' : 'Next'}
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCollection}>
+                {/* Collection Name Input Box */}
+                <div style={{ marginBottom: '18px' }}>
+                  <input
+                    type="text"
+                    placeholder="Collection name"
+                    value={newCollectionName}
+                    onChange={(e) => setNewCollectionName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '16px 14px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #3f3f46',
+                      background: '#000000',
+                      color: '#f8fafa',
+                      fontSize: '0.95rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Add people to this collection option row */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 4px',
+                  cursor: 'pointer'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <Users size={22} color="#f8fafa" />
+                    <div>
+                      <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#f8fafa' }}>
+                        Add people to this collection
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: '#8e8e8e', marginTop: '2px' }}>
+                        Save to a collection together
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* CREATE COLLECTION MODAL (Exact Instagram Native Bottom Sheet) */}
-      {/* ======================================================== */}
-      {showCreateCollectionModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
-            {/* Top Handle Bar */}
-            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
-
-            {/* Header: Cancel | New collection | Next */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-              <button
-                type="button"
-                onClick={() => { setShowCreateCollectionModal(false); setNewCollectionName(''); }}
-                style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
-              >
-                Cancel
-              </button>
-
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
-                New collection
-              </h3>
-
-              <button
-                type="button"
-                onClick={handleCreateCollection}
-                disabled={!newCollectionName.trim() || creatingCollection}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: newCollectionName.trim() ? '#90a4f2' : '#52525b',
-                  fontSize: '0.96rem',
-                  fontWeight: '700',
-                  cursor: newCollectionName.trim() ? 'pointer' : 'not-allowed',
-                  padding: 0
-                }}
-              >
-                {creatingCollection ? 'Adding...' : 'Next'}
-              </button>
+                  </div>
+                  <ChevronRight size={18} color="#71717a" />
+                </div>
+              </form>
             </div>
+          </div>
+        )}
 
-            <form onSubmit={handleCreateCollection}>
-              {/* Collection Name Input Box */}
-              <div style={{ marginBottom: '18px' }}>
+        {/* ======================================================== */}
+        {/* COLLECTION 3-DOTS OPTIONS BOTTOM SHEET (Exact Instagram Native Layout) */}
+        {/* ======================================================== */}
+        {showCollectionMenuModal && selectedCollection && (
+          <div className="modal-overlay" onClick={() => setShowCollectionMenuModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '14px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
+              {/* Top drag handle */}
+              <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {/* 1. Delete Collection (Red) */}
+                <button
+                  onClick={(e) => {
+                    setShowCollectionMenuModal(false);
+                    handleDeleteCollection(selectedCollection.id, e);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                    color: '#ed4956',
+                    fontSize: '0.96rem',
+                    fontWeight: '600',
+                    padding: '16px 0',
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Delete Collection
+                </button>
+
+                {/* 2. Edit collection */}
+                <button
+                  onClick={() => {
+                    setShowCollectionMenuModal(false);
+                    setEditCollectionName(selectedCollection.name);
+                    setShowEditCollectionModal(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                    color: '#f8fafa',
+                    fontSize: '0.96rem',
+                    fontWeight: '500',
+                    padding: '16px 0',
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Edit collection
+                </button>
+
+                {/* 3. Add to collection */}
+                <button
+                  onClick={async () => {
+                    setShowCollectionMenuModal(false);
+                    await fetchAllVaultReels();
+                    setShowAddToThisCollectionModal(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+                    color: '#f8fafa',
+                    fontSize: '0.96rem',
+                    fontWeight: '500',
+                    padding: '16px 0',
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Add to collection
+                </button>
+
+                {/* 4. Select... */}
+                <button
+                  onClick={() => {
+                    setShowCollectionMenuModal(false);
+                    setIsManageMode(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#f8fafa',
+                    fontSize: '0.96rem',
+                    fontWeight: '500',
+                    padding: '16px 0 6px',
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Select...
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* EDIT COLLECTION MODAL */}
+        {/* ======================================================== */}
+        {showEditCollectionModal && selectedCollection && (
+          <div className="modal-overlay" onClick={() => setShowEditCollectionModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
+              <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEditCollectionModal(false)}
+                  style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
+                >
+                  Cancel
+                </button>
+
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
+                  Edit collection
+                </h3>
+
+                <button
+                  type="button"
+                  onClick={handleSaveEditedCollectionName}
+                  disabled={!editCollectionName.trim() || editingCollection}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: editCollectionName.trim() ? '#90a4f2' : '#52525b',
+                    fontSize: '0.96rem',
+                    fontWeight: '700',
+                    cursor: editCollectionName.trim() ? 'pointer' : 'not-allowed',
+                    padding: 0
+                  }}
+                >
+                  {editingCollection ? 'Saving...' : 'Done'}
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditedCollectionName}>
                 <input
                   type="text"
-                  placeholder="Collection name"
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  value={editCollectionName}
+                  onChange={(e) => setEditCollectionName(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '16px 14px',
@@ -2670,665 +2854,454 @@ const getCachedReels = () => {
                   }}
                   autoFocus
                 />
-              </div>
-
-              {/* Add people to this collection option row */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 4px',
-                cursor: 'pointer'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <Users size={22} color="#f8fafa" />
-                  <div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#f8fafa' }}>
-                      Add people to this collection
-                    </div>
-                    <div style={{ fontSize: '0.76rem', color: '#8e8e8e', marginTop: '2px' }}>
-                      Save to a collection together
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight size={18} color="#71717a" />
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* COLLECTION 3-DOTS OPTIONS BOTTOM SHEET (Exact Instagram Native Layout) */}
-      {/* ======================================================== */}
-      {showCollectionMenuModal && selectedCollection && (
-        <div className="modal-overlay" onClick={() => setShowCollectionMenuModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '14px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
-            {/* Top drag handle */}
-            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* 1. Delete Collection (Red) */}
-              <button
-                onClick={(e) => {
-                  setShowCollectionMenuModal(false);
-                  handleDeleteCollection(selectedCollection.id, e);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-                  color: '#ed4956',
-                  fontSize: '0.96rem',
-                  fontWeight: '600',
-                  padding: '16px 0',
-                  textAlign: 'left',
-                  cursor: 'pointer'
-                }}
-              >
-                Delete Collection
-              </button>
-
-              {/* 2. Edit collection */}
-              <button
-                onClick={() => {
-                  setShowCollectionMenuModal(false);
-                  setEditCollectionName(selectedCollection.name);
-                  setShowEditCollectionModal(true);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-                  color: '#f8fafa',
-                  fontSize: '0.96rem',
-                  fontWeight: '500',
-                  padding: '16px 0',
-                  textAlign: 'left',
-                  cursor: 'pointer'
-                }}
-              >
-                Edit collection
-              </button>
-
-              {/* 3. Add to collection */}
-              <button
-                onClick={async () => {
-                  setShowCollectionMenuModal(false);
-                  await fetchAllVaultReels();
-                  setShowAddToThisCollectionModal(true);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-                  color: '#f8fafa',
-                  fontSize: '0.96rem',
-                  fontWeight: '500',
-                  padding: '16px 0',
-                  textAlign: 'left',
-                  cursor: 'pointer'
-                }}
-              >
-                Add to collection
-              </button>
-
-              {/* 4. Select... */}
-              <button
-                onClick={() => {
-                  setShowCollectionMenuModal(false);
-                  setIsManageMode(true);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#f8fafa',
-                  fontSize: '0.96rem',
-                  fontWeight: '500',
-                  padding: '16px 0 6px',
-                  textAlign: 'left',
-                  cursor: 'pointer'
-                }}
-              >
-                Select...
-              </button>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ======================================================== */}
-      {/* EDIT COLLECTION MODAL */}
-      {/* ======================================================== */}
-      {showEditCollectionModal && selectedCollection && (
-        <div className="modal-overlay" onClick={() => setShowEditCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', padding: '16px 20px 24px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
-            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 16px' }} />
+        {/* ======================================================== */}
+        {/* ADD FROM SAVED PICKER MODAL (Exact Instagram Screenshot 2) */}
+        {/* ======================================================== */}
+        {showAddToThisCollectionModal && selectedCollection && (
+          <div className="modal-overlay" onClick={() => setShowAddToThisCollectionModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '14px 14px 20px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
+              <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 14px' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-              <button
-                type="button"
-                onClick={() => setShowEditCollectionModal(false)}
-                style={{ background: 'none', border: 'none', color: '#f8fafa', fontSize: '0.96rem', fontWeight: '500', cursor: 'pointer', padding: 0 }}
-              >
-                Cancel
-              </button>
-
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
-                Edit collection
-              </h3>
-
-              <button
-                type="button"
-                onClick={handleSaveEditedCollectionName}
-                disabled={!editCollectionName.trim() || editingCollection}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: editCollectionName.trim() ? '#90a4f2' : '#52525b',
-                  fontSize: '0.96rem',
-                  fontWeight: '700',
-                  cursor: editCollectionName.trim() ? 'pointer' : 'not-allowed',
-                  padding: 0
-                }}
-              >
-                {editingCollection ? 'Saving...' : 'Done'}
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditedCollectionName}>
-              <input
-                type="text"
-                value={editCollectionName}
-                onChange={(e) => setEditCollectionName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '16px 14px',
-                  borderRadius: '12px',
-                  border: '1.5px solid #3f3f46',
-                  background: '#000000',
-                  color: '#f8fafa',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                autoFocus
-              />
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* ADD FROM SAVED PICKER MODAL (Exact Instagram Screenshot 2) */}
-      {/* ======================================================== */}
-      {showAddToThisCollectionModal && selectedCollection && (
-        <div className="modal-overlay" onClick={() => setShowAddToThisCollectionModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px', height: '90vh', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '14px 14px 20px', background: '#181c1f', borderRadius: '18px 18px 0 0', border: '1px solid #282f34' }}>
-            <div style={{ width: '38px', height: '4px', background: '#3f3f46', borderRadius: '2px', margin: '0 auto 14px' }} />
-
-            {/* Header: Back Arrow | Add from saved | Save */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
-              <button
-                type="button"
-                onClick={() => setShowAddToThisCollectionModal(false)}
-                style={{ background: 'none', border: 'none', color: '#f8fafa', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '4px' }}
-                title="Back"
-              >
-                <ArrowLeft size={22} strokeWidth={2.2} />
-              </button>
-
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
-                Add from saved
-              </h3>
-
-              <button
-                type="button"
-                onClick={handleAddReelsToCurrentCollection}
-                disabled={addingReelsToCol}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: selectedReelIdsForAdd.size > 0 ? '#90a4f2' : '#f8fafa',
-                  fontSize: '0.96rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  padding: '4px 6px'
-                }}
-              >
-                {addingReelsToCol ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-
-            {/* Scrollable 3-Column Square Grid with Top-Left Checkboxes */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', padding: '1px' }}>
-              {allVaultReels.length === 0 ? (
-                [1, 2, 3, 4, 5, 6].map(n => (
-                  <div key={n} className="skeleton-shimmer" style={{ aspectRatio: '1 / 1', background: '#181c1f' }} />
-                ))
-              ) : (
-                allVaultReels.map(reel => {
-                const isSelected = selectedReelIdsForAdd.has(reel.id);
-                return (
-                  <div
-                    key={reel.id}
-                    onClick={() => {
-                      setSelectedReelIdsForAdd(prev => {
-                        const next = new Set(prev);
-                        if (next.has(reel.id)) next.delete(reel.id);
-                        else next.add(reel.id);
-                        return next;
-                      });
-                    }}
-                    style={{
-                      position: 'relative',
-                      aspectRatio: '1 / 1',
-                      background: '#121518',
-                      cursor: 'pointer',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {reel.thumbnail_url ? (
-                      <img src={reel.thumbnail_url} alt={reel.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a' }}>
-                        <Play size={24} color="#71717a" />
-                      </div>
-                    )}
-                    {/* Checkbox in Top-Left Corner (Exact Screenshot 2) */}
-                    <div style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: '8px',
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '3px',
-                      background: isSelected ? '#f8fafa' : 'rgba(0, 0, 0, 0.4)',
-                      border: isSelected ? '1.5px solid #f8fafa' : '1.5px solid rgba(255, 255, 255, 0.7)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      zIndex: 5
-                    }}>
-                      {isSelected && <Check size={13} color="#000000" strokeWidth={3} />}
-                    </div>
-                  </div>
-                );
-              }))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* INSTAGRAM PAIRING MODAL */}
-      {/* ======================================================== */}
-      {showPairModal && (
-        <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
-          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px', padding: '22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.08rem', fontWeight: '600', color: '#f8fafa', margin: '0 0 3px', letterSpacing: '-0.01em' }}>
-                  Link Your Instagram
-                </h3>
-                <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
-                  Sync reels via Instagram DM in 10 seconds
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPairModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#8e8e8e',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ background: '#181c1f', border: '1px solid #282f34', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '600', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Your Unique Linking Code
-              </span>
-              <div style={{ fontSize: '2rem', fontWeight: '700', fontFamily: 'monospace', letterSpacing: '0.12em', color: '#f8fafa', margin: '6px 0' }}>
-                {pairingCode || 'MIND-849201'}
-              </div>
-              <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.78rem' }}>
-                {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />} Copy Code
-              </button>
-            </div>
-
-            <div style={{ fontSize: '0.84rem', color: '#f8fafa', lineHeight: '1.6', marginBottom: '20px' }}>
-              <ol style={{ paddingLeft: '18px', margin: 0 }}>
-                <li style={{ marginBottom: '4px' }}>Open Instagram Direct and message <strong style={{ color: '#90a4f2' }}>@reeldex.io</strong>.</li>
-                <li style={{ marginBottom: '4px' }}>Send your code: <code style={{ color: '#90a4f2', background: '#121518', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>{pairingCode}</code></li>
-                <li>Done! Any Reel you share in DM will automatically transcribe and save here.</li>
-              </ol>
-            </div>
-
-            <a
-              href="https://ig.me/m/reeldex.io"
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => openInstagramUrl('https://ig.me/m/reeldex.io', e)}
-              className="btn-blue"
-              style={{ width: '100%', justifyContent: 'center', padding: '10px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.88rem' }}
-            >
-              <span>Open Instagram DM</span>
-              <ExternalLink size={14} />
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* REEL DETAIL FULL-PAGE VIEW (INSTAGRAM NATIVE) */}
-      {/* ======================================================== */}
-      {selectedReel && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1000,
-          background: '#0c0f14',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          {/* Top Sticky Header (Seamless, No Divider) */}
-          <header style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 30,
-            background: 'rgba(12, 15, 20, 0.96)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: 'none',
-            minHeight: '64px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 20px',
-            boxSizing: 'border-box'
-          }}>
-            {/* Left: Back Button */}
-            <button
-              onClick={() => setSelectedReel(null)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#f8fafa',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                padding: '8px 12px 8px 0',
-                fontSize: '1rem',
-                fontWeight: '500'
-              }}
-            >
-              <ArrowLeft size={24} strokeWidth={2.2} />
-              <span>Back</span>
-            </button>
-
-            {/* Center: Author info */}
-            <div style={{ textAlign: 'center', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              <span style={{ fontSize: '0.94rem', fontWeight: '500', color: '#f8fafa' }}>
-                @{selectedReel.author || selectedReel.sender_username || 'Creator'}
-              </span>
-            </div>
-
-            {/* Right: Actions (Retry only if failed, Delete in sleek gray) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {selectedReel.status === 'failed' && (
+              {/* Header: Back Arrow | Add from saved | Save */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 4px' }}>
                 <button
                   type="button"
-                  onTouchEnd={(e) => handleRetryReel(selectedReel.id, e)}
-                  onClick={(e) => handleRetryReel(selectedReel.id, e)}
-                  style={{
-                    background: 'rgba(144, 164, 242, 0.12)',
-                    border: '1px solid rgba(144, 164, 242, 0.25)',
-                    color: '#90a4f2',
-                    cursor: 'pointer',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    fontSize: '0.84rem',
-                    fontWeight: '600',
-                    touchAction: 'manipulation'
-                  }}
-                  title="Retry Transcription"
+                  onClick={() => setShowAddToThisCollectionModal(false)}
+                  style={{ background: 'none', border: 'none', color: '#f8fafa', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '4px' }}
+                  title="Back"
                 >
-                  <RotateCw size={14} />
-                  <span>Retry</span>
+                  <ArrowLeft size={22} strokeWidth={2.2} />
                 </button>
-              )}
 
-              <button
-                type="button"
-                onTouchEnd={(e) => handleDeleteReel(selectedReel.id, e)}
-                onClick={(e) => handleDeleteReel(selectedReel.id, e)}
-                style={{
-                  background: '#181c1f',
-                  border: '1px solid #282f34',
-                  color: '#e4e4e7',
-                  cursor: 'pointer',
-                  padding: '8px 14px',
-                  borderRadius: '8px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.84rem',
-                  fontWeight: '500',
-                  touchAction: 'manipulation',
-                  transition: 'background 0.15s ease'
-                }}
-                title="Delete Reel"
-              >
-                <Trash2 size={14} color="#a1a1aa" />
-                <span>Delete</span>
-              </button>
-            </div>
-          </header>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#f8fafa', margin: 0, textAlign: 'center' }}>
+                  Add from saved
+                </h3>
 
-          {/* Main Full-Page Content */}
-          <div style={{
-            maxWidth: '820px',
-            width: '100%',
-            margin: '0 auto',
-            padding: '12px 16px 80px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '18px'
-          }}>
-            {/* Header: Clean Editorial Title & Category Eyebrow */}
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.74rem',
-                fontWeight: '500',
-                color: '#8e8e8e',
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-                marginBottom: '6px'
-              }}>
-                <span>{selectedReel.category || 'General'}</span>
-                {selectedReel.duration && (
-                  <>
-                    <span>•</span>
-                    <span>{Math.round(selectedReel.duration)}s</span>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={handleAddReelsToCurrentCollection}
+                  disabled={addingReelsToCol}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: selectedReelIdsForAdd.size > 0 ? '#90a4f2' : '#f8fafa',
+                    fontSize: '0.96rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    padding: '4px 6px'
+                  }}
+                >
+                  {addingReelsToCol ? 'Saving...' : 'Save'}
+                </button>
               </div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: '0 0 4px', lineHeight: '1.35' }}>
-                {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
-              </h1>
-              <p style={{ fontSize: '0.85rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
-                by @{selectedReel.author || selectedReel.sender_username || 'Creator'}
-              </p>
-            </div>
 
-            {/* Video Thumbnail Preview Banner */}
-            {(selectedReel.thumbnail_url || selectedReel.shortcode) && (
-              <div style={{
-                position: 'relative',
-                width: '100%',
-                maxHeight: '340px',
-                aspectRatio: '16 / 9',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                backgroundColor: '#000000',
-                border: '1px solid #282f34'
-              }}>
-                <img
-                  src={selectedReel.thumbnail_url || (selectedReel.shortcode ? `https://www.instagram.com/p/${selectedReel.shortcode}/media/?size=l` : '')}
-                  alt={selectedReel.title || 'Reel Thumbnail'}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => handleThumbnailError(e, selectedReel.shortcode)}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                {selectedReel.reel_url && (
-                  <div
-                    onClick={(e) => openInstagramUrl(selectedReel.reel_url, e)}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 60%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 22px',
-                      borderRadius: '24px',
-                      background: 'rgba(0, 0, 0, 0.82)',
-                      backdropFilter: 'blur(10px)',
-                      WebkitBackdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
-                      color: '#ffffff',
-                      fontWeight: '600',
-                      fontSize: '0.86rem',
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.6)'
-                    }}>
-                      <Play size={14} color="#ffffff" style={{ fill: '#ffffff' }} />
-                      <span>Watch on Instagram</span>
-                      <ExternalLink size={12} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Folder Move & Translation Row */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: '#181c1f',
-              border: '1px solid #282f34',
-              borderRadius: '12px',
-              padding: '10px 14px',
-              flexWrap: 'wrap',
-              gap: '10px',
-              position: 'relative'
-            }}>
-              {/* Custom Collection Dropdown Picker */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
-                <span style={{ fontSize: '0.82rem', color: '#8e8e8e', fontWeight: '500' }}>
-                  Collection:
-                </span>
-                
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowDetailFolderPicker(prev => !prev)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: '#121518',
-                      border: '1px solid #282f34',
-                      borderRadius: '8px',
-                      padding: '7px 12px',
-                      color: '#f8fafa',
-                      fontSize: '0.82rem',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <Folder size={14} color="#90a4f2" strokeWidth={2} />
-                    <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {selectedReel.collection_name || 'None (All saved)'}
-                    </span>
-                    <ChevronDown size={14} color="#8e8e8e" />
-                  </button>
-
-                  {/* Floating Custom Dropdown Menu */}
-                  {showDetailFolderPicker && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 'calc(100% + 6px)',
-                        left: 0,
-                        zIndex: 60,
-                        minWidth: '210px',
-                        background: '#181c1f',
-                        border: '1px solid #282f34',
-                        borderRadius: '12px',
-                        padding: '6px',
-                        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.75)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px'
-                      }}
-                    >
-                      <button
-                        type="button"
+              {/* Scrollable 3-Column Square Grid with Top-Left Checkboxes */}
+              <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px', padding: '1px' }}>
+                {allVaultReels.length === 0 ? (
+                  [1, 2, 3, 4, 5, 6].map(n => (
+                    <div key={n} className="skeleton-shimmer" style={{ aspectRatio: '1 / 1', background: '#181c1f' }} />
+                  ))
+                ) : (
+                  allVaultReels.map(reel => {
+                    const isSelected = selectedReelIdsForAdd.has(reel.id);
+                    return (
+                      <div
+                        key={reel.id}
                         onClick={() => {
-                          handleAssignCollection(selectedReel.id, null);
-                          setShowDetailFolderPicker(false);
+                          setSelectedReelIdsForAdd(prev => {
+                            const next = new Set(prev);
+                            if (next.has(reel.id)) next.delete(reel.id);
+                            else next.add(reel.id);
+                            return next;
+                          });
                         }}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '9px 12px',
-                          borderRadius: '8px',
-                          background: !selectedReel.collection_id ? '#22272b' : 'transparent',
-                          border: 'none',
-                          color: '#f8fafa',
-                          fontSize: '0.84rem',
+                          position: 'relative',
+                          aspectRatio: '1 / 1',
+                          background: '#121518',
                           cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'background 0.15s ease'
+                          overflow: 'hidden'
                         }}
                       >
-                        <span>None (All saved)</span>
-                        {!selectedReel.collection_id && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
-                      </button>
+                        {reel.thumbnail_url ? (
+                          <img src={reel.thumbnail_url} alt={reel.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a' }}>
+                            <Play size={24} color="#71717a" />
+                          </div>
+                        )}
+                        {/* Checkbox in Top-Left Corner (Exact Screenshot 2) */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          left: '8px',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '3px',
+                          background: isSelected ? '#f8fafa' : 'rgba(0, 0, 0, 0.4)',
+                          border: isSelected ? '1.5px solid #f8fafa' : '1.5px solid rgba(255, 255, 255, 0.7)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 5
+                        }}>
+                          {isSelected && <Check size={13} color="#000000" strokeWidth={3} />}
+                        </div>
+                      </div>
+                    );
+                  }))}
+              </div>
+            </div>
+          </div>
+        )}
 
-                      {collections.map(c => (
+        {/* ======================================================== */}
+        {/* INSTAGRAM PAIRING MODAL */}
+        {/* ======================================================== */}
+        {showPairModal && (
+          <div className="modal-overlay" onClick={() => setShowPairModal(false)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px', padding: '22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.08rem', fontWeight: '600', color: '#f8fafa', margin: '0 0 3px', letterSpacing: '-0.01em' }}>
+                    Link Your Instagram
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
+                    Sync reels via Instagram DM in 10 seconds
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPairModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#8e8e8e',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ background: '#181c1f', border: '1px solid #282f34', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: '600', color: '#8e8e8e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Your Unique Linking Code
+                </span>
+                <div style={{ fontSize: '2rem', fontWeight: '700', fontFamily: 'monospace', letterSpacing: '0.12em', color: '#f8fafa', margin: '6px 0' }}>
+                  {pairingCode || 'MIND-849201'}
+                </div>
+                <button onClick={() => copyText(pairingCode)} className="btn-white" style={{ fontSize: '0.78rem' }}>
+                  {copied ? <Check size={13} color="#10b981" /> : <Copy size={13} />} Copy Code
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.84rem', color: '#f8fafa', lineHeight: '1.6', marginBottom: '20px' }}>
+                <ol style={{ paddingLeft: '18px', margin: 0 }}>
+                  <li style={{ marginBottom: '4px' }}>Open Instagram Direct and message <strong style={{ color: '#90a4f2' }}>@reeldex.io</strong>.</li>
+                  <li style={{ marginBottom: '4px' }}>Send your code: <code style={{ color: '#90a4f2', background: '#121518', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>{pairingCode}</code></li>
+                  <li>Done! Any Reel you share in DM will automatically transcribe and save here.</li>
+                </ol>
+              </div>
+
+              <a
+                href="https://ig.me/m/reeldex.io"
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => openInstagramUrl('https://ig.me/m/reeldex.io', e)}
+                className="btn-blue"
+                style={{ width: '100%', justifyContent: 'center', padding: '10px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.88rem' }}
+              >
+                <span>Open Instagram DM</span>
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* REEL DETAIL FULL-PAGE VIEW (INSTAGRAM NATIVE) */}
+        {/* ======================================================== */}
+        {selectedReel && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: '#0c0f14',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Top Sticky Header (Seamless, No Divider) */}
+            <header style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 30,
+              background: 'rgba(12, 15, 20, 0.96)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              borderBottom: 'none',
+              minHeight: '64px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 20px',
+              boxSizing: 'border-box'
+            }}>
+              {/* Left: Back Button */}
+              <button
+                onClick={() => setSelectedReel(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#f8fafa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  padding: '8px 12px 8px 0',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                <ArrowLeft size={24} strokeWidth={2.2} />
+                <span>Back</span>
+              </button>
+
+              {/* Center: Author info */}
+              <div style={{ textAlign: 'center', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.94rem', fontWeight: '500', color: '#f8fafa' }}>
+                  @{selectedReel.author || selectedReel.sender_username || 'Creator'}
+                </span>
+              </div>
+
+              {/* Right: Actions (Retry only if failed, Delete in sleek gray) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {selectedReel.status === 'failed' && (
+                  <button
+                    type="button"
+                    onTouchEnd={(e) => handleRetryReel(selectedReel.id, e)}
+                    onClick={(e) => handleRetryReel(selectedReel.id, e)}
+                    style={{
+                      background: 'rgba(144, 164, 242, 0.12)',
+                      border: '1px solid rgba(144, 164, 242, 0.25)',
+                      color: '#90a4f2',
+                      cursor: 'pointer',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontSize: '0.84rem',
+                      fontWeight: '600',
+                      touchAction: 'manipulation'
+                    }}
+                    title="Retry Transcription"
+                  >
+                    <RotateCw size={14} />
+                    <span>Retry</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onTouchEnd={(e) => handleDeleteReel(selectedReel.id, e)}
+                  onClick={(e) => handleDeleteReel(selectedReel.id, e)}
+                  style={{
+                    // background: '#181c1f',
+                    // border: '1px solid #282f34',
+                    color: '#e4e4e7',
+                    cursor: 'pointer',
+                    // padding: '8px 14px',
+                    // borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.84rem',
+                    fontWeight: '500',
+                    touchAction: 'manipulation',
+                    transition: 'background 0.15s ease'
+                  }}
+                  title="Delete Reel"
+                >
+                  <Trash2 size={14} color="#a1a1aa" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </header>
+
+            {/* Main Full-Page Content */}
+            <div style={{
+              maxWidth: '820px',
+              width: '100%',
+              margin: '0 auto',
+              padding: '12px 16px 80px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px'
+            }}>
+              {/* Header: Clean Editorial Title & Category Eyebrow */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.74rem',
+                  fontWeight: '500',
+                  color: '#8e8e8e',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.07em',
+                  marginBottom: '6px'
+                }}>
+                  <span>{selectedReel.category || 'General'}</span>
+                  {selectedReel.duration && (
+                    <>
+                      <span>•</span>
+                      <span>{Math.round(selectedReel.duration)}s</span>
+                    </>
+                  )}
+                </div>
+                <h1 style={{ fontSize: '1.35rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: '0 0 4px', lineHeight: '1.35' }}>
+                  {selectedReel.title || `Reel by @${selectedReel.author || 'Creator'}`}
+                </h1>
+                <p style={{ fontSize: '0.85rem', color: '#8e8e8e', margin: 0, fontWeight: '400' }}>
+                  by @{selectedReel.author || selectedReel.sender_username || 'Creator'}
+                </p>
+              </div>
+
+              {/* Video Thumbnail Preview Banner */}
+              {(selectedReel.thumbnail_url || selectedReel.shortcode) && (
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  maxHeight: '340px',
+                  aspectRatio: '16 / 9',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  backgroundColor: '#000000',
+                  border: '1px solid #282f34'
+                }}>
+                  <img
+                    src={selectedReel.thumbnail_url || (selectedReel.shortcode ? `https://www.instagram.com/p/${selectedReel.shortcode}/media/?size=l` : '')}
+                    alt={selectedReel.title || 'Reel Thumbnail'}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleThumbnailError(e, selectedReel.shortcode)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  {selectedReel.reel_url && (
+                    <div
+                      onClick={(e) => openInstagramUrl(selectedReel.reel_url, e)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 60%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 22px',
+                        borderRadius: '24px',
+                        background: 'rgba(0, 0, 0, 0.82)',
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.25)',
+                        color: '#ffffff',
+                        fontWeight: '600',
+                        fontSize: '0.86rem',
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.6)'
+                      }}>
+                        <Play size={14} color="#ffffff" style={{ fill: '#ffffff' }} />
+                        <span>Watch on Instagram</span>
+                        <ExternalLink size={12} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Folder Move & Translation Row */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                // background: '#181c1f',
+                // border: '1px solid #282f34',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                flexWrap: 'wrap',
+                gap: '10px',
+                position: 'relative'
+              }}>
+                {/* Custom Collection Dropdown Picker */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+                  <span style={{ fontSize: '0.82rem', color: '#8e8e8e', fontWeight: '500' }}>
+                    Collection:
+                  </span>
+
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailFolderPicker(prev => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        // background: '#121518',
+                        // border: '1px solid #282f34',
+                        borderRadius: '8px',
+                        padding: '7px 12px',
+                        color: '#f8fafa',
+                        fontSize: '0.82rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Folder size={14} color="#90a4f2" strokeWidth={2} />
+                      <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedReel.collection_name || 'None (All saved)'}
+                      </span>
+                      <ChevronDown size={14} color="#8e8e8e" />
+                    </button>
+
+                    {/* Floating Custom Dropdown Menu */}
+                    {showDetailFolderPicker && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 6px)',
+                          left: 0,
+                          zIndex: 60,
+                          minWidth: '210px',
+                          background: '#181c1f',
+                          border: '1px solid #282f34',
+                          borderRadius: '12px',
+                          padding: '6px',
+                          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.75)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px'
+                        }}
+                      >
                         <button
-                          key={c.id}
                           type="button"
                           onClick={() => {
-                            handleAssignCollection(selectedReel.id, c.id);
+                            handleAssignCollection(selectedReel.id, null);
                             setShowDetailFolderPicker(false);
                           }}
                           style={{
@@ -3337,7 +3310,7 @@ const getCachedReels = () => {
                             justifyContent: 'space-between',
                             padding: '9px 12px',
                             borderRadius: '8px',
-                            background: String(selectedReel.collection_id) === String(c.id) ? '#22272b' : 'transparent',
+                            background: !selectedReel.collection_id ? '#22272b' : 'transparent',
                             border: 'none',
                             color: '#f8fafa',
                             fontSize: '0.84rem',
@@ -3346,269 +3319,296 @@ const getCachedReels = () => {
                             transition: 'background 0.15s ease'
                           }}
                         >
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                          {String(selectedReel.collection_id) === String(c.id) && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
+                          <span>None (All saved)</span>
+                          {!selectedReel.collection_id && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
                         </button>
-                      ))}
+
+                        {collections.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              handleAssignCollection(selectedReel.id, c.id);
+                              setShowDetailFolderPicker(false);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '9px 12px',
+                              borderRadius: '8px',
+                              background: String(selectedReel.collection_id) === String(c.id) ? '#22272b' : 'transparent',
+                              border: 'none',
+                              color: '#f8fafa',
+                              fontSize: '0.84rem',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'background 0.15s ease'
+                            }}
+                          >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                            {String(selectedReel.collection_id) === String(c.id) && <Check size={14} color="#90a4f2" strokeWidth={2.5} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Retry Banner only if Failed */}
+              {selectedReel.status === 'failed' && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '12px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f87171' }}>
+                      Transcription Incomplete
                     </div>
+                    <div style={{ fontSize: '0.78rem', color: '#a1a1aa', marginTop: '2px' }}>
+                      {selectedReel.error_message || 'Tap retry to re-process audio and generate AI summary.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleRetryReel(selectedReel.id, e)}
+                    style={{
+                      background: '#22272b',
+                      border: '1px solid #3f3f46',
+                      borderRadius: '8px',
+                      padding: '7px 14px',
+                      color: '#f8fafa',
+                      fontSize: '0.82rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <RotateCw size={13} /> Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Translation Active Alert */}
+              {showTranslated && (
+                <div style={{
+                  background: 'rgba(0, 149, 246, 0.08)',
+                  border: '1px solid rgba(0, 149, 246, 0.25)',
+                  borderRadius: '10px',
+                  padding: '9px 14px',
+                  fontSize: '0.8rem',
+                  color: '#90a4f2',
+                  fontWeight: '400',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Globe size={14} />
+                  <span>English translation active (cached permanently)</span>
+                </div>
+              )}
+
+              {/* AI Summary & Key Takeaways Card */}
+              {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
+                <div style={{
+                  padding: '20px',
+                  borderRadius: '16px',
+                  // background: '#181c1f',
+                  // border: '1px solid #282f34',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa' }}>
+                    AI Summary & Key Takeaways
+                  </div>
+
+                  {selectedReel.transcript?.summary && (
+                    <p style={{ fontSize: '0.92rem', color: '#f8fafa', lineHeight: '1.65', margin: 0, fontWeight: '400' }}>
+                      {renderWithClickableLinks(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
+                    </p>
                   )}
+
+                  {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
+                    <ul style={{ paddingLeft: '18px', fontSize: '0.88rem', color: '#d4d4d8', lineHeight: '1.65', margin: 0 }}>
+                      {selectedReel.transcript.key_points.map((pt, i) => (
+                        <li key={i} style={{ marginBottom: '4px' }}>{renderWithClickableLinks(pt)}</li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Extracted Tools & Action Steps */}
+                  {(() => {
+                    const validActions = (selectedReel.action_items || [])
+                      .map(formatActionItem)
+                      .filter(act => act && act.trim().length > 0 && !act.startsWith('{'));
+
+                    if (validActions.length === 0) return null;
+
+                    return (
+                      <div style={{
+                        marginTop: '6px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #282f34'
+                      }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
+                          Extracted Tools & Action Steps:
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {validActions.map((act, i) => (
+                            <div key={i} style={{ fontSize: '0.86rem', color: '#f8fafa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                              <span style={{ color: '#90a4f2' }}>•</span>
+                              <span>{renderWithClickableLinks(act)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
-              </div>
-            </div>
+              )}
 
-            {/* Retry Banner only if Failed */}
-            {selectedReel.status === 'failed' && (
-              <div style={{
-                background: 'rgba(239, 68, 68, 0.08)',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                flexWrap: 'wrap'
-              }}>
-                <div>
-                  <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f87171' }}>
-                    Transcription Incomplete
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: '#a1a1aa', marginTop: '2px' }}>
-                    {selectedReel.error_message || 'Tap retry to re-process audio and generate AI summary.'}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => handleRetryReel(selectedReel.id, e)}
-                  style={{
-                    background: '#22272b',
-                    border: '1px solid #3f3f46',
-                    borderRadius: '8px',
-                    padding: '7px 14px',
-                    color: '#f8fafa',
-                    fontSize: '0.82rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <RotateCw size={13} /> Retry
-                </button>
-              </div>
-            )}
-
-            {/* Translation Active Alert */}
-            {showTranslated && (
-              <div style={{
-                background: 'rgba(0, 149, 246, 0.08)',
-                border: '1px solid rgba(0, 149, 246, 0.25)',
-                borderRadius: '10px',
-                padding: '9px 14px',
-                fontSize: '0.8rem',
-                color: '#90a4f2',
-                fontWeight: '400',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Globe size={14} />
-                <span>English translation active (cached permanently)</span>
-              </div>
-            )}
-
-            {/* AI Summary & Key Takeaways Card */}
-            {(selectedReel.transcript?.summary || (selectedReel.action_items && selectedReel.action_items.length > 0)) && (
+              {/* Word-For-Word Full Transcript Card */}
               <div style={{
                 padding: '20px',
                 borderRadius: '16px',
-                background: '#181c1f',
-                border: '1px solid #282f34',
+                // background: '#181c1f',
+                // border: '1px solid #282f34',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px'
+                gap: '14px'
               }}>
-                <div style={{ fontSize: '0.88rem', fontWeight: '600', color: '#f8fafa' }}>
-                  AI Summary & Key Takeaways
-                </div>
-
-                {selectedReel.transcript?.summary && (
-                  <p style={{ fontSize: '0.92rem', color: '#f8fafa', lineHeight: '1.65', margin: 0, fontWeight: '400' }}>
-                    {renderWithClickableLinks(showTranslated && selectedReel.transcript?.translated_summary ? selectedReel.transcript.translated_summary : selectedReel.transcript.summary)}
-                  </p>
-                )}
-
-                {selectedReel.transcript?.key_points?.length > 0 && !showTranslated && (
-                  <ul style={{ paddingLeft: '18px', fontSize: '0.88rem', color: '#d4d4d8', lineHeight: '1.65', margin: 0 }}>
-                    {selectedReel.transcript.key_points.map((pt, i) => (
-                      <li key={i} style={{ marginBottom: '4px' }}>{renderWithClickableLinks(pt)}</li>
-                    ))}
-                  </ul>
-                )}
-
-                {/* Extracted Tools & Action Steps */}
-                {(() => {
-                  const validActions = (selectedReel.action_items || [])
-                    .map(formatActionItem)
-                    .filter(act => act && act.trim().length > 0 && !act.startsWith('{'));
-
-                  if (validActions.length === 0) return null;
-
-                  return (
-                    <div style={{
-                      marginTop: '6px',
-                      paddingTop: '12px',
-                      borderTop: '1px solid #282f34'
-                    }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
-                        Extracted Tools & Action Steps:
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {validActions.map((act, i) => (
-                          <div key={i} style={{ fontSize: '0.86rem', color: '#f8fafa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                            <span style={{ color: '#90a4f2' }}>•</span>
-                            <span>{renderWithClickableLinks(act)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* Word-For-Word Full Transcript Card */}
-            <div style={{
-              padding: '20px',
-              borderRadius: '16px',
-              background: '#181c1f',
-              border: '1px solid #282f34',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>
-                    Word-for-Word Transcript
-                  </span>
-                  {showTranslated && (
-                    <span style={{ marginLeft: '8px', fontSize: '0.74rem', color: '#90a4f2', fontWeight: '500' }}>
-                      (English Translation)
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>
+                      Word-for-Word Transcript
                     </span>
-                  )}
+                    {showTranslated && (
+                      <span style={{ marginLeft: '8px', fontSize: '0.74rem', color: '#90a4f2', fontWeight: '500' }}>
+                        (English Translation)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Clean Copy Button in Transcription Area */}
+                  <button
+                    type="button"
+                    onClick={() => copyText(
+                      showTranslated
+                        ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '')
+                        : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
+                    )}
+                    style={{
+                      // background: '#121518',
+                      // border: '1px solid #282f34',
+                      color: copied ? '#10b981' : '#f8fafa',
+                      borderRadius: '8px',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: '500',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Copy full transcript"
+                  >
+                    {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
+                  </button>
                 </div>
 
-                {/* Clean Copy Button in Transcription Area */}
-                <button
-                  type="button"
-                  onClick={() => copyText(
-                    showTranslated 
-                      ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || '') 
-                      : (selectedReel.transcript?.full_text || selectedReel.preview_text || '')
-                  )}
-                  style={{
-                    background: '#121518',
-                    border: '1px solid #282f34',
-                    color: copied ? '#10b981' : '#f8fafa',
-                    borderRadius: '8px',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Copy full transcript"
-                >
-                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-                  <span>{copied ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
-
-              <div style={{
-                maxHeight: '380px',
-                overflowY: 'auto',
-                padding: '16px',
-                borderRadius: '10px',
-                background: '#121518',
-                border: '1px solid #282f34',
-                color: '#f8fafa',
-                fontSize: '0.88rem',
-                lineHeight: '1.7',
-                whiteSpace: 'pre-wrap',
-                fontWeight: '400'
-              }}>
-                {showTranslated 
-                  ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || 'No translation available.')
-                  : (selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...')}
-              </div>
-
-              {/* Translation Controls Below Transcription */}
-              {selectedReel.transcript && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4px' }}>
-                  {selectedReel.transcript.translated_text ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowTranslated(!showTranslated)}
-                      style={{
-                        fontSize: '0.82rem',
-                        padding: '7px 14px',
-                        borderRadius: '8px',
-                        background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : '#121518',
-                        border: showTranslated ? '1px solid #90a4f2' : '1px solid #282f34',
-                        color: showTranslated ? '#90a4f2' : '#f8fafa',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <Globe size={14} color={showTranslated ? "#90a4f2" : "#f8fafa"} />
-                      <span>{showTranslated ? 'Viewing English Translation' : 'Translate to English'}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleTranslateReel(selectedReel.id)}
-                      disabled={translating}
-                      style={{
-                        fontSize: '0.82rem',
-                        padding: '7px 14px',
-                        borderRadius: '8px',
-                        background: '#121518',
-                        border: '1px solid #282f34',
-                        color: '#f8fafa',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: translating ? 'wait' : 'pointer',
-                        opacity: translating ? 0.7 : 1,
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <Languages size={14} color="#90a4f2" />
-                      <span>{translating ? 'Translating audio...' : 'Translate to English'}</span>
-                    </button>
-                  )}
+                <div style={{
+                  maxHeight: '380px',
+                  overflowY: 'auto',
+                  padding: '16px',
+                  borderRadius: '10px',
+                  // background: '#121518',
+                  border: '1px solid #282f34',
+                  color: '#f8fafa',
+                  fontSize: '0.88rem',
+                  lineHeight: '1.7',
+                  whiteSpace: 'pre-wrap',
+                  fontWeight: '400'
+                }}>
+                  {showTranslated
+                    ? (selectedReel.transcript?.translated_text || selectedReel.transcript?.full_text || 'No translation available.')
+                    : (selectedReel.transcript?.full_text || selectedReel.preview_text || 'Transcription processing...')}
                 </div>
-              )}
+
+                {/* Translation Controls Below Transcription */}
+                {selectedReel.transcript && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4px' }}>
+                    {selectedReel.transcript.translated_text ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowTranslated(!showTranslated)}
+                        style={{
+                          fontSize: '0.82rem',
+                          padding: '7px 14px',
+                          borderRadius: '8px',
+                          // background: showTranslated ? 'rgba(144, 164, 242, 0.15)' : '#121518',
+                          // border: showTranslated ? '1px solid #90a4f2' : '1px solid #282f34',
+                          // color: showTranslated ? '#90a4f2' : '#f8fafa',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <Globe size={14} color={showTranslated ? "#f8fafa" : "#f8fafa"} />
+                        <span>{showTranslated ? 'Viewing English Translation' : 'Translate to English'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleTranslateReel(selectedReel.id)}
+                        disabled={translating}
+                        style={{
+                          fontSize: '0.82rem',
+                          padding: '7px 14px',
+                          borderRadius: '8px',
+                          background: '#121518',
+                          border: '1px solid #282f34',
+                          color: '#f8fafa',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: translating ? 'wait' : 'pointer',
+                          opacity: translating ? 0.7 : 1,
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <Languages size={14} color="#90a4f2" />
+                        <span>{translating ? 'Translating audio...' : 'Translate to English'}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ======================================================== */}
-      {/* SHADCN FLUID TOASTER */}
-      {/* ======================================================== */}
-      <Toaster position="bottom-right" richColors />
-    </div>
-  </TooltipProvider>
+        {/* ======================================================== */}
+        {/* SHADCN FLUID TOASTER */}
+        {/* ======================================================== */}
+        <Toaster position="bottom-right" richColors />
+      </div>
+    </TooltipProvider>
   );
 }
