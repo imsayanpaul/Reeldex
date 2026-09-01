@@ -1216,39 +1216,41 @@ const getCachedReels = () => {
               setSelectedReelIds(new Set());
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}
             title="Go to All Saved"
           >
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-heading)', letterSpacing: '-0.02em', fontFamily: 'var(--font-main)', margin: 0 }}>
+            <h1 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.025em', fontFamily: 'var(--font-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               ReelDex
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
             </h1>
           </div>
 
-          {/* Center: Search Box & Highlighted Broadened Ask AI Button */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 8px' }}>
-            <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '380px' }}>
+          {/* Center: Search Box & Highlighted Ask AI Button */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', margin: '0 12px' }}>
+            <div className="ig-navbar-search" style={{ flex: 1, maxWidth: '420px' }}>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Search size={14} color="#8e8e8e" style={{ position: 'absolute', left: '12px' }} />
+                <Search size={14} color="#64748b" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
                 <input
                   type="text"
-                  placeholder="Search transcripts & tools..."
+                  placeholder="Search transcripts, tools, creators..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '7px 30px 7px 34px',
-                    borderRadius: 'var(--radius-sm)',
+                    padding: '7px 32px 7px 34px',
+                    borderRadius: 'var(--radius-full)',
                     border: '1px solid var(--border-light)',
                     background: 'var(--bg-input)',
                     fontSize: '0.84rem',
                     outline: 'none',
-                    color: 'var(--text-main)'
+                    color: '#f8fafa',
+                    transition: 'border-color 0.15s ease'
                   }}
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', color: '#8e8e8e', cursor: 'pointer' }}
+                    style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
                   >
                     <X size={13} />
                   </button>
@@ -1262,13 +1264,13 @@ const getCachedReels = () => {
               className="ig-ask-ai-center-btn"
               title="Ask Dex AI across your saved reels"
             >
+              <Sparkles size={13} />
               <span>Ask Dex AI</span>
             </button>
           </div>
 
           {/* Right Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-
             {/* User / Instagram Status Capsule */}
             <button
               onClick={handleGeneratePairingCode}
@@ -1276,40 +1278,41 @@ const getCachedReels = () => {
               title="Instagram Connection Status - Click to Pair"
             >
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={15} color="#e4e4e7" />
+                <InstagramIcon size={14} />
                 <span style={{
                   position: 'absolute',
                   bottom: '-1px',
                   right: '-2px',
-                  width: '6px',
-                  height: '6px',
+                  width: '5px',
+                  height: '5px',
                   borderRadius: '50%',
-                  background: session.is_instagram_linked ? '#10b981' : '#f59e0b',
-                  border: '1.5px solid #0c0f14'
+                  background: session.is_instagram_linked ? '#10b981' : '#f59e0b'
                 }} />
               </div>
               <span className="ig-username-text">
-                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'User')}
+                {session.instagram_username ? `@${session.instagram_username}` : (session.display_name || 'Link IG')}
               </span>
             </button>
 
-            {/* + New Collection Icon Only */}
+            {/* + New Collection Icon */}
             <button
               onClick={() => setShowCreateCollectionModal(true)}
               style={{
-                background: 'none',
-                border: 'none',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '50%',
                 cursor: 'pointer',
-                padding: '2px',
+                width: '32px',
+                height: '32px',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginLeft: '4px'
+                transition: 'all 0.15s ease'
               }}
               title="Create New Collection"
             >
-              <Plus size={28} strokeWidth={2.4} />
+              <Plus size={16} strokeWidth={2.4} />
             </button>
           </div>
         </header>
@@ -1322,25 +1325,25 @@ const getCachedReels = () => {
         <div
           className="ig-content-container"
           style={{
-            padding: isManageMode ? '14px 16px 100px' : '14px 16px 60px',
+            padding: isManageMode ? '18px 18px 100px' : '18px 18px 60px',
             display: 'flex',
             flexDirection: 'column'
           }}
         >
-          {/* Mobile Search Bar (prominently available on mobile devices) */}
+          {/* Mobile Search Bar */}
           {!isManageMode && (
             <div className="ig-mobile-search-bar" style={{ marginBottom: '14px' }}>
               <div style={{
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
-                background: '#181c1f',
-                borderRadius: '10px',
-                border: '1px solid #282f34',
-                padding: '0 12px',
-                height: '40px'
+                background: 'var(--bg-input)',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--border-light)',
+                padding: '0 14px',
+                height: '38px'
               }}>
-                <Search size={15} color="#8e8e8e" style={{ marginRight: '8px', flexShrink: 0 }} />
+                <Search size={14} color="#64748b" style={{ marginRight: '8px', flexShrink: 0 }} />
                 <input
                   type="text"
                   placeholder={selectedCollection ? `Search in ${selectedCollection.name}...` : "Search transcripts, tools, creators..."}
@@ -1348,406 +1351,247 @@ const getCachedReels = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     flex: 1,
-                    background: 'none',
+                    background: 'transparent',
                     border: 'none',
-                    outline: 'none',
                     color: '#f8fafa',
-                    fontSize: '0.88rem',
-                    padding: 0
+                    fontSize: '0.86rem',
+                    outline: 'none'
                   }}
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#8e8e8e',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                    title="Clear search"
+                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
                   >
-                    <X size={15} />
+                    <X size={14} />
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* Filter Pills (Instagram Horizontal Scrollable Strip) */}
+          {/* Segmented Category Strip with Counts */}
           {!selectedCollection && !isManageMode && (
-          <div className="ig-categories-strip">
-            <button
-              onClick={() => setActiveViewFilter('All')}
-              className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveViewFilter('Collections')}
-              className={`ig-filter-pill ${activeViewFilter === 'Collections' ? 'active' : ''}`}
-            >
-              Collections
-            </button>
-            {categories.filter(c => c !== 'All').map(cat => (
+            <div className="ig-categories-strip">
               <button
-                key={cat}
-                onClick={() => setActiveViewFilter(cat)}
-                className={`ig-filter-pill ${activeViewFilter === cat ? 'active' : ''}`}
+                onClick={() => setActiveViewFilter('All')}
+                className={`ig-filter-pill ${activeViewFilter === 'All' ? 'active' : ''}`}
               >
-                {cat}
+                <span>All</span>
+                <span style={{ opacity: 0.65, fontSize: '0.72rem' }}>{reels.length}</span>
               </button>
-            ))}
-          </div>
-        )}
+              <button
+                onClick={() => setActiveViewFilter('Collections')}
+                className={`ig-filter-pill ${activeViewFilter === 'Collections' ? 'active' : ''}`}
+              >
+                <Folder size={12} />
+                <span>Collections</span>
+                <span style={{ opacity: 0.65, fontSize: '0.72rem' }}>{collections.length}</span>
+              </button>
+              {categories.filter(c => c !== 'All').map(cat => {
+                const count = reels.filter(r => r.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveViewFilter(cat)}
+                    className={`ig-filter-pill ${activeViewFilter === cat ? 'active' : ''}`}
+                  >
+                    <span>{cat}</span>
+                    {count > 0 && <span style={{ opacity: 0.65, fontSize: '0.72rem' }}>{count}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-        {/* 1. COLLECTIONS SECTION (Shown when on 'All' or 'Collections' filter) */}
-            {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
-              <div style={{ marginBottom: '28px' }}>
-                {activeViewFilter === 'All' && (
-                  <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#f8fafa' }}>
-                      Collections
-                    </h2>
-                    <button
-                      onClick={() => setActiveViewFilter('Collections')}
-                      style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '500', fontSize: '0.88rem', cursor: 'pointer' }}
-                    >
-                      See all
-                    </button>
+          {/* 1. COLLECTIONS SECTION */}
+          {(!selectedCollection && !isManageMode && (activeViewFilter === 'All' || activeViewFilter === 'Collections')) && (
+            <div style={{ marginBottom: '28px' }}>
+              {activeViewFilter === 'All' && (
+                <div className="ig-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <h2 style={{ fontSize: '0.96rem', fontWeight: '600', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                    Collections
+                  </h2>
+                  <button
+                    onClick={() => setActiveViewFilter('Collections')}
+                    style={{ background: 'none', border: 'none', color: '#10b981', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    View all ({collections.length})
+                  </button>
+                </div>
+              )}
+
+              {collections.length === 0 ? (
+                <div style={{
+                  padding: '22px 20px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '14px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#f8fafa' }}>Organize with Collections</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>Group your saved reels by topic, tools, or projects.</div>
                   </div>
-                )}
+                  <button onClick={() => setShowCreateCollectionModal(true)} className="ig-ask-ai-center-btn" style={{ fontSize: '0.78rem' }}>
+                    <Plus size={13} /> Create
+                  </button>
+                </div>
+              ) : activeViewFilter === 'All' ? (
+                <div className="ig-collections-shelf">
+                  {collections.slice(0, 4).map(col => {
+                    const coverImg = getCollectionCover(col.id);
+                    const count = reels.filter(r => r.collection_id === col.id).length;
+                    return (
+                      <div
+                        key={col.id}
+                        className="ig-shelf-card"
+                        onClick={() => setSelectedCollection(col)}
+                      >
+                        <div className="ig-shelf-cover">
+                          {coverImg ? (
+                            <img src={coverImg} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          ) : (
+                            <Folder size={18} color="#10b981" />
+                          )}
+                        </div>
+                        <div className="ig-shelf-info">
+                          <div className="ig-shelf-title">
+                            {col.name}
+                          </div>
+                          <div className="ig-shelf-meta">
+                            <span>{count} {count === 1 ? 'reel' : 'reels'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="ig-collections-grid">
+                  {collections.map(col => {
+                    const thumbs = getCollectionThumbnails(col.id);
+                    const count = reels.filter(r => r.collection_id === col.id).length;
+                    return (
+                      <div
+                        key={col.id}
+                        className="ig-collection-card"
+                        onClick={() => setSelectedCollection(col)}
+                      >
+                        <div className="ig-collection-cover-square">
+                          {thumbs.length >= 4 ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', width: '100%', height: '100%', gap: '1px' }}>
+                              {thumbs.map((img, idx) => (
+                                <img key={idx} src={img} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ))}
+                            </div>
+                          ) : thumbs.length > 0 ? (
+                            <img src={thumbs[0]} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-input)' }}>
+                              <Folder size={28} color="#10b981" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="ig-collection-title-block">
+                          <div className="ig-collection-title-text">
+                            {col.name}
+                          </div>
+                          <div className="ig-collection-meta-text">
+                            <span>{count} {count === 1 ? 'reel' : 'reels'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
-                {collections.length === 0 ? (
+          {/* 2. REELS AND POSTS SECTION */}
+          {(activeViewFilter !== 'Collections' || selectedCollection) && (
+            <div>
+              {!isManageMode && selectedCollection && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                  padding: '12px 14px',
+                  background: 'var(--bg-card)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Folder size={16} color="#10b981" />
+                    <span style={{ fontSize: '0.94rem', fontWeight: '600', color: '#ffffff' }}>{selectedCollection.name}</span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>({displayedReels.length})</span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCollection(null)}
+                    style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                    Back to All
+                  </button>
+                </div>
+              )}
+
+              {(initialLoading || reelsLoading) ? (
+                <div className="ig-reels-grid">
+                  {[...Array(6)].map((_, idx) => (
+                    <div key={idx} className="modern-reel-card skeleton-shimmer" style={{ height: '320px' }} />
+                  ))}
+                </div>
+              ) : displayedReels.length === 0 ? (
+                <div style={{
+                  padding: '60px 20px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto'
+                }}>
                   <div style={{
-                    padding: '24px 20px',
-                    borderRadius: '14px',
-                    background: '#181c1f',
-                    border: '1px solid #282f34',
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '50%',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-card)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    margin: '0 16px'
+                    justifyContent: 'center',
+                    marginBottom: '16px'
                   }}>
-                    <div>
-                      <div style={{ fontSize: '0.92rem', fontWeight: '500', color: '#f8fafa' }}>Organize with Collections</div>
-                      <div style={{ fontSize: '0.78rem', color: '#8e8e8e', marginTop: '2px' }}>Group your saved reels by theme, work, or project.</div>
-                    </div>
-                    <button onClick={() => setShowCreateCollectionModal(true)} className="btn-coral" style={{ fontSize: '0.78rem' }}>
-                      <Plus size={13} /> Create
+                    <Bookmark size={24} color="#10b981" />
+                  </div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '600', color: '#f8fafa', marginBottom: '6px' }}>
+                    {activeViewFilter !== 'All' ? `No reels in ${activeViewFilter}` : 'No Saved Reels Found'}
+                  </h3>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', maxWidth: '360px', lineHeight: '1.5', marginBottom: '18px' }}>
+                    {session.is_instagram_linked
+                      ? 'Share any Instagram Reel in DM to @reeldex.io to automatically transcribe and index it.'
+                      : 'Link your Instagram account to automatically sync and transcribe your favorite reels.'}
+                  </p>
+                  {!session.is_instagram_linked && (
+                    <button onClick={handleGeneratePairingCode} className="ig-ask-ai-center-btn">
+                      <InstagramIcon size={14} /> Link Instagram Account
                     </button>
-                  </div>
-                ) : activeViewFilter === 'All' ? (
-                  <div className="ig-collections-shelf">
-                    {collections.slice(0, 4).map(col => {
-                      const coverImg = getCollectionCover(col.id);
-                      return (
-                        <div
-                          key={col.id}
-                          className="ig-shelf-card"
-                          onClick={() => setSelectedCollection(col)}
-                        >
-                          <div className="ig-shelf-cover">
-                            {coverImg ? (
-                              <img src={coverImg} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#141820' }}>
-                                <Folder size={20} color="#8e8e8e" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ig-shelf-info">
-                            <div className="ig-shelf-title">
-                              {col.name}
-                            </div>
-                            <div className="ig-shelf-meta">
-                              <Lock size={10} /> <span>Private</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="ig-collections-grid">
-                    {collections.map(col => {
-                      const thumbs = getCollectionThumbnails(col.id);
-                      return (
-                        <div
-                          key={col.id}
-                          className="ig-collection-card"
-                          onClick={() => setSelectedCollection(col)}
-                        >
-                          <div className="ig-collection-cover-square">
-                            {thumbs.length >= 4 ? (
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', width: '100%', height: '100%', gap: '1px' }}>
-                                {thumbs.map((img, idx) => (
-                                  <img key={idx} src={img} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ))}
-                              </div>
-                            ) : thumbs.length > 0 ? (
-                              <img src={thumbs[0]} alt={col.name} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1c1e' }}>
-                                <Folder size={32} color="#71717a" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ig-collection-title-block">
-                            <div className="ig-collection-title-text">
-                              {col.name}
-                            </div>
-                            <div className="ig-collection-meta-text">
-                              <Lock size={11} /> <span>Private</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              ) : (
+                <div className="ig-reels-grid">
+                  {displayedReels.map((reel) => {
+                    const rawAuthor = reel.author || reel.sender_username || 'creator';
+                    const cleanAuthor = rawAuthor.split(/[|\-\/]/)[0].trim().replace(/^@/, '');
+                    const thumbUrl = getReelThumbnail(reel);
 
-            {/* 2. REELS AND POSTS SECTION (9:16 Vertical Instagram Cards Grid) */}
-            {(activeViewFilter !== 'Collections' || selectedCollection) && (
-              <div>
-                {!isManageMode && selectedCollection && (
-                  <div style={{
-                    display: 'flex',
-                    width: '100%',
-                    borderBottom: '1px solid #282f34',
-                    marginBottom: '20px',
-                    marginTop: '-16px'
-                  }}>
-                    <button
-                      onClick={() => setCollectionSubTab('all')}
-                      style={{
-                        flex: 1,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: collectionSubTab === 'all' ? '#f8fafa' : '#71717a',
-                        padding: '12px 0',
-                        borderBottom: collectionSubTab === 'all' ? '1.5px solid #f8fafa' : '1.5px solid transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease'
-                      }}
-                      title="Posts"
-                    >
-                      <Grid size={22} strokeWidth={collectionSubTab === 'all' ? 2.2 : 1.6} />
-                    </button>
-                    <button
-                      onClick={() => setCollectionSubTab('reels')}
-                      style={{
-                        flex: 1,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: collectionSubTab === 'reels' ? '#f8fafa' : '#71717a',
-                        padding: '12px 0',
-                        borderBottom: collectionSubTab === 'reels' ? '1.5px solid #f8fafa' : '1.5px solid transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease'
-                      }}
-                      title="Reels"
-                    >
-                      <Play size={22} strokeWidth={collectionSubTab === 'reels' ? 2.2 : 1.6} />
-                    </button>
-                  </div>
-                )}
-
-                {!isManageMode && !selectedCollection && (
-                  <div className="ig-reels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.98rem', fontWeight: '500', color: '#f8fafa' }}>
-                      Reels and posts
-                    </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {reels.length > 0 && (
-                        <button
-                          onClick={() => setIsManageMode(true)}
-                          style={{ background: 'none', border: 'none', color: '#90a4f2', fontWeight: '500', fontSize: '0.88rem', cursor: 'pointer' }}
-                        >
-                          Manage
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {(initialLoading || reelsLoading) ? (
-                  <div className="ig-reels-grid">
-                    {[1, 2, 3].map((n) => (
-                      <div key={n} className="modern-reel-card" style={{ opacity: 0.85 }}>
-                        <div className="modern-card-thumbnail-box skeleton-shimmer" style={{ minHeight: '190px' }} />
-                        <div className="modern-card-body">
-                          <div className="skeleton-shimmer" style={{ width: '35%', height: '12px', borderRadius: '4px', marginBottom: '8px' }} />
-                          <div className="skeleton-shimmer" style={{ width: '80%', height: '18px', borderRadius: '4px', marginBottom: '10px' }} />
-                          <div className="skeleton-shimmer" style={{ width: '100%', height: '36px', borderRadius: '4px', marginBottom: '12px' }} />
-                          <div className="skeleton-shimmer" style={{ width: '50%', height: '12px', borderRadius: '4px' }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : displayedReels.length === 0 ? (
-                  selectedCollection ? (
-                    <div style={{
-                      padding: '70px 20px',
-                      textAlign: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto'
-                    }}>
-                      {/* Circle Icon Badge */}
-                      <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '50%',
-                        border: '2px solid #f8fafa',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '18px'
-                      }}>
-                        <Bookmark size={28} color="#f8fafa" strokeWidth={1.8} />
-                      </div>
-
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
-                        Save to this collection
-                      </h3>
-                      <p style={{ fontSize: '0.86rem', color: '#8e8e8e', maxWidth: '340px', lineHeight: '1.45', marginBottom: '20px' }}>
-                        Save Reels and posts to easily find your favorite videos anytime.
-                      </p>
-
-                      <button
-                        onClick={async () => {
-                          await fetchAllVaultReels();
-                          setShowAddToThisCollectionModal(true);
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#90a4f2',
-                          fontSize: '0.94rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 12px'
-                        }}
-                      >
-                        <Plus size={16} strokeWidth={2.4} /> Add to collection
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{
-                      padding: '70px 20px',
-                      textAlign: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto'
-                    }}>
-                      {/* Circle Icon Badge */}
-                      <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '50%',
-                        border: '2px solid #f8fafa',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '18px'
-                      }}>
-                        <Bookmark size={28} color="#f8fafa" strokeWidth={1.8} />
-                      </div>
-
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', marginBottom: '8px' }}>
-                        {activeViewFilter !== 'All' ? `No reels in ${activeViewFilter}` : 'No Saved Reels Found'}
-                      </h3>
-                      <p style={{ fontSize: '0.86rem', color: '#8e8e8e', maxWidth: '340px', lineHeight: '1.45', marginBottom: '20px' }}>
-                        {activeViewFilter !== 'All'
-                          ? `Reels tagged with "${activeViewFilter}" will automatically appear here once transcribed.`
-                          : session.is_instagram_linked 
-                            ? 'Send any Instagram Reel in DM to @reeldex.io to automatically transcribe audio and index tools.'
-                            : 'Link your Instagram account to automatically sync and transcribe reels you share in Direct Messages.'}
-                      </p>
-
-                      {activeViewFilter !== 'All' ? (
-                        <button
-                          onClick={() => setActiveViewFilter('All')}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#90a4f2',
-                            fontSize: '0.94rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px'
-                          }}
-                        >
-                          View all saved reels
-                        </button>
-                      ) : session.is_instagram_linked ? (
-                        <a
-                          href="https://ig.me/m/reeldex.io"
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#90a4f2',
-                            fontSize: '0.94rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          <InstagramIcon size={16} /> Open Instagram DM (@reeldex.io)
-                        </a>
-                      ) : (
-                        <button
-                          onClick={handleGeneratePairingCode}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#90a4f2',
-                            fontSize: '0.94rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px'
-                          }}
-                        >
-                          <InstagramIcon size={16} /> Link Instagram Account
-                        </button>
-                      )}
-                    </div>
-                  )
-                ) : (
-                  <div className="ig-reels-grid">
-                    {displayedReels.map((reel) => (
+                    return (
                       <div
                         key={reel.id}
                         className="modern-reel-card"
@@ -1760,168 +1604,146 @@ const getCachedReels = () => {
                           }
                         }}
                         style={{
-                          opacity: (isManageMode && selectedReelIds.size > 0 && !selectedReelIds.has(reel.id)) ? 0.5 : 1,
-                          position: 'relative',
-                          cursor: 'pointer'
+                          opacity: (isManageMode && selectedReelIds.size > 0 && !selectedReelIds.has(reel.id)) ? 0.4 : 1
                         }}
                       >
                         {/* Video Thumbnail Box */}
-                        {(() => {
-                          const thumbUrl = getReelThumbnail(reel);
-                          return (
-                            <div className="modern-card-thumbnail-box">
-                              {thumbUrl ? (
-                                <img
-                                  src={thumbUrl}
-                                  alt={reel.title || 'Reel Thumbnail'}
-                                  referrerPolicy="no-referrer"
-                                  onError={(e) => handleThumbnailError(e, reel.shortcode)}
-                                />
-                              ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #181c20 0%, #0c0f14 100%)' }}>
-                                  <Play size={28} color="#90a4f2" opacity={0.6} />
-                                </div>
-                              )}
-                              
-                              {/* Instagram 3-Grid Top-Right Reel Icon */}
-                              <div className="ig-reel-media-badge">
-                                <Play size={13} color="#ffffff" fill="#ffffff" />
-                              </div>
-
-                              <div className="modern-card-overlay">
-                                {!isManageMode && (
-                                  <div className="play-circle-badge">
-                                    <Play size={15} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Top Floating Badges (Desktop) */}
-                              <div className="modern-card-badges">
-                                <span className="pill-category-badge">
-                                  {reel.category || 'General'}
-                                </span>
-                                {reel.duration && (
-                                  <span className="pill-duration-badge">
-                                    {Math.round(reel.duration)}s
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Manage Mode Multi-Select Checkbox Overlay (Instagram Native) */}
-                              {isManageMode && (
-                                <div style={{
-                                  position: 'absolute',
-                                  bottom: '10px',
-                                  right: '10px',
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '4px',
-                                  background: selectedReelIds.has(reel.id) ? '#ffffff' : 'rgba(0, 0, 0, 0.65)',
-                                  border: selectedReelIds.has(reel.id) ? '2px solid #ffffff' : '2px solid rgba(255, 255, 255, 0.7)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  zIndex: 10,
-                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
-                                }}>
-                                  {selectedReelIds.has(reel.id) && <Check size={16} color="#000000" strokeWidth={3.5} />}
-                                </div>
-                              )}
+                        <div className="modern-card-thumbnail-box">
+                          {thumbUrl ? (
+                            <img
+                              src={thumbUrl}
+                              alt={reel.title || 'Reel Thumbnail'}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => handleThumbnailError(e, reel.shortcode)}
+                            />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#12161c' }}>
+                              <Play size={28} color="#10b981" opacity={0.6} />
                             </div>
-                          );
-                        })()}
+                          )}
 
-                        {/* Card Body with High-End Typography */}
+                          <div className="modern-card-overlay">
+                            {!isManageMode && (
+                              <div className="play-circle-badge">
+                                <Play size={14} color="#ffffff" style={{ fill: '#ffffff', marginLeft: '2px' }} />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Category Badge */}
+                          {reel.category && (
+                            <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 5 }}>
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: '700',
+                                padding: '3px 8px',
+                                borderRadius: '4px',
+                                background: 'rgba(0, 0, 0, 0.75)',
+                                backdropFilter: 'blur(6px)',
+                                color: '#ffffff',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em'
+                              }}>
+                                {reel.category}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Manage Mode Multi-Select Checkbox */}
+                          {isManageMode && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '10px',
+                              right: '10px',
+                              width: '22px',
+                              height: '22px',
+                              borderRadius: '4px',
+                              background: selectedReelIds.has(reel.id) ? '#10b981' : 'rgba(0, 0, 0, 0.65)',
+                              border: selectedReelIds.has(reel.id) ? '2px solid #10b981' : '2px solid rgba(255, 255, 255, 0.7)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 10
+                            }}>
+                              {selectedReelIds.has(reel.id) && <Check size={14} color="#000000" strokeWidth={3.5} />}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Body */}
                         <div className="modern-card-body">
                           <div>
                             {/* Author Handle */}
-                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '400', marginBottom: '4px' }}>
-                              @{reel.author || reel.sender_username || 'creator'}
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>@{cleanAuthor}</span>
                             </div>
 
                             {/* Video Title */}
                             <h3 style={{
-                              fontSize: '0.94rem',
-                              fontWeight: '500',
-                              color: 'var(--text-heading)',
+                              fontSize: '0.92rem',
+                              fontWeight: '600',
+                              color: '#ffffff',
                               lineHeight: '1.35',
                               letterSpacing: '-0.01em',
+                              marginBottom: '6px',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}>
+                              {reel.title || `Reel by @${cleanAuthor}`}
+                            </h3>
+
+                            {/* AI Summary Snippet */}
+                            <p style={{
+                              fontSize: '0.8rem',
+                              color: 'var(--text-body)',
+                              lineHeight: '1.5',
                               marginBottom: '8px',
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden'
                             }}>
-                              {reel.title || `Reel by @${reel.author || 'Creator'}`}
-                            </h3>
-
-                            {/* AI Summary Snippet */}
-                            <p style={{
-                              fontSize: '0.82rem',
-                              color: 'var(--text-body)',
-                              lineHeight: '1.55',
-                              marginBottom: '6px',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden'
-                            }}>
                               {reel.status === 'failed' ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleRetryReel(reel.id, e)}
-                                  style={{ background: 'none', border: 'none', padding: '4px 0', textAlign: 'left', color: '#f87171', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500' }}
-                                >
-                                  <RotateCw size={12} /> Transcription failed • Tap to retry
-                                </button>
+                                <span style={{ color: '#f87171' }}>Transcription failed • Tap to retry</span>
                               ) : (
-                                formatSummary(reel.summary) || reel.preview_text || (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => handleRetryReel(reel.id, e)}
-                                    style={{ background: 'none', border: 'none', padding: '4px 0', textAlign: 'left', color: '#90a4f2', display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '500' }}
-                                    title="Tap to retry transcription"
-                                  >
-                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#90a4f2', animation: 'pulse 1.2s infinite' }} />
-                                    Transcribing spoken audio... (Tap to retry)
-                                  </button>
-                                )
+                                formatSummary(reel.summary) || reel.preview_text || 'Transcribing spoken audio...'
                               )}
                             </p>
                           </div>
 
-                          {/* Card Footer: Folder Tag, Date & Actions */}
+                          {/* Card Footer: Collection Tag, Date & Quick Actions */}
                           <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            paddingTop: '10px',
+                            paddingTop: '8px',
                             borderTop: '1px solid var(--border-light)',
-                            fontSize: '0.74rem'
+                            fontSize: '0.72rem'
                           }}>
-                            <span style={{ color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>
                               {reel.collection_name ? (
-                                <>
-                                  <Folder size={12} color="#90a4f2" strokeWidth={2.2} />
-                                  <span style={{ color: '#90a4f2' }}>{reel.collection_name}</span>
-                                </>
+                                <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Folder size={11} /> {reel.collection_name}
+                                </span>
                               ) : (
                                 reel.created_at ? new Date(reel.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Saved'
                               )}
                             </span>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
-                              {/* Move to Folder Button */}
+                              {/* Move to Collection Button */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setOpenCollectionPickerId(openCollectionPickerId === reel.id ? null : reel.id);
                                 }}
-                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#90a4f2' : '#94a3b8', cursor: 'pointer', padding: '3px' }}
+                                style={{ background: 'none', border: 'none', color: reel.collection_name ? '#10b981' : '#64748b', cursor: 'pointer', padding: '3px' }}
                                 title="Move to Collection"
                               >
-                                <Folder size={14} />
+                                <Folder size={13} />
                               </button>
 
                               {/* Collection Picker Popover */}
@@ -1934,14 +1756,14 @@ const getCachedReels = () => {
                                     right: '0',
                                     width: '190px',
                                     background: 'var(--bg-card)',
-                                    borderRadius: '10px',
+                                    borderRadius: 'var(--radius-md)',
                                     boxShadow: 'var(--shadow-lg)',
                                     border: '1px solid var(--border-light)',
                                     padding: '8px',
                                     zIndex: 100
                                   }}
                                 >
-                                  <div style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-muted)', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
+                                  <div style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-muted)', padding: '2px 4px 6px', textTransform: 'uppercase' }}>
                                     Move to Collection:
                                   </div>
 
@@ -1956,11 +1778,11 @@ const getCachedReels = () => {
                                           setOpenCollectionPickerId(null);
                                           setShowCreateCollectionModal(true);
                                         }}
-                                        className="btn-primary"
+                                        className="ig-ask-ai-center-btn"
                                         style={{
                                           width: '100%',
                                           fontSize: '0.74rem',
-                                          padding: '6px 10px',
+                                          padding: '5px 8px',
                                           justifyContent: 'center'
                                         }}
                                       >
@@ -1976,13 +1798,13 @@ const getCachedReels = () => {
                                           style={{
                                             width: '100%',
                                             textAlign: 'left',
-                                            padding: '6px 8px',
-                                            borderRadius: '6px',
-                                            background: reel.collection_id === col.id ? 'var(--accent-primary-light)' : 'transparent',
+                                            padding: '5px 7px',
+                                            borderRadius: '4px',
+                                            background: reel.collection_id === col.id ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
                                             border: 'none',
-                                            fontSize: '0.78rem',
-                                            fontWeight: '600',
-                                            color: reel.collection_id === col.id ? '#90a4f2' : 'var(--text-body)',
+                                            fontSize: '0.76rem',
+                                            fontWeight: '500',
+                                            color: reel.collection_id === col.id ? '#10b981' : 'var(--text-main)',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1990,7 +1812,7 @@ const getCachedReels = () => {
                                             marginBottom: '2px'
                                           }}
                                         >
-                                          <Folder size={12} color={reel.collection_id === col.id ? "#90a4f2" : "currentColor"} />
+                                          <Folder size={12} color={reel.collection_id === col.id ? "#10b981" : "currentColor"} />
                                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{col.name}</span>
                                         </button>
                                       ))}
@@ -2004,14 +1826,14 @@ const getCachedReels = () => {
                                         style={{
                                           width: '100%',
                                           textAlign: 'left',
-                                          padding: '6px 8px',
-                                          borderRadius: '6px',
+                                          padding: '5px 7px',
+                                          borderRadius: '4px',
                                           background: 'transparent',
                                           border: 'none',
                                           borderTop: '1px solid var(--border-light)',
-                                          fontSize: '0.74rem',
-                                          fontWeight: '700',
-                                          color: '#90a4f2',
+                                          fontSize: '0.72rem',
+                                          fontWeight: '600',
+                                          color: '#10b981',
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
@@ -2028,8 +1850,8 @@ const getCachedReels = () => {
                                           style={{
                                             width: '100%',
                                             textAlign: 'left',
-                                            padding: '5px 8px',
-                                            borderRadius: '6px',
+                                            padding: '4px 7px',
+                                            borderRadius: '4px',
                                             background: 'transparent',
                                             border: 'none',
                                             fontSize: '0.72rem',
@@ -2054,17 +1876,17 @@ const getCachedReels = () => {
                                     border: '1px solid rgba(239, 68, 68, 0.25)',
                                     color: '#f87171',
                                     cursor: 'pointer',
-                                    padding: '5px 8px',
-                                    borderRadius: '6px',
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '4px',
-                                    fontSize: '0.72rem',
+                                    gap: '3px',
+                                    fontSize: '0.7rem',
                                     fontWeight: '600'
                                   }}
                                   title="Retry Transcription"
                                 >
-                                  <RotateCw size={12} />
+                                  <RotateCw size={11} />
                                   <span>Retry</span>
                                 </button>
                               )}
@@ -2076,24 +1898,25 @@ const getCachedReels = () => {
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  color: '#94a3b8',
+                                  color: '#64748b',
                                   cursor: 'pointer',
-                                  padding: '8px 10px',
+                                  padding: '4px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  borderRadius: '6px',
+                                  borderRadius: '4px',
                                   touchAction: 'manipulation'
                                 }}
                                 title="Delete Reel"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={13} />
                               </button>
                             </div>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 )}
               </div>
@@ -2107,36 +1930,69 @@ const getCachedReels = () => {
             position: 'fixed',
             inset: 0,
             zIndex: 100,
-            background: '#0c0f14',
+            background: 'var(--bg-app)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
             {/* Top Fixed Header */}
             <header style={{
-              minHeight: '60px',
-              height: '60px',
+              minHeight: '58px',
+              height: '58px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0 16px',
-              background: 'rgba(12, 15, 20, 0.98)',
+              padding: '0 18px',
+              background: 'rgba(9, 12, 16, 0.88)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
+              borderBottom: '1px solid var(--border-light)',
               flexShrink: 0,
               zIndex: 10
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
                   onClick={() => setActiveTab('vault')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#f8fafa', padding: '4px' }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#f8fafa',
+                    width: '32px',
+                    height: '32px',
+                    padding: 0
+                  }}
                   title="Back to Vault"
                 >
-                  <ArrowLeft size={24} strokeWidth={2.2} />
+                  <ArrowLeft size={18} strokeWidth={2.2} />
                 </button>
-                <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#f8fafa', letterSpacing: '-0.02em', margin: 0 }}>
-                  Ask Dex AI
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '6px',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Sparkles size={13} color="#10b981" />
+                  </div>
+                  <div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.2 }}>
+                      Dex AI Copilot
+                    </h1>
+                    <div style={{ fontSize: '0.68rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                      Indexed across {reels.length} saved reels
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button
@@ -2148,15 +2004,24 @@ const getCachedReels = () => {
                     }
                   ]);
                 }}
-                className="ig-filter-pill"
-                style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-full)',
+                  color: 'var(--text-body)',
+                  fontSize: '0.78rem',
+                  fontWeight: '600',
+                  padding: '5px 14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
                 title="Start a new chat"
               >
-                New chat
+                + New chat
               </button>
             </header>
 
-            {/* Middle Message Stream (Scrollable Only Here, No Scrollbar Visible) */}
+            {/* Middle Message Stream */}
             <div
               className="no-scrollbar"
               style={{
@@ -2164,9 +2029,9 @@ const getCachedReels = () => {
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
-                padding: '12px 16px',
-                maxWidth: '820px',
+                gap: '14px',
+                padding: '16px 18px',
+                maxWidth: '840px',
                 width: '100%',
                 margin: '0 auto',
                 boxSizing: 'border-box',
@@ -2179,19 +2044,20 @@ const getCachedReels = () => {
                   key={idx}
                   style={{
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: msg.role === 'user' ? '82%' : '92%',
+                    maxWidth: msg.role === 'user' ? '82%' : '94%',
                     minWidth: 0,
                     boxSizing: 'border-box',
                     overflowWrap: 'break-word',
                     wordBreak: 'break-word',
-                    padding: msg.role === 'user' ? '10px 16px' : '14px 18px',
+                    padding: msg.role === 'user' ? '10px 16px' : '16px 20px',
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                    background: msg.role === 'user' ? '#3797f0' : '#181c1f',
-                    color: msg.role === 'user' ? '#ffffff' : '#f8fafa',
-                    border: msg.role === 'user' ? 'none' : '1px solid #282f34',
+                    background: msg.role === 'user' ? '#10b981' : 'var(--bg-card)',
+                    color: msg.role === 'user' ? '#07090c' : '#f8fafa',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)',
+                    boxShadow: msg.role === 'user' ? '0 4px 14px rgba(16, 185, 129, 0.25)' : 'var(--shadow-xs)',
                     fontSize: '0.9rem',
-                    lineHeight: '1.55',
-                    fontWeight: '400'
+                    lineHeight: '1.6',
+                    fontWeight: msg.role === 'user' ? '600' : '400'
                   }}
                 >
                   {msg.role === 'user' ? (
@@ -2215,10 +2081,10 @@ const getCachedReels = () => {
                                     }
                                   }}
                                   style={{
-                                    color: '#90a4f2',
+                                    color: '#38bdf8',
                                     textDecoration: 'underline',
                                     textUnderlineOffset: '3px',
-                                    fontWeight: '500',
+                                    fontWeight: '600',
                                     cursor: 'pointer'
                                   }}
                                 />
@@ -2230,81 +2096,75 @@ const getCachedReels = () => {
                         </ReactMarkdown>
                       </div>
 
-                      {/* Action Bar: Copy for WhatsApp / Notes, Copy MD & Save .md Options */}
+                      {/* Action Bar: Copy for WhatsApp, Copy MD & Show More */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
                         flexWrap: 'wrap',
                         gap: '8px',
-                        marginTop: '12px',
+                        marginTop: '14px',
                         paddingTop: '10px',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+                        borderTop: '1px solid var(--border-light)'
                       }}>
                         <button
                           onClick={() => handleCopyMessageText(msg.content, idx, 'whatsapp')}
-                          className="ig-chat-action-btn"
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            background: 'rgba(55, 151, 240, 0.15)',
-                            border: '1px solid rgba(55, 151, 240, 0.3)',
-                            color: '#70b5f9',
-                            fontSize: '0.78rem',
+                            background: 'rgba(56, 189, 248, 0.08)',
+                            border: '1px solid rgba(56, 189, 248, 0.25)',
+                            color: '#38bdf8',
+                            fontSize: '0.76rem',
                             fontWeight: '600',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
+                            padding: '5px 12px',
+                            borderRadius: 'var(--radius-full)',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            outline: 'none',
-                            userSelect: 'none'
+                            transition: 'all 0.15s ease'
                           }}
                           title="Copy formatted text ready for WhatsApp and Notes app"
                         >
                           {copiedMsgIdx === `${idx}-whatsapp` ? (
                             <>
                               <Check size={13} color="#10b981" />
-                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied for WhatsApp!</span>
+                              <span style={{ color: '#10b981' }}>Copied for WhatsApp!</span>
                             </>
                           ) : (
                             <>
-                              <Copy size={13} color="#70b5f9" />
-                              <span>Copy for WhatsApp / Notes</span>
+                              <Copy size={13} color="#38bdf8" />
+                              <span>Copy for WhatsApp</span>
                             </>
                           )}
                         </button>
 
                         <button
                           onClick={() => handleCopyMessageText(msg.content, idx, 'markdown')}
-                          className="ig-chat-action-btn"
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                            color: '#d4d4d8',
-                            fontSize: '0.78rem',
-                            fontWeight: '500',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-body)',
+                            fontSize: '0.76rem',
+                            fontWeight: '600',
+                            padding: '5px 12px',
+                            borderRadius: 'var(--radius-full)',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            outline: 'none',
-                            userSelect: 'none'
+                            transition: 'all 0.15s ease'
                           }}
-                          title="Copy raw Markdown format"
+                          title="Copy raw markdown formatted text"
                         >
                           {copiedMsgIdx === `${idx}-markdown` ? (
                             <>
                               <Check size={13} color="#10b981" />
-                              <span style={{ color: '#10b981', fontWeight: '600' }}>Copied MD!</span>
+                              <span style={{ color: '#10b981' }}>Copied MD!</span>
                             </>
                           ) : (
                             <>
-                              <Copy size={13} color="#a1a1aa" />
-                              <span>Copy MD</span>
+                              <Copy size={13} color="#94a3b8" />
+                              <span>Copy Markdown</span>
                             </>
                           )}
                         </button>
@@ -2312,74 +2172,47 @@ const getCachedReels = () => {
                         {hasMoreItemsToShow(msg.content) && (
                           <button
                             onClick={() => handleShowMoreResults(idx)}
-                            className="ig-chat-action-btn"
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              color: '#34d399',
-                              fontSize: '0.78rem',
+                              background: 'rgba(16, 185, 129, 0.12)',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              color: '#10b981',
+                              fontSize: '0.76rem',
                               fontWeight: '600',
-                              padding: '6px 12px',
-                              borderRadius: '20px',
+                              padding: '5px 14px',
+                              borderRadius: 'var(--radius-full)',
                               cursor: 'pointer',
-                              transition: 'all 0.15s ease',
-                              outline: 'none',
-                              userSelect: 'none'
+                              transition: 'all 0.15s ease'
                             }}
-                            title="Ask Dex AI to list remaining results starting from where it left off"
+                            title="List remaining results from your saved reels"
                           >
-                            <Plus size={13} color="#34d399" />
+                            <Sparkles size={13} color="#10b981" />
                             <span>Show More Results</span>
                           </button>
                         )}
-
-                        <button
-                          onClick={() => handleDownloadMessageText(msg.content, idx)}
-                          className="ig-chat-action-btn"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                            color: '#d4d4d8',
-                            fontSize: '0.78rem',
-                            fontWeight: '500',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            outline: 'none',
-                            userSelect: 'none'
-                          }}
-                          title="Save clean Markdown (.md) file"
-                        >
-                          <Download size={13} color="#a1a1aa" />
-                          <span>Save .md</span>
-                        </button>
                       </div>
                     </>
                   )}
                 </div>
               ))}
+
               {chatLoading && (
                 <div style={{
                   alignSelf: 'flex-start',
-                  padding: '10px 16px',
+                  padding: '12px 18px',
                   borderRadius: '18px 18px 18px 4px',
-                  background: '#181c1f',
-                  border: '1px solid #282f34',
-                  fontSize: '0.84rem',
-                  color: '#8e8e8e',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-body)',
+                  fontSize: '0.86rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '10px'
                 }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#90a4f2', animation: 'pulse 1.2s infinite' }} />
-                  <span>Searching transcripts and synthesizing answer...</span>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', animation: 'pulse 1.2s infinite' }} />
+                  <span>Synthesizing answer across your saved reels...</span>
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -2387,10 +2220,10 @@ const getCachedReels = () => {
 
             {/* Pinned Bottom Input Container */}
             <div style={{
-              maxWidth: '820px',
+              maxWidth: '840px',
               width: '100%',
               margin: '0 auto',
-              padding: '8px 16px 16px',
+              padding: '8px 18px 18px',
               flexShrink: 0,
               boxSizing: 'border-box'
             }}>
@@ -2418,18 +2251,18 @@ const getCachedReels = () => {
                       sendChatMessageText(prompt);
                     }}
                     style={{
-                      fontSize: '0.8rem',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      background: '#181c1f',
-                      border: '1px solid #282f34',
-                      color: '#f8fafa',
-                      fontWeight: '400',
+                      fontSize: '0.78rem',
+                      padding: '5px 12px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid var(--border-light)',
+                      color: 'var(--text-body)',
+                      fontWeight: '500',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease'
                     }}
                   >
-                    {prompt}
+                    ✨ {prompt}
                   </button>
                 ))}
               </div>
@@ -2438,11 +2271,12 @@ const getCachedReels = () => {
               <form onSubmit={handleAskAI} style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                background: '#181c1f',
-                border: '1.5px solid #282f34',
-                borderRadius: '24px',
-                padding: '4px 6px 4px 16px'
+                gap: '10px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 6px 4px 18px',
+                boxShadow: 'var(--shadow-md)'
               }}>
                 <input
                   type="text"
@@ -2456,7 +2290,7 @@ const getCachedReels = () => {
                     background: 'transparent',
                     color: '#f8fafa',
                     outline: 'none',
-                    fontSize: '0.92rem',
+                    fontSize: '0.9rem',
                     fontWeight: '400'
                   }}
                 />
@@ -2464,10 +2298,10 @@ const getCachedReels = () => {
                   type="submit"
                   disabled={chatLoading || !chatQuestion.trim()}
                   style={{
-                    background: chatQuestion.trim() ? '#90a4f2' : '#27282c',
-                    color: chatQuestion.trim() ? '#0c0f14' : '#71717a',
-                    width: '36px',
-                    height: '36px',
+                    background: chatQuestion.trim() ? '#10b981' : 'rgba(255, 255, 255, 0.06)',
+                    color: chatQuestion.trim() ? '#07090c' : '#64748b',
+                    width: '34px',
+                    height: '34px',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -2475,10 +2309,11 @@ const getCachedReels = () => {
                     border: 'none',
                     cursor: chatQuestion.trim() ? 'pointer' : 'not-allowed',
                     transition: 'all 0.15s ease',
+                    boxShadow: chatQuestion.trim() ? '0 0 12px rgba(16, 185, 129, 0.35)' : 'none',
                     flexShrink: 0
                   }}
                 >
-                  <Send size={15} />
+                  <Send size={14} />
                 </button>
               </form>
             </div>
