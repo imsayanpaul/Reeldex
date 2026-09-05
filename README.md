@@ -5,6 +5,26 @@
 
 ---
 
+## 💡 What Problem Does ReelDex Solve?
+
+### The Problem: The "Saved Posts" Black Hole 🕳️
+We all save dozens of useful Instagram Reels every week — design tools, coding tips, workout plans, business frameworks, or recipes. But what happens next?
+- **They get lost forever**: Instagram's saved section is a giant, endless wall of video thumbnails with zero search capabilities.
+- **You can't search what was actually said**: You remember someone shared an incredible free AI tool or interview hack 2 months ago, but Instagram cannot search the spoken words inside the video.
+- **Rewatching is frustrating**: To find a single website name, code snippet, or recipe step, you have to open 10 different reels and scrub through timelines.
+- **Wasted knowledge**: You save content to use later, but because you can't search or organize it, 95% of it is never looked at again.
+
+---
+
+### The Solution: Your Instant AI Knowledge Vault 🚀
+ReelDex turns passive Instagram saving into an active, searchable personal brain:
+1. **Send it and forget it**: Just tap "Share" and send any Reel to **`@reeldex.io`** in Instagram DM.
+2. **Instant audio-to-text**: ReelDex listens to the audio and writes down every spoken word in 1–2 seconds.
+3. **Pulls out the gold**: It automatically extracts the key takeaways, website links, tools mentioned, and action steps so you never have to take manual notes.
+4. **Chat with your saved reels**: Use **Ask Dex AI** to search in plain English (*"What were those free portfolio websites I saved?"*, *"Summarize all interview tips"*) and get instant answers with links back to the original videos.
+
+---
+
 ## ⚡ Key Features
 
 ### 📩 Instagram Integration & Ingestion
