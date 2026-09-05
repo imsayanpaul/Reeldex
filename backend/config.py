@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # App Settings
-    APP_NAME: str = "InstaM Transcriber"
+    APP_NAME: str = "ReelDex Engine"
     DEBUG: bool = True
     PORT: int = 8000
     HOST: str = "0.0.0.0"
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "https://reeldex-io.vercel.app"
     
     # Storage & Paths
-    DATABASE_URL: str = "sqlite:///./instam.db"
+    DATABASE_URL: str = "sqlite:///./reeldex.db"
     AUDIO_DIR: str = "./downloads/audio"
     
     class Config:
