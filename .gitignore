@@ -25,3 +25,6 @@ cloudflared.exe
 
 # Instagram session cookies (NEVER commit)
 instagram_cookies.txt
+
+# Agent customization & local skills
+.agents/
