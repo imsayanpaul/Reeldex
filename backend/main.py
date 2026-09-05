@@ -23,7 +23,7 @@ from backend.routes import router as api_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="InstaM - Instagram Reel Transcription & DM Automation Engine",
+    title="ReelDex - Instagram Reel Transcription & DM Automation Engine",
     description="Extracts audio, transcribes Instagram Reels with Whisper, and handles Meta DM Webhooks.",
     version="1.0.0"
 )
@@ -49,17 +49,17 @@ app.include_router(api_router, prefix="/api")
 @app.get("/privacy")
 def privacy_policy():
     return {
-        "title": "Privacy Policy for InstaM Transcriber",
-        "description": "InstaM processes Instagram reels and messages solely to provide audio transcriptions. We do not store personal data or sell information to third parties.",
-        "contact": "support@instam.ai"
+        "title": "Privacy Policy for ReelDex",
+        "description": "ReelDex processes Instagram reels and messages solely to provide audio transcriptions. We do not store personal data or sell information to third parties.",
+        "contact": "support@reeldex.io"
     }
 
 @app.get("/terms")
 def terms_of_service():
     return {
-        "title": "Terms of Service for InstaM Transcriber",
-        "description": "By using InstaM, you agree to transcribe public media for personal use.",
-        "contact": "support@instam.ai"
+        "title": "Terms of Service for ReelDex",
+        "description": "By using ReelDex, you agree to transcribe public media for personal use.",
+        "contact": "support@reeldex.io"
     }
 
 @app.get("/health")

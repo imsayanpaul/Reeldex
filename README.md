@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧠 ReelDex (InstaM)
+# 🧠 ReelDex
 
 ### **The AI-Powered Second Brain & Knowledge Vault for Instagram Reels**
 
@@ -275,7 +275,7 @@ META_APP_SECRET=optional_app_secret
 # ========================================================
 # Database Configuration
 # ========================================================
-# Leave blank for local SQLite (instam.db), or provide PostgreSQL connection URI:
+# Leave blank for local SQLite (reeldex.db), or provide PostgreSQL connection URI:
 DATABASE_URL=postgresql://user:password@db.example.supabase.co:5432/postgres
 
 # ========================================================
