@@ -58,6 +58,7 @@ def get_db():
 # and fails harmlessly when the column already exists (SQLite has no IF NOT EXISTS).
 _ADDED_COLUMNS = [
     ("reels", "collection_id", "INTEGER"),
+    ("reels", "caption", "TEXT"),
     ("transcripts", "translated_text", "TEXT"),
     ("transcripts", "translated_summary", "TEXT"),
 ]

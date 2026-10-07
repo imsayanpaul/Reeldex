@@ -39,7 +39,7 @@ Everyone saves reels: a design tool, a recipe, an interview tip, a workout. Inst
 
 1. **Share any reel to `@reeldex.io` in an Instagram DM**, or paste the link on the web.
 2. **ReelDex pulls only the audio** and transcribes every spoken word with timestamps.
-3. **AI pulls out what matters:** a title, a summary, key points, the tools and links mentioned, promo codes, and step-by-step instructions. Then it files the reel under a topic.
+3. **AI pulls out what matters:** a title, a summary, key points, the tools and links mentioned, promo codes, and step-by-step instructions. Then it files the reel under a topic. The creator's caption is used too: it fixes misheard names, and for music-only reels with text on screen it's often where the content is.
 4. **The bot replies in your DM** with the summary and a link to the reel in your vault.
 5. **Search everything, or just ask:** *"What AI design tools have I saved?"* returns an answer that cites the exact reels it came from.
 
@@ -67,6 +67,7 @@ Every saved reel in one place, with search across titles, creators, tools, and a
 Each reel has its own page:
 - the summary, numbered key points, tools and links, and steps
 - the full transcript with timestamps
+- the creator's caption
 - one-click translation to English for reels in other languages
 - downloads as subtitles (`.srt`, with real timings) or `.txt`, or copy the transcript
 - a button that opens the reel in the Instagram app on phones

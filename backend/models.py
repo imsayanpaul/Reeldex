@@ -63,6 +63,7 @@ class ReelItem(Base):
     author = Column(String(100), nullable=True)
     thumbnail_url = Column(String(1000), nullable=True)
     duration = Column(Float, nullable=True)
+    caption = Column(Text, nullable=True)  # the creator's Instagram caption
     
     # Metadata & Source
     source = Column(String(50), default="web_ui")  # "web_ui" or "instagram_dm"

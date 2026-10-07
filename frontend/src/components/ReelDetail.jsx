@@ -13,7 +13,9 @@ const clock = (sec) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-const isEnglish = (lang) => !lang || /^(en|english)/i.test(lang);
+const CAPTION_PREVIEW = 280;
+
+const isEnglish =(lang) => !lang || /^(en|english)/i.test(lang);
 
 function Section({ title, children, action }) {
   return (
@@ -37,6 +39,7 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showTimes, setShowTimes] = useState(true);
+  const [captionOpen, setCaptionOpen] = useState(false);
 
   useOverlay(true, onClose);
 
@@ -247,8 +250,27 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                     </Section>
                   )}
 
-                  {!t && (
-                    <p className="mt-8 text-white/55">No speech was found in this reel (it may be music only).</p>
+                  {data.caption && (
+                    <Section
+                      title="Caption"
+                      action={data.caption.length > CAPTION_PREVIEW && (
+                        <button type="button" className="rd-mono bg-transparent border-0 cursor-pointer text-white/55 hover:text-white" onClick={() => setCaptionOpen((v) => !v)}>
+                          {captionOpen ? 'show less' : 'show all'}
+                        </button>
+                      )}
+                    >
+                      <p className="m-0 text-[15px] leading-relaxed text-white/80 whitespace-pre-wrap">
+                        {linkify(captionOpen || data.caption.length <= CAPTION_PREVIEW ? data.caption : `${data.caption.slice(0, CAPTION_PREVIEW).trimEnd()}…`)}
+                      </p>
+                    </Section>
+                  )}
+
+                  {!fullText && (
+                    <p className="mt-8 text-white/55">
+                      {data.caption
+                        ? 'No speech in this reel, so the summary comes from the creator’s caption.'
+                        : 'No speech was found in this reel (it may be music only).'}
+                    </p>
                   )}
                 </>
               )}

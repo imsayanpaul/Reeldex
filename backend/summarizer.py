@@ -38,7 +38,29 @@ def clean_json_response(raw_text: str) -> Dict[str, Any]:
         print(f"[JSON Parse Error]: {e}, raw text: {raw_text[:200]}")
         return {}
 
-def extract_reel_insights(transcript_text: str, title: Optional[str] = None) -> Dict[str, Any]:
+_PROMO_LINE = re.compile(r"^\s*(link in bio|follow\b|like (and|&) (share|save)|save (this|for later)|share (this|with)|comment below|dm me)\b", re.I)
+
+
+def clean_caption(caption: Optional[str], limit: int = 1500) -> str:
+    """The creator's caption without hashtags, @handles-only lines or 'link in bio' filler."""
+    if not caption:
+        return ""
+    lines = []
+    for line in caption.splitlines():
+        line = re.sub(r"(?<!\w)#\w+", "", line)  # hashtags
+        line = re.sub(r"\s{2,}", " ", line).strip(" .·•|-")
+        if not line or _PROMO_LINE.match(line) or re.fullmatch(r"(@[\w.]+\s*)+", line):
+            continue
+        lines.append(line)
+    return "\n".join(lines)[:limit].strip()
+
+
+def caption_is_useful(caption: str) -> bool:
+    """Enough real words to be worth summarising (not just emojis or a one-liner)."""
+    return len(re.findall(r"[^\W\d_]{2,}", caption)) >= 6
+
+
+def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None) -> Dict[str, Any]:
     """
     Uses Groq LLaMA to generate:
     1. 2-sentence summary
@@ -47,7 +69,9 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None) -> 
     4. 3-5 Topical Tags
     5. Action items (tools, promo codes, steps, links)
     """
-    if not transcript_text or len(transcript_text.strip()) < 10:
+    caption = clean_caption(caption)
+    has_speech = bool(transcript_text and len(transcript_text.strip()) >= 10)
+    if not has_speech and not caption_is_useful(caption):
         return {
             "summary": "Short or non-verbal media clip.",
             "key_points": [],
@@ -60,19 +84,36 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None) -> 
     if not api_key:
         print("[Summarizer] No GROQ_API_KEY found, returning fallback.")
         return {
-            "summary": transcript_text[:180] + "...",
+            "summary": (transcript_text or caption)[:180] + "...",
             "key_points": [],
             "category": "General Knowledge",
             "tags": ["#reel"],
             "action_items": []
         }
 
-    prompt = f"""You are an elite AI knowledge extraction engine for Instagram Reels.
-Analyze the following transcript from an Instagram Reel and extract structured insights.
+    if has_speech:
+        source = f"""Analyze the following transcript from an Instagram Reel and extract structured insights.
 
 Transcript:
 \"\"\"{transcript_text}\"\"\"
+"""
+        if caption:
+            source += f"""
+Creator's caption (hashtags removed):
+\"\"\"{caption}\"\"\"
+Use the caption to fix the spelling of names, tools and websites the speaker mentions, and to add items the creator lists there.
+If the caption and the transcript disagree, trust the transcript. Ignore promotional filler.
+"""
+    else:
+        source = f"""This reel has no spoken words (music or text on screen only). The creator's caption is the only text available.
+Extract structured insights from the caption. Ignore promotional filler.
 
+Caption:
+\"\"\"{caption}\"\"\"
+"""
+
+    prompt = f"""You are an elite AI knowledge extraction engine for Instagram Reels.
+{source}
 Video Title / Context: {title or 'Instagram Reel'}
 
 You MUST output ONLY a valid JSON object matching this exact schema:
@@ -145,7 +186,7 @@ Do NOT output any intro or outro markdown, only the JSON block."""
 
     # Both models failed or returned no summary: a plain fallback, never None
     return {
-        "summary": transcript_text[:180] + "...",
+        "summary": (transcript_text or caption)[:180] + "...",
         "key_points": [],
         "category": "General Knowledge",
         "tags": ["#reel"],

@@ -105,7 +105,8 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
             return {
                 "success": True,
                 "audio_path": audio_path if os.path.exists(audio_path) else None,
-                "title": info.get("title") or info.get("description", "Instagram Reel")[:60],
+                "title": info.get("title") or (info.get("description") or "Instagram Reel")[:60],
+                "caption": info.get("description") or "",
                 "author": info.get("uploader") or info.get("channel") or "Instagram User",
                 "thumbnail": info.get("thumbnail"),
                 "duration": info.get("duration"),

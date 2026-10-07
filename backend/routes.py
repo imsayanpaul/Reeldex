@@ -16,7 +16,7 @@ from backend.database import get_db
 from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
-from backend.summarizer import extract_reel_insights, CATEGORIES
+from backend.summarizer import extract_reel_insights, clean_caption, caption_is_useful, CATEGORIES
 from backend.search import rank_reels_search, ask_reels_ai
 from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload
 from backend.auth import (
@@ -162,9 +162,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                         cached_reel = done
                         break
 
-        if cached_reel and cached_reel.transcript and cached_reel.transcript.full_text:
+        if cached_reel and cached_reel.transcript and (cached_reel.transcript.full_text or cached_reel.transcript.summary):
             print(f"[Global Cache HIT] Reel #{cached_reel.id} -> #{reel.id} (0 tokens)")
-            for field in ("title", "author", "thumbnail_url", "duration", "category", "tags", "action_items"):
+            for field in ("title", "author", "thumbnail_url", "duration", "caption", "category", "tags", "action_items"):
                 setattr(reel, field, getattr(cached_reel, field))
             reel.status = "completed"
             reel.error_message = None
@@ -188,6 +188,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         reel.thumbnail_url = dl.get("thumbnail_url") or dl.get("thumbnail") or (
             f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None)
         reel.duration = dl.get("duration")
+        reel.caption = (dl.get("caption") or "")[:5000] or None
         db.commit()
         if not audio_path or not os.path.exists(audio_path):
             raise Exception(dl.get("error") or "Couldn't get the audio from this reel. It may be private or removed.")
@@ -210,8 +211,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         if not full_text and segments:
             full_text = " ".join(s.get("text", "") for s in segments if isinstance(s, dict)).strip()
 
-        # 3. Insights, or the zero-speech short circuit
-        if len(full_text) < 10:
+        # 3. Insights. With no speech, the caption is often where the content is (music + text reels).
+        caption = clean_caption(reel.caption)
+        if len(full_text) < 10 and not caption_is_useful(caption):
             print(f"[Zero-Speech] Reel #{reel.id} has no spoken audio; skipping the LLM.")
             insights = {
                 "summary": "Visual reel with background music (no spoken dialogue).",
@@ -221,7 +223,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 "action_items": [],
             }
         else:
-            insights = extract_reel_insights(full_text, reel.title) or {}
+            insights = extract_reel_insights(full_text, reel.title, caption=reel.caption) or {}
 
         reel.category = insights.get("category") or "General Knowledge"
         reel.tags = insights.get("tags") or ["#reel"]
@@ -632,6 +634,7 @@ def get_reel_detail(reel_id: int, user: User = Depends(require_user), db: Sessio
         full_text_val = t.full_text or " ".join(s.get("text", "").strip() for s in segments_data if isinstance(s, dict))
 
     data = reel_card(reel)
+    data["caption"] = reel.caption
     data["transcript"] = {
         "full_text": full_text_val,
         "language": t.language if t else "en",
@@ -757,7 +760,8 @@ def ask_chat_endpoint(req: AskChatRequest, header_token: Optional[str] = Depends
             "tags": r.tags or [],
             "action_items": r.action_items or [],
             "summary": (t.summary if t else "") or "",
-            "full_text": (t.full_text if t else "") or "",
+            # The caption is searchable too: music + text reels often only have content there
+            "full_text": "\n".join(x for x in ((t.full_text if t else ""), clean_caption(r.caption)) if x),
         })
     history = (req.history or [])[-6:]
     return ask_reels_ai(req.question, reels_context, history=history)
