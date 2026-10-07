@@ -43,14 +43,19 @@ function useRoute() {
 }
 
 const CHAT_KEY = 'reeldex_chat';
+const CHAT_ID_KEY = 'reeldex_chat_id';
 const loadChat = () => {
   try { return JSON.parse(sessionStorage.getItem(CHAT_KEY)) || []; } catch { return []; }
+};
+const loadChatId = () => {
+  try { return Number(sessionStorage.getItem(CHAT_ID_KEY)) || null; } catch { return null; }
 };
 
 export default function App() {
   const vault = useVault();
   const [route, go] = useRoute();
   const [messages, setMessages] = useState(loadChat);
+  const [chatId, setChatId] = useState(loadChatId); // set once the open chat is saved
   const [pairOpen, setPairOpen] = useState(false);
   const [move, setMove] = useState(null); // { ids, current, single, after }
   const [createFor, setCreateFor] = useState(null);
@@ -58,6 +63,12 @@ export default function App() {
   useEffect(() => {
     try { sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages.slice(-30))); } catch { /* private mode */ }
   }, [messages]);
+  useEffect(() => {
+    try {
+      if (chatId) sessionStorage.setItem(CHAT_ID_KEY, String(chatId));
+      else sessionStorage.removeItem(CHAT_ID_KEY);
+    } catch { /* private mode */ }
+  }, [chatId]);
 
   // A DM magic link can carry ?new_reel=ID: open that reel once we're signed in
   const launched = useRef(false);
@@ -118,7 +129,7 @@ export default function App() {
         )}
         {route.view === 'ask' && (
           <Suspense fallback={<div className="rd-wrap py-20"><Loader2 className="animate-spin text-white/60" /></div>}>
-            <AskDex messages={messages} setMessages={setMessages} onOpen={openReel} reelCount={vault.stats.reels} />
+            <AskDex messages={messages} setMessages={setMessages} chatId={chatId} setChatId={setChatId} onOpen={openReel} reelCount={vault.stats.reels} />
           </Suspense>
         )}
       </main>

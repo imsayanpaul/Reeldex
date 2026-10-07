@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 
 from backend.database import get_db
-from backend.models import ReelItem, Transcript, User, PairingCode, Collection
+from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import extract_reel_insights, CATEGORIES
@@ -652,6 +652,85 @@ def delete_reel(reel_id: int, user: User = Depends(require_user), db: Session = 
 
 
 # --- Ask Dex AI (sync: runs in a worker thread so the LLM call can't block the server) ---
+
+# --- Saved Ask Dex chats ---
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., max_length=20000)
+    citations: Optional[List[Dict[str, Any]]] = Field(default=None, max_length=30)
+
+class SaveChatRequest(BaseModel):
+    title: Optional[str] = Field(None, max_length=200)
+    messages: List[ChatMessage] = Field(..., min_length=1, max_length=200)
+
+
+def _chat_summary(c: SavedChat) -> Dict[str, Any]:
+    msgs = c.messages or []
+    return {
+        "id": c.id,
+        "title": c.title,
+        "message_count": len(msgs),
+        "created_at": c.created_at.isoformat() if c.created_at else "",
+        "updated_at": c.updated_at.isoformat() if c.updated_at else "",
+    }
+
+
+def _owned_chat(db: Session, user: User, chat_id: int) -> SavedChat:
+    c = db.query(SavedChat).filter(SavedChat.id == chat_id, SavedChat.user_id == user.id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    return c
+
+
+def _chat_title(req: SaveChatRequest) -> str:
+    if req.title and req.title.strip():
+        return req.title.strip()[:200]
+    first = next((m.content for m in req.messages if m.role == "user"), "Saved chat")
+    first = " ".join(first.split())
+    return first[:80] + ("…" if len(first) > 80 else "")
+
+
+@router.get("/chats")
+def list_saved_chats(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    chats = db.query(SavedChat).filter(SavedChat.user_id == user.id).order_by(desc(SavedChat.updated_at)).limit(200).all()
+    return [_chat_summary(c) for c in chats]
+
+
+@router.post("/chats", dependencies=[Depends(rate_limit("chats", 60, 60))])
+def create_saved_chat(req: SaveChatRequest, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    c = SavedChat(user_id=user.id, title=_chat_title(req), messages=[m.model_dump(exclude_none=True) for m in req.messages])
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    return _chat_summary(c)
+
+
+@router.get("/chats/{chat_id}")
+def get_saved_chat(chat_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    c = _owned_chat(db, user, chat_id)
+    return {**_chat_summary(c), "messages": c.messages or []}
+
+
+@router.put("/chats/{chat_id}", dependencies=[Depends(rate_limit("chats", 60, 60))])
+def update_saved_chat(chat_id: int, req: SaveChatRequest, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    c = _owned_chat(db, user, chat_id)
+    if req.title and req.title.strip():
+        c.title = req.title.strip()[:200]
+    c.messages = [m.model_dump(exclude_none=True) for m in req.messages]
+    c.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    db.refresh(c)
+    return _chat_summary(c)
+
+
+@router.delete("/chats/{chat_id}")
+def delete_saved_chat(chat_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    c = _owned_chat(db, user, chat_id)
+    db.delete(c)
+    db.commit()
+    return {"success": True}
+
 
 @router.post("/chat", dependencies=[Depends(rate_limit("ai", 20, 60))])
 @router.post("/chat/ask", include_in_schema=False, dependencies=[Depends(rate_limit("ai", 20, 60))])

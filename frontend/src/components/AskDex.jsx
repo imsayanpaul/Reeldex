@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { ArrowUp, ArrowUpRight, Check, Copy, Download, Loader2, MessageCircle, Plus, RotateCcw } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Bookmark, BookmarkCheck, Check, Copy, Download, History, Loader2, MessageCircle, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../lib/api';
-import { copyText, downloadFile, fileSafe, isInstagramUrl, openInstagramUrl, sanitizeMarkdown, toMarkdown, toWhatsApp } from '../lib/format';
+import { copyText, downloadFile, fileSafe, formatDate, isInstagramUrl, openInstagramUrl, sanitizeMarkdown, toMarkdown, toWhatsApp } from '../lib/format';
+import { Dialog } from './Dialog';
 
 const SUGGESTIONS = [
   'What AI & design tools were mentioned?',
@@ -87,7 +88,87 @@ function Answer({ msg, question, onOpen, onMore, busy }) {
   );
 }
 
-export default function AskDex({ messages, setMessages, onOpen, reelCount }) {
+// Only what the server needs to keep
+const toSaved = (messages) => messages.map(({ role, content, citations }) => (
+  citations?.length ? { role, content, citations: citations.slice(0, 30) } : { role, content }
+));
+
+function SavedChats({ open, onClose, activeId, onLoad, onDeleted }) {
+  const [chats, setChats] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setConfirmId(null);
+    api('/chats').then(setChats).catch((err) => { toast.error(err.message); setChats([]); });
+  }, [open]);
+
+  const load = async (c) => {
+    setLoadingId(c.id);
+    try {
+      const full = await api(`/chats/${c.id}`);
+      onLoad(full);
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const remove = async (c) => {
+    if (confirmId !== c.id) { setConfirmId(c.id); return; }
+    try {
+      await api(`/chats/${c.id}`, { method: 'DELETE' });
+      setChats((prev) => prev.filter((x) => x.id !== c.id));
+      onDeleted(c.id);
+      toast.success('Chat deleted');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} kicker="ask dex" title="Saved chats" wide>
+      {chats === null ? (
+        <Loader2 className="animate-spin text-white/60" />
+      ) : chats.length === 0 ? (
+        <p className="m-0 text-white/60">No saved chats yet. Ask something, then hit <b className="text-white">Save chat</b>.</p>
+      ) : (
+        <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
+          {chats.map((c) => (
+            <li key={c.id} className={`flex items-center gap-2 rounded-md border ${c.id === activeId ? 'border-[var(--blue)] bg-[var(--blue)]/15' : 'border-white/10 hover:bg-white/5'}`}>
+              <button type="button" onClick={() => load(c)} className="flex-1 min-w-0 text-left bg-transparent border-0 cursor-pointer px-4 py-3">
+                <span className="block font-semibold truncate">{c.title}</span>
+                <span className="block rd-mono text-white/45 mt-0.5">
+                  {formatDate(c.updated_at).toLowerCase()} · {c.message_count} message{c.message_count === 1 ? '' : 's'}{c.id === activeId ? ' · open' : ''}
+                </span>
+              </button>
+              {loadingId === c.id ? (
+                <Loader2 size={16} className="animate-spin text-white/60 mr-4" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => remove(c)}
+                  className={`rd-btn rd-btn-sm mr-2 ${confirmId === c.id ? 'rd-btn-danger' : 'rd-btn-ghost text-white/55'}`}
+                  aria-label={`Delete ${c.title}`}
+                >
+                  <Trash2 size={15} />{confirmId === c.id && 'Delete?'}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Dialog>
+  );
+}
+
+export default function AskDex({ messages, setMessages, chatId, setChatId, onOpen, reelCount }) {
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const dirty = useRef(false);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
@@ -109,6 +190,7 @@ export default function AskDex({ messages, setMessages, onOpen, reelCount }) {
     abortRef.current = ctrl;
     try {
       const data = await api('/chat', { method: 'POST', body: { question, history }, signal: ctrl.signal });
+      dirty.current = true;
       setMessages((prev) => [...prev, { role: 'assistant', content: data.answer || '', citations: data.citations || [] }]);
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -122,6 +204,29 @@ export default function AskDex({ messages, setMessages, onOpen, reelCount }) {
 
   const submit = (e) => { e.preventDefault(); send(input); };
 
+  // Once a chat is saved, each new answer is added to it automatically
+  useEffect(() => {
+    if (!chatId || !dirty.current || !messages.length) return;
+    dirty.current = false;
+    api(`/chats/${chatId}`, { method: 'PUT', body: { messages: toSaved(messages) } })
+      .catch((err) => { if (err.status === 404) setChatId(null); });
+  }, [messages, chatId, setChatId]);
+
+  const saveChat = async () => {
+    setSaving(true);
+    try {
+      const c = await api('/chats', { method: 'POST', body: { messages: toSaved(messages) } });
+      setChatId(c.id);
+      toast.success('Chat saved. New answers are added to it automatically.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const newChat = () => { abortRef.current?.abort(); setMessages([]); setChatId(null); };
+
   // The question an answer was replying to (for file names and "show more")
   const questionFor = (i) => {
     for (let j = i - 1; j >= 0; j -= 1) if (messages[j].role === 'user') return messages[j].content;
@@ -133,16 +238,30 @@ export default function AskDex({ messages, setMessages, onOpen, reelCount }) {
   return (
     <section className="rd-ink-grid min-h-[calc(100vh-var(--nav-h))] flex flex-col">
       <div className="rd-wrap flex-1 flex flex-col max-w-[880px] pt-10 md:pt-14 pb-[calc(var(--tabbar-h)+120px)] min-[900px]:pb-36">
-        <div className="flex items-end justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
             <div className="rd-mono text-white/55 mb-3">ai across {reelCount} saved reel{reelCount === 1 ? '' : 's'}</div>
             <h1 className="rd-display text-[clamp(56px,11vw,120px)]">Ask <span className="text-[var(--blue)]">Dex</span></h1>
           </div>
-          {messages.length > 0 && (
-            <button type="button" className="rd-btn rd-btn-line rd-btn-sm !border-white/25 shrink-0" onClick={() => setMessages([])} disabled={busy}>
-              <RotateCcw size={14} /> New chat
+          <div className="flex flex-wrap sm:justify-end gap-2 shrink-0">
+            {messages.length > 0 && (chatId ? (
+              <span className="rd-btn rd-btn-sm !cursor-default text-[var(--green)] !px-2" title="Saved. New answers are added automatically">
+                <BookmarkCheck size={15} /> Chat saved
+              </span>
+            ) : (
+              <button type="button" className="rd-btn rd-btn-blue rd-btn-sm" onClick={saveChat} disabled={busy || saving}>
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />} Save chat
+              </button>
+            ))}
+            <button type="button" className="rd-btn rd-btn-line rd-btn-sm !border-white/25" onClick={() => setSavedOpen(true)}>
+              <History size={14} /> Saved chats
             </button>
-          )}
+            {messages.length > 0 && (
+              <button type="button" className="rd-btn rd-btn-line rd-btn-sm !border-white/25" onClick={newChat} disabled={busy}>
+                <RotateCcw size={14} /> New
+              </button>
+            )}
+          </div>
         </div>
 
         {messages.length === 0 && (
@@ -211,6 +330,13 @@ export default function AskDex({ messages, setMessages, onOpen, reelCount }) {
           </button>
         </form>
       </div>
+      <SavedChats
+        open={savedOpen}
+        onClose={() => setSavedOpen(false)}
+        activeId={chatId}
+        onLoad={(c) => { dirty.current = false; setMessages(c.messages || []); setChatId(c.id); }}
+        onDeleted={(id) => { if (id === chatId) setChatId(null); }}
+      />
     </section>
   );
 }

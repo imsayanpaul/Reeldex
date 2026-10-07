@@ -107,3 +107,15 @@ class Transcript(Base):
 
     # Relationship
     reel = relationship("ReelItem", back_populates="transcript")
+
+
+class SavedChat(Base):
+    """An Ask Dex conversation the user chose to keep."""
+    __tablename__ = "saved_chats"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    messages = Column(JSON, default=list)  # [{"role": "user"|"assistant", "content": str, "citations": [...]}]
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
