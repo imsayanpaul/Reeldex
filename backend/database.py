@@ -18,8 +18,17 @@ else:
         "max_overflow": 10,
     }
 
+def _normalize_url(url: str) -> str:
+    """Use the installed psycopg2 driver whatever scheme the host gives us
+    (postgres://, postgresql://, postgresql+psycopg://)."""
+    for prefix in ("postgres://", "postgresql://", "postgresql+psycopg://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg2://" + url[len(prefix):]
+    return url
+
+
 engine = create_engine(
-    settings.DATABASE_URL,
+    _normalize_url(settings.DATABASE_URL),
     connect_args=connect_args,
     **engine_kwargs
 )
