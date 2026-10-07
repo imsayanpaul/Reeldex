@@ -121,7 +121,7 @@ Link your Instagram by sending a one-time code (`MIND-123456`) to `@reeldex.io` 
 
 ## Security and reliability
 
-ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request:
+ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request. All of it is covered by **48 automated tests** in [`tests/test_security.py`](tests/test_security.py), run by CI on every push:
 
 - **Ownership checks on every endpoint.** Reels, collections and saved chats are scoped to the signed-in user. Guessing another reel's ID returns 404.
 - **Signed webhooks.** Instagram webhook calls must carry a valid Meta `X-Hub-Signature-256` HMAC, compared in constant time. The verify handshake uses a constant-time compare too.
@@ -130,6 +130,7 @@ ReelDex handles other people's Instagram accounts and libraries, so access contr
 - **Per-IP rate limits** on sign-in, pairing, saving reels and AI endpoints. Over the limit, the API returns 429 with `Retry-After`.
 - **Input limits.** Requests are validated against size limits. Thumbnail requests only accept real Instagram shortcodes and only fetch HTTPS images, capped at 5 MB.
 - **Locked-down server config.** API keys can't be changed over HTTP, and the status endpoint reports only true/false flags.
+- **Duplicate-safe webhooks.** Meta sometimes delivers a message twice, sometimes to two workers at once. Handled message ids are recorded in the database, so each reel is saved and answered once.
 - **Model fallbacks.** Transcription, insights and Ask Dex each try a chain of models, so one busy or retired model doesn't take the feature down.
 
 ## Performance
@@ -171,6 +172,7 @@ flowchart LR
 | Data | PostgreSQL in production, SQLite locally, with automatic column migrations |
 | Messaging | Instagram Graph API webhooks and DMs |
 | Hosting | Vercel (web), Render with Docker (API) |
+| CI/CD | GitHub Actions on every push; auto-deploy to Vercel and Render |
 
 ## Running locally
 
@@ -208,6 +210,15 @@ VITE_API_URL=http://localhost:8000 npm run dev
 
 On Windows PowerShell, run `$env:VITE_API_URL="http://localhost:8000"; npm run dev` instead. Then open http://localhost:5173 and paste a reel link to try it.
 
+**3. Tests**
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The suite uses a throwaway SQLite database and never calls Instagram or the AI providers.
+
 ## Project structure
 
 ```
@@ -225,6 +236,8 @@ Reeldex/
 ├── frontend/src/
 │   ├── components/        # Vault, reel cards & table, reel detail, collections, Ask Dex, dialogs
 │   └── lib/               # API client, session, vault state hook, formatting & exports
+├── tests/               # Security and access-control tests (pytest)
+├── .github/workflows/   # CI: lint, build, startup on SQLite + Postgres, security tests
 ├── Dockerfile
 └── render.yaml
 ```

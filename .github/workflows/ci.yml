@@ -1,0 +1,100 @@
+name: CI
+
+# Checks every push to main and every pull request before Vercel and Render deploy it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web app lints and builds
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+
+  api:
+    name: API starts (SQLite and Postgres)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}  # the smoke test lives outside the repo but imports backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: reeldex
+          POSTGRES_PASSWORD: reeldex
+          POSTGRES_DB: reeldex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reeldex"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Write the smoke test
+        run: |
+          cat > "$RUNNER_TEMP/smoke.py" <<'EOF'
+          """Starts the app (which runs migrations) and checks the basics. No real keys needed."""
+          from fastapi.testclient import TestClient
+          from sqlalchemy import inspect
+          from backend.main import app
+          from backend.database import engine
+
+          client = TestClient(app)
+          assert client.get("/health").status_code == 200, "health check failed"
+          assert client.get("/api/reels").status_code == 401, "reels must require login"
+          assert "verify_token" not in client.get("/api/config").json(), "config leaks a secret"
+          tables = set(inspect(engine).get_table_names())
+          missing = {"users", "reels", "transcripts", "collections", "saved_chats", "webhook_events"} - tables
+          assert not missing, f"tables not created: {missing}"
+          print(f"OK on {engine.dialect.name}")
+          EOF
+      - name: SQLite
+        env:
+          DATABASE_URL: sqlite:///./ci.db
+        run: python "$RUNNER_TEMP/smoke.py"
+      - name: Postgres
+        env:
+          # The psycopg-style URL that once crashed production on startup
+          DATABASE_URL: postgresql+psycopg://reeldex:reeldex@localhost:5432/reeldex
+        run: |
+          python "$RUNNER_TEMP/smoke.py"
+          python "$RUNNER_TEMP/smoke.py"  # second start: migrations must be safe to re-run
+
+  security:
+    name: Security tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Access control, webhook signatures, rate limits, duplicate deliveries
+        run: pytest -v
