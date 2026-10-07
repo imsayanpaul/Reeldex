@@ -1,8 +1,10 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="allow")
+
     # App Settings
     APP_NAME: str = "ReelDex Engine"
     DEBUG: bool = False
@@ -10,7 +12,8 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     
     # Meta / Instagram Webhook Configuration
-    META_VERIFY_TOKEN: str = "instam_secret_verify_token_2026"
+    # No default: without it set, the webhook verify handshake always fails
+    META_VERIFY_TOKEN: str = ""
     INSTAGRAM_PAGE_ACCESS_TOKEN: Optional[str] = None
     META_APP_SECRET: Optional[str] = None
     
@@ -27,10 +30,6 @@ class Settings(BaseSettings):
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./reeldex.db"
     AUDIO_DIR: str = "./downloads/audio"
-    
-    class Config:
-        env_file = ".env"
-        extra = "allow"
 
 settings = Settings()
 
