@@ -120,3 +120,12 @@ class SavedChat(Base):
     messages = Column(JSON, default=list)  # [{"role": "user"|"assistant", "content": str, "citations": [...]}]
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+
+class WebhookEvent(Base):
+    """Instagram message ids already handled. Shared by every worker, so a message Meta
+    delivers twice (possibly to two workers at once) is only processed once."""
+    __tablename__ = "webhook_events"
+
+    mid = Column(String(255), primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)

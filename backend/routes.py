@@ -4,6 +4,7 @@ import json
 import uuid
 import hmac
 import datetime
+import random
 import urllib.request
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request, Response
@@ -11,9 +12,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
+from sqlalchemy.exc import IntegrityError
 
 from backend.database import get_db
-from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat
+from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
@@ -843,8 +845,39 @@ def verify_instagram_webhook(
     raise HTTPException(status_code=403, detail="Verification token mismatch.")
 
 
-PROCESSED_MIDS: set = set()
 PAIR_RE = re.compile(r"(?:MIND|DEX|PAIR|LINK)?\s*-?\s*([0-9]{6})\b")
+
+
+def claim_message(db: Session, key: Optional[str], window: Optional[datetime.timedelta] = None) -> bool:
+    """Records a key (a Meta message id, or a user+reel pair). False if it was already claimed.
+
+    Meta sometimes delivers the same message twice at once. With several workers an
+    in-memory set can't see the other copy, so the database's primary key decides.
+    With `window`, an older claim doesn't count and is renewed (a reel re-sent later is fine).
+    """
+    if not key:
+        return True
+    key = key[:255]
+    try:
+        db.add(WebhookEvent(mid=key))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if window is None:
+            return False
+        now = datetime.datetime.utcnow()
+        renewed = db.query(WebhookEvent).filter(
+            WebhookEvent.mid == key, WebhookEvent.created_at < now - window,
+        ).update({"created_at": now}, synchronize_session=False)
+        db.commit()
+        if not renewed:
+            return False
+    # Occasionally forget ids older than a week so the table stays small
+    if random.random() < 0.02:
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+        db.query(WebhookEvent).filter(WebhookEvent.created_at < cutoff).delete(synchronize_session=False)
+        db.commit()
+    return True
 
 
 @router.post("/webhook/instagram")
@@ -860,13 +893,9 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
         events = parse_webhook_payload(body)
         print(f"[Webhook] {len(events)} message event(s)")
         for item in events:
-            mid = item.get("message_id")
-            if mid:
-                if mid in PROCESSED_MIDS:
-                    continue
-                PROCESSED_MIDS.add(mid)
-                if len(PROCESSED_MIDS) > 2000:
-                    PROCESSED_MIDS.clear()
+            if not claim_message(db, item.get("message_id")):
+                print("[Webhook] Duplicate delivery skipped")
+                continue
 
             sender_id = item["sender_id"]
             reel_urls = item.get("reel_urls", [])
@@ -908,6 +937,10 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     clean_url = normalize_instagram_url(r_url)
                     shortcode = extract_shortcode(clean_url)
                     match = (ReelItem.shortcode == shortcode) | (ReelItem.reel_url == clean_url) if shortcode else (ReelItem.reel_url == clean_url)
+                    # The same reel arriving twice within 2 minutes (two copies, two message ids) is one save
+                    if not claim_message(db, f"reel:{user.id}:{shortcode or clean_url}", window=datetime.timedelta(minutes=2)):
+                        print(f"[Webhook] Same reel again within 2 minutes, skipped: {shortcode}")
+                        continue
                     existing = owned_reels(db, user).filter(match).order_by(ReelItem.id.desc()).first()
                     if existing and existing.status != "failed":
                         continue
