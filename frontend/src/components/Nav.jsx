@@ -1,4 +1,4 @@
-import { FolderOpen, LayoutGrid, MessageSquare } from 'lucide-react';
+import { ArrowUpRight, FolderOpen, LayoutGrid, MessageSquare } from 'lucide-react';
 
 // lucide no longer ships brand icons
 export function InstagramIcon({ size = 16 }) {
@@ -69,8 +69,22 @@ export function Nav({ view, onView, session, onLink }) {
             </span>
           </button>
         ) : (
-          <button type="button" onClick={onLink} className="rd-btn rd-btn-blue rd-btn-sm">
-            <InstagramIcon size={16} /> Link Instagram
+          <button
+            type="button"
+            onClick={onLink}
+            className="group flex items-center gap-2.5 h-11 pl-1 pr-1 max-[420px]:pr-4 rounded-full bg-[var(--blue)] hover:bg-[var(--blue-hover)] border-0 cursor-pointer transition-colors max-w-[60vw]"
+          >
+            <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-white text-[var(--blue)] shrink-0">
+              <span className="absolute inset-0 rounded-full bg-white/60 animate-ping motion-reduce:hidden" style={{ animationDuration: '2.4s' }} />
+              <span className="relative"><InstagramIcon size={17} /></span>
+            </span>
+            <span className="flex flex-col items-start leading-none text-white">
+              <span className="rd-mono text-white/70 max-[359px]:hidden" style={{ fontSize: 10 }}>not linked</span>
+              <span className="rd-label mt-1 max-[359px]:mt-0 whitespace-nowrap" style={{ fontSize: 13 }}><span className="max-[359px]:hidden">Link Instagram</span><span className="hidden max-[359px]:inline">Link</span></span>
+            </span>
+            <span className="flex items-center justify-center w-9 h-9 rounded-full border-[1.5px] border-white/60 text-white shrink-0 transition-transform group-hover:translate-x-0.5 max-[420px]:hidden">
+              <ArrowUpRight size={16} />
+            </span>
           </button>
         )}
       </div>
