@@ -16,6 +16,9 @@ frontend/dist/
 
 # Database & Downloads
 instam.db
+reeldex.db
+*.db-shm
+*.db-wal
 downloads/
 temp_audio/
 *.log

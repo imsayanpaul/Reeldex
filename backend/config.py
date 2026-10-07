@@ -5,7 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     # App Settings
     APP_NAME: str = "ReelDex Engine"
-    DEBUG: bool = True
+    DEBUG: bool = False
     PORT: int = 8000
     HOST: str = "0.0.0.0"
     
@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     
     # Frontend & Deployment
     FRONTEND_URL: str = "https://reeldex-io.vercel.app"
+    # Comma-separated origins allowed to call the API ("*" = any; auth uses a
+    # bearer token, not cookies, so credentials are never shared cross-site)
+    CORS_ORIGINS: str = "*"
     
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./reeldex.db"

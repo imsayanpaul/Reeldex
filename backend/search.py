@@ -149,7 +149,7 @@ def sanitize_ai_response(text: str) -> str:
 
     return cleaned.strip()
 
-async def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     RAG (Retrieval-Augmented Generation) Chat Engine:
     Answers a user's question by synthesizing information across their saved reels library.

@@ -142,13 +142,15 @@ Do NOT output any intro or outro markdown, only the JSON block."""
                 return data
         except Exception as e2:
             print(f"[Summarizer Fallback Error]: {e2}")
-            return {
-                "summary": transcript_text[:180] + "...",
-                "key_points": [],
-                "category": "General Knowledge",
-                "tags": ["#reel"],
-                "action_items": []
-            }
+
+    # Both models failed or returned no summary: a plain fallback, never None
+    return {
+        "summary": transcript_text[:180] + "...",
+        "key_points": [],
+        "category": "General Knowledge",
+        "tags": ["#reel"],
+        "action_items": []
+    }
 
 # Backward compatibility alias
 def summarize_transcript(transcript_text: str, title: Optional[str] = None) -> tuple:

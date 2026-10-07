@@ -16,11 +16,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from backend.config import settings
-from backend.database import engine, Base
+from backend.database import run_migrations
 from backend.routes import router as api_router
 
-# Create Database tables
-Base.metadata.create_all(bind=engine)
+# Create tables and add any newer columns
+run_migrations()
+
+if not settings.META_APP_SECRET:
+    print("[Security] META_APP_SECRET is not set: Instagram webhook signatures are NOT verified. Set it in production.")
 
 app = FastAPI(
     title="ReelDex - Instagram Reel Transcription & DM Automation Engine",
@@ -34,13 +37,13 @@ from fastapi.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # CORS configuration
+_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()] or ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
+    allow_origins=_origins,
+    allow_credentials=False,  # bearer tokens, not cookies
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "token"],
 )
 
 # Include API Router

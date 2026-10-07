@@ -4,14 +4,23 @@ services:
     runtime: docker
     plan: free
     region: oregon
+    healthCheckPath: /health
     envVars:
       - key: GROQ_API_KEY
         sync: false
       - key: INSTAGRAM_PAGE_ACCESS_TOKEN
         sync: false
+      # Meta app secret: verifies that webhook calls really come from Meta
+      - key: META_APP_SECRET
+        sync: false
+      # Set in the Render dashboard; never commit the real value
       - key: META_VERIFY_TOKEN
-        value: instam_secret_verify_token_2026
+        sync: false
       - key: INSTAGRAM_SESSION_ID
         sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        value: https://reeldex-io.vercel.app
       - key: PORT
         value: 8000

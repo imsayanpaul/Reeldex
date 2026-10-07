@@ -30,27 +30,9 @@ if "sqlite" in settings.DATABASE_URL:
         with engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL;"))
             conn.execute(text("PRAGMA synchronous=NORMAL;"))
-            
-            # Ensure new columns exist on SQLite
-            try:
-                conn.execute(text("ALTER TABLE reels ADD COLUMN collection_id INTEGER;"))
-            except Exception:
-                pass
-            try:
-                conn.execute(text("ALTER TABLE reels ADD COLUMN collection_name TEXT;"))
-            except Exception:
-                pass
-            try:
-                conn.execute(text("ALTER TABLE transcripts ADD COLUMN translated_text TEXT;"))
-            except Exception:
-                pass
-            try:
-                conn.execute(text("ALTER TABLE transcripts ADD COLUMN translated_summary TEXT;"))
-            except Exception:
-                pass
             conn.commit()
     except Exception as e:
-        print(f"[DB Init Migrations]: {e}")
+        print(f"[DB Init]: {e}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -61,3 +43,29 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Columns added after the first release. Each ALTER runs in its own transaction
+# and fails harmlessly when the column already exists (SQLite has no IF NOT EXISTS).
+_ADDED_COLUMNS = [
+    ("reels", "collection_id", "INTEGER"),
+    ("reels", "collection_name", "TEXT"),
+    ("transcripts", "translated_text", "TEXT"),
+    ("transcripts", "translated_summary", "TEXT"),
+]
+
+
+def run_migrations():
+    from sqlalchemy import inspect, text
+    Base.metadata.create_all(bind=engine)
+    inspector = inspect(engine)
+    for table, column, col_type in _ADDED_COLUMNS:
+        try:
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            if column in existing:
+                continue
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+            print(f"[DB Migration] Added {table}.{column}")
+        except Exception as e:
+            print(f"[DB Migration] {table}.{column}: {e}")
