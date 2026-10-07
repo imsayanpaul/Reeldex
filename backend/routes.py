@@ -16,7 +16,9 @@ from backend.database import get_db
 from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
-from backend.summarizer import extract_reel_insights, clean_caption, caption_is_useful, CATEGORIES
+from backend.summarizer import (
+    extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
+)
 from backend.search import rank_reels_search, ask_reels_ai
 from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload
 from backend.auth import (
@@ -78,7 +80,7 @@ def thumb_for(reel: ReelItem) -> Optional[str]:
 def speech_flags(r: ReelItem) -> Dict[str, bool]:
     """no_speech: processed but nobody talks. from_caption: the summary came from the caption instead."""
     t = r.transcript
-    no_speech = r.status == "completed" and t is not None and not (t.full_text or "").strip()
+    no_speech = r.status == "completed" and t is not None and not has_real_speech(t.full_text)
     return {"no_speech": no_speech, "from_caption": no_speech and caption_is_useful(clean_caption(r.caption))}
 
 
@@ -131,12 +133,12 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     if flags["from_caption"]:
         msg = (
             f"{head}🏷️ [{reel.category or 'General Knowledge'}]\n\n"
-            "🔇 No one talks in this reel, so there's no transcript. I summarised it from the caption instead.\n\n"
+            "🔇 No one really talks in this reel, so I summarised it from the caption instead.\n\n"
             f"🔗 View it:\n{link}"
         )
     elif flags["no_speech"]:
         msg = (
-            f"{head}\n🔇 No one talks in this reel. It's just music or visuals, so there's nothing to transcribe or summarise.\n\n"
+            f"{head}\n🔇 No one really talks in this reel. It's just music or visuals, so there's nothing to summarise.\n\n"
             f"{NO_SPEECH_TIP}\n\n🔗 View it:\n{link}"
         )
     else:
@@ -211,12 +213,13 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         # 1. Audio + metadata
         dl = download_audio_from_reel(reel_url)
         audio_path = dl.get("audio_path")
-        reel.title = dl.get("title") or reel.title or f"Reel {reel.shortcode or ''}"
+        reel.caption = (dl.get("caption") or "")[:5000] or None
+        title = dl.get("title") or reel.title or f"Reel {reel.shortcode or ''}"
+        reel.title = (readable_title(title, reel.caption) or title)[:300]
         reel.author = dl.get("author") or reel.author
         reel.thumbnail_url = dl.get("thumbnail_url") or dl.get("thumbnail") or (
             f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None)
         reel.duration = dl.get("duration")
-        reel.caption = (dl.get("caption") or "")[:5000] or None
         db.commit()
         if not audio_path or not os.path.exists(audio_path):
             raise Exception(dl.get("error") or "Couldn't get the audio from this reel. It may be private or removed.")
@@ -241,10 +244,10 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
 
         # 3. Insights. With no speech, the caption is often where the content is (music + text reels).
         caption = clean_caption(reel.caption)
-        if len(full_text) < 10 and not caption_is_useful(caption):
+        if not has_real_speech(full_text) and not caption_is_useful(caption):
             print(f"[Zero-Speech] Reel #{reel.id} has no spoken audio; skipping the LLM.")
             insights = {
-                "summary": "No one talks in this reel, so there's nothing to transcribe or summarise.",
+                "summary": "No one really talks in this reel, so there's nothing to summarise.",
                 "key_points": [],
                 "category": "Music / Visual",
                 "tags": ["#visual", "#music"],

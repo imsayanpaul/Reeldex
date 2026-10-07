@@ -60,6 +60,29 @@ def caption_is_useful(caption: str) -> bool:
     return len(re.findall(r"[^\W\d_]{2,}", caption)) >= 6
 
 
+MIN_DISTINCT_SPOKEN_WORDS = 5
+
+
+def has_real_speech(transcript_text: Optional[str]) -> bool:
+    """True when someone actually talks: at least 5 different words.
+
+    A stray "you" or a background "I love you, I love you" (3 different words) isn't
+    something to summarise. Counting distinct words stops a repeated phrase passing.
+    """
+    words = {w.lower() for w in re.findall(r"[^\W\d_]+", transcript_text or "")}
+    return len(words) >= MIN_DISTINCT_SPOKEN_WORDS
+
+
+def readable_title(title: Optional[str], caption: Optional[str]) -> Optional[str]:
+    """Instagram often titles reels "Video by <handle>". Use the caption's first line instead."""
+    if title and not re.match(r"^(video|reel) by\b", title.strip(), re.I):
+        return title
+    first = next((line for line in clean_caption(caption).splitlines() if re.search(r"[^\W\d_]{2,}", line)), "")
+    if not first:
+        return title
+    return first if len(first) <= 90 else first[:87].rstrip() + "…"
+
+
 def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None) -> Dict[str, Any]:
     """
     Uses Groq LLaMA to generate:
@@ -70,7 +93,7 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None, cap
     5. Action items (tools, promo codes, steps, links)
     """
     caption = clean_caption(caption)
-    has_speech = bool(transcript_text and len(transcript_text.strip()) >= 10)
+    has_speech = has_real_speech(transcript_text)
     if not has_speech and not caption_is_useful(caption):
         return {
             "summary": "Short or non-verbal media clip.",

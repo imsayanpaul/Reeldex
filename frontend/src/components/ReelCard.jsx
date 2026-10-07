@@ -5,7 +5,7 @@ import { formatDate, isPending, STATUS_LABEL, summaryText } from '../lib/format'
 
 const TONES = ['is-white', 'is-blue', 'is-gray'];
 
-export const NO_SPEECH_LINE = 'No one talks in this reel, so there’s nothing to transcribe.';
+export const NO_SPEECH_LINE = 'No one really talks in this reel, so there’s nothing to summarise.';
 
 export function Thumb({ reel, className = 'rd-thumb', style }) {
   const [broken, setBroken] = useState(false);

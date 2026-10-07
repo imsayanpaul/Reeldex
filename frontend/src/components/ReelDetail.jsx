@@ -166,12 +166,12 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                       <div className="flex items-center gap-2 rd-label text-white"><VolumeX size={15} /> No talking in this reel</div>
                       {data.from_caption ? (
                         <p className="text-white/75 text-[14px] mt-2 mb-0">
-                          Nobody speaks in it, so there’s no transcript. The summary below comes from the creator’s caption.
+                          Nobody really speaks in it, so the summary below comes from the creator’s caption.
                         </p>
                       ) : (
                         <>
                           <p className="text-white/75 text-[14px] mt-2 mb-0">
-                            It’s just music or visuals, so there was nothing to transcribe or summarise.
+                            It’s just music or visuals, so there was nothing to summarise.
                           </p>
                           <p className="text-white/55 text-[14px] mt-2 mb-0">
                             ReelDex works best with reels where someone explains something, like tips, tutorials, reviews or recipes.
