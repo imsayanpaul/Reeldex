@@ -1,147 +1,233 @@
-# ReelDex 🧠📱
+<h1 align="center">REELDEX</h1>
 
-> **The AI-Powered Second Brain & Knowledge Vault for Instagram Reels.**  
-> Automatically transcribe, categorize, summarize, and search your saved Instagram Reels via Direct Message or Web Dashboard.
+<h3 align="center">You saved it. Now find it.</h3>
 
----
+<p align="center">
+  A searchable second brain for Instagram Reels. Share a reel to <b>@reeldex.io</b> in a DM and it's transcribed, summarised, sorted by topic, and ready to search or ask questions about.
+</p>
 
-## 💡 What Problem Does ReelDex Solve?
+<p align="center">
+  <a href="https://reeldex-io.vercel.app"><b>Live app</b></a> ·
+  <a href="#features">Features</a> ·
+  <a href="#security-and-reliability">Security</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#running-locally">Run locally</a>
+</p>
 
-### The Problem: The "Saved Posts" Black Hole 🕳️
-We all save dozens of useful Instagram Reels every week — design tools, coding tips, workout plans, business frameworks, or recipes. But what happens next?
-- **They get lost forever**: Instagram's saved section is a giant, endless wall of video thumbnails with zero search capabilities.
-- **You can't search what was actually said**: You remember someone shared an incredible free AI tool or interview hack 2 months ago, but Instagram cannot search the spoken words inside the video.
-- **Rewatching is frustrating**: To find a single website name, code snippet, or recipe step, you have to open 10 different reels and scrub through timelines.
-- **Wasted knowledge**: You save content to use later, but because you can't search or organize it, 95% of it is never looked at again.
+<p align="center">
+  <img src="https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS_4-0F172A?style=flat-square&logo=tailwindcss&logoColor=38BDF8" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Groq-F55036?style=flat-square" alt="Groq" />
+  <img src="https://img.shields.io/badge/Instagram_Graph_API-E4405F?style=flat-square&logo=instagram&logoColor=white" alt="Instagram" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+</p>
 
----
+<p align="center">
+  <a href="https://reeldex-io.vercel.app">
+    <img src="docs/screenshots/hero.webp" alt="ReelDex vault" width="900" />
+  </a>
+</p>
 
-### The Solution: Your Instant AI Knowledge Vault 🚀
-ReelDex turns passive Instagram saving into an active, searchable personal brain:
-1. **Send it and forget it**: Just tap "Share" and send any Reel to **`@reeldex.io`** in Instagram DM.
-2. **Instant audio-to-text**: ReelDex listens to the audio and writes down every spoken word in 1–2 seconds.
-3. **Pulls out the gold**: It automatically extracts the key takeaways, website links, tools mentioned, and action steps so you never have to take manual notes.
-4. **Chat with your saved reels**: Use **Ask Dex AI** to search in plain English (*"What were those free portfolio websites I saved?"*, *"Summarize all interview tips"*) and get instant answers with links back to the original videos.
+## The problem
 
----
+Everyone saves reels: a design tool, a recipe, an interview tip, a workout. Instagram's saved tab is a wall of thumbnails with no search, and you can't search what was *said* in a video. So finding "that free AI tool someone mentioned two months ago" means rewatching ten reels. Most of what we save never gets used.
 
-## ⚡ Key Features
+## How ReelDex fixes it
 
-### 📩 Instagram Integration & Ingestion
-- **Automatic Instagram DM Ingestion**: Share any Instagram Reel link directly in a Direct Message to `@reeldex.io` — the webhook immediately downloads, transcribes, and saves it to your vault.
-- **Instant DM Auto-Reply**: The bot replies in DM with an executive summary, extracted tools/links, and a magic link to view the reel on your dashboard.
-- **Passwordless Account Linking**: Generate a temporary 6-digit code on the web (`MIND-XXXXXX`) and send it in DM to `@reeldex.io` to instantly pair your web session with your Instagram account.
-- **Web Link Ingestion**: Direct link submission box inside the web interface for saving reels on desktop.
+1. **Share any reel to `@reeldex.io` in an Instagram DM**, or paste the link on the web.
+2. **ReelDex pulls only the audio** and transcribes every spoken word with timestamps.
+3. **AI pulls out what matters:** a title, a summary, key points, the tools and links mentioned, promo codes, and step-by-step instructions. Then it files the reel under a topic.
+4. **The bot replies in your DM** with the summary and a link to the reel in your vault.
+5. **Search everything, or just ask:** *"What AI design tools have I saved?"* returns an answer that cites the exact reels it came from.
 
-### 🎙️ AI Transcription & Intelligence Engine
-- **Ultra-Fast Pure-Audio Extraction**: Uses `yt-dlp` to extract the pure audio stream in under 1 second without downloading heavy video files.
-- **Word-for-Word Transcription**: Powered by **Groq Whisper Large v3**, transcribing full speech with timestamps in ~1-2 seconds.
-- **Structured AI Insights**: Powered by **Groq LLaMA 3.3 70B** to generate concise titles, executive summaries, and core bullet takeaways.
-- **Automated Taxonomy Categorization**: Automatically categorizes reels into 10+ topics (*Tech & AI, Career & Business, Finance & Investing, Productivity & Mindset, Fitness & Health, Recipes & Food, Learning & Books, Design & Creativity, Entertainment & Humor, General Knowledge*).
-- **Concrete Action Items & Tool Extraction**: Automatically detects and surfaces software tools, website URLs, promo codes, books, and step-by-step instructions mentioned in the video.
-- **On-Demand Audio Translation**: 1-click translation of foreign language transcripts and summaries into English, permanently cached in the database.
+## Features
 
-### ⚡ Performance & Token Optimization
-- **0-Token Global Deduplication**: If another user has previously saved the same reel, transcripts and insights are linked instantly with **0 LLM/Whisper tokens consumed**.
-- **In-Flight Concurrency Locks**: Mutex locks prevent multiple background workers from downloading or transcribing the same viral reel simultaneously.
-- **Zero-Speech Bypass**: Silent or purely musical reels automatically skip LLM summarization to save compute.
+### Your vault
 
-### 🔎 Ask Dex AI (RAG Knowledge Copilot)
-- **Library-Wide Semantic Search**: Chat naturally across your entire saved reel library (*"What AI design tools did I save?"*, *"Summarize all job interview tips"*).
-- **Grounded Answers with Video Citations**: Every response cites the exact Instagram Reel with clickable video links, timestamps, and creator handles.
-- **Interactive "Show More Results"**: Continue unearthing additional items from your library starting right where the previous answer left off.
-- **Suggested Query Chips**: Instant starter prompts to explore insights quickly.
+Every saved reel in one place, with search across titles, creators, tools, and anything said in the video. Filter by topic, switch between a card grid and a table with a category sidebar, and watch new reels go from *fetching* to *transcribing* to *done* live.
 
-### 📱 Instagram-Native UI & Organization
-- **Faithful Instagram Dark Aesthetic**: Sleek `#0c0f14` theme with glassmorphic top navigation and subtle border accents.
-- **Strict 2-Column Mobile Grid**: Specially tuned for smartphones (320px–430px) with 16:10 aspect-ratio thumbnails and 2-line clamped summaries side-by-side.
-- **Custom Collections / Folders**: Group reels into custom folders with 4-quadrant photo collage album covers and private access controls.
-- **Multi-Select Batch Manage Mode**: Native corner checkboxes with Select All / Deselect All to batch-assign reels to collections or bulk-unsave.
-- **Full-Screen Reel Detail Modal**: View high-res poster, watch video directly on Instagram, inspect word-for-word transcript, and retry failed transcriptions.
-- **Live Search & Category Pills**: Filter by category pills with live reel counters, or perform instant full-text search across titles, creators, tags, and transcripts.
+<p align="center"><img src="docs/screenshots/vault-cards.webp" alt="Vault card grid with topic filters" width="900" /></p>
 
-### 📋 Multi-Format Knowledge Export
-- **WhatsApp & Notes Format**: 1-click copy formatted with bold headlines (`*Title*`), unicode bullets (`•`), and direct links (`🔗 https://...`).
-- **Raw Markdown Copy**: Clean GitHub-flavored markdown ready to paste into Obsidian, Notion, or Roam.
-- **Direct `.md` File Download**: Saves a clean `.md` document directly to your device with 1 click.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/vault-table.webp" alt="Table view with category filters and expandable rows" /></td>
+    <td width="50%"><img src="docs/screenshots/vault-select.webp" alt="Select mode for bulk actions" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Table view: category checkboxes and expandable rows</sub></td>
+    <td align="center"><sub>Select mode: bulk add to a collection or delete</sub></td>
+  </tr>
+</table>
 
----
+### Everything a reel said, on one page
 
-## 🏗️ Architecture & Tech Stack
+Each reel has its own page:
+- the summary, numbered key points, tools and links, and steps
+- the full transcript with timestamps
+- one-click translation to English for reels in other languages
+- downloads as subtitles (`.srt`, with real timings) or `.txt`, or copy the transcript
+- a button that opens the reel in the Instagram app on phones
+- retry for reels that failed to process
 
-### Frontend
-- **Framework**: React 19 + Vite
-- **Styling**: Vanilla CSS (Tailwind utilities, Lucide React icons, Radix UI primitives)
-- **UI Components**: Sonner (Toasts), Vaul (Bottom Sheets), React Markdown
-- **Responsive Design**: Instagram-native mobile viewports and desktop layouts
+<p align="center"><img src="docs/screenshots/reel-detail.webp" alt="Reel detail with summary, key points and tools" width="900" /></p>
 
-### Backend & AI Pipeline
-- **API Framework**: FastAPI (Python 3.11+) + Uvicorn + GZip Middleware
-- **Database**: SQLAlchemy ORM with SQLite (local development) and PostgreSQL (Supabase / Render production)
-- **Downloader**: `yt-dlp` (streamlined pure-audio extraction)
-- **AI Engine**: 
-  - Groq Cloud API (`whisper-large-v3` for speech-to-text)
-  - Groq Cloud API (`llama-3.3-70b-versatile` for summarization & RAG)
-- **Messaging**: Meta Instagram Graph API / Webhook Integration
+### Ask Dex: chat with your saved reels
 
----
+Ask questions across your whole library in plain English.
 
-## 🚀 Getting Started Locally
+- **Grounded answers:** every answer is built only from your own reels and links back to the videos and creators it used.
+- **Show more results:** keeps digging past the first answer.
+- **Export:** copy an answer formatted for WhatsApp, copy it as Markdown, or download a `.md` file.
+- **Saved chats:** conversations save to your account, add new answers automatically, and can be reopened from any device.
 
-### Prerequisites
-- Node.js 18+ & npm
-- Python 3.10+
-- FFmpeg (required for `yt-dlp` audio processing)
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/ask-dex.webp" alt="Ask Dex answer" /></td>
+    <td width="50%"><img src="docs/screenshots/ask-dex-citations.webp" alt="Ask Dex citations and export options" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Answers grouped by topic, each item linked to its reel</sub></td>
+    <td align="center"><sub>Source reels, WhatsApp / Markdown export, show more</sub></td>
+  </tr>
+</table>
 
-### 1. Clone the Repository
+### Collections
+
+Group reels into collections such as *Design stack*, *Morning routine* or *Money moves*. Each one gets a cover made from its first four thumbnails. You can fill a collection from your saved reels, rename it, or move single reels in and out.
+
+<p align="center"><img src="docs/screenshots/collections.webp" alt="Collections with thumbnail covers" width="900" /></p>
+
+### Made for phones
+
+Most reels are saved on a phone, so the app is built mobile-first. It has a bottom tab bar, full-screen reel pages and a thumb-friendly chat box.
+
+<p align="center">
+  <img src="docs/screenshots/mobile-hero.webp" alt="Mobile home" width="200" />
+  &nbsp;
+  <img src="docs/screenshots/mobile-vault.webp" alt="Mobile vault" width="200" />
+  &nbsp;
+  <img src="docs/screenshots/mobile-detail.webp" alt="Mobile reel detail" width="200" />
+  &nbsp;
+  <img src="docs/screenshots/mobile-ask.webp" alt="Mobile Ask Dex" width="200" />
+</p>
+
+### Instagram, no password
+
+Link your Instagram by sending a one-time code (`MIND-123456`) to `@reeldex.io` in a DM. The DM bot sends a magic link that signs you straight in. The token is removed from the address bar as soon as it's read.
+
+## Security and reliability
+
+ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request:
+
+- **Ownership checks on every endpoint.** Reels, collections and saved chats are scoped to the signed-in user. Guessing another reel's ID returns 404.
+- **Signed webhooks.** Instagram webhook calls must carry a valid Meta `X-Hub-Signature-256` HMAC, compared in constant time. The verify handshake uses a constant-time compare too.
+- **Exact-match pairing.** A pairing code links an account only if it matches exactly and hasn't expired. Codes last 20 minutes and are single use.
+- **Bearer-token auth.** Tokens travel in the `Authorization` header, never in URLs. Normal requests can't create accounts.
+- **Per-IP rate limits** on sign-in, pairing, saving reels and AI endpoints. Over the limit, the API returns 429 with `Retry-After`.
+- **Input limits.** Requests are validated against size limits. Thumbnail requests only accept real Instagram shortcodes and only fetch HTTPS images, capped at 5 MB.
+- **Locked-down server config.** API keys can't be changed over HTTP, and the status endpoint reports only true/false flags.
+- **Model fallbacks.** Transcription, insights and Ask Dex each try a chain of models, so one busy or retired model doesn't take the feature down.
+
+## Performance
+
+- **Pay once per viral reel.** If a reel was already transcribed for anyone, its transcript and insights are reused instantly with no AI calls. A lock stops two workers from processing the same reel at the same time.
+- **Audio only.** `yt-dlp` pulls just the audio stream, never the full video.
+- **Lean list responses.** The library list leaves out full transcripts, and collections and chat load their data in a single query instead of one per reel.
+- **Non-blocking AI.** AI calls run on worker threads, so a slow model never stalls other requests.
+- **Instant, quiet UI:**
+  - the cached library renders immediately
+  - polling every 3.5s while a reel processes and every 15s otherwise, paused in background tabs
+  - no re-render when nothing has changed
+  - lazy-loaded thumbnails
+  - the Markdown renderer only loads when Ask Dex opens
+
+## Architecture
+
+```mermaid
+flowchart LR
+    IG[Instagram DM] -->|Meta webhook<br/>HMAC signed| API
+    W[Web app<br/>React 19 · Vite · Tailwind 4] -->|Bearer token| API[FastAPI]
+    API --> DL[yt-dlp<br/>audio only]
+    DL --> STT[Whisper large-v3-turbo<br/>timed transcript]
+    STT --> LLM[LLM insights<br/>summary · tools · topic]
+    LLM --> DB[(PostgreSQL)]
+    API --> DB
+    API -->|reply with summary + magic link| IG
+    W -->|Ask Dex| RAG[Retrieval over your reels<br/>+ LLM answer with citations]
+    RAG --> DB
+```
+
+| Layer | Technology |
+|---|---|
+| Web | React 19, Vite, Tailwind CSS 4, lucide icons, sonner, react-markdown |
+| API | FastAPI, Uvicorn, SQLAlchemy, Pydantic v2 |
+| Speech to text | Whisper large-v3-turbo on Groq, with OpenAI Whisper as a fallback |
+| Insights & Ask Dex | Open-weight LLMs on Groq (GPT-OSS 120B/20B, Qwen) with a fallback chain |
+| Media | yt-dlp, FFmpeg |
+| Data | PostgreSQL in production, SQLite locally, with automatic column migrations |
+| Messaging | Instagram Graph API webhooks and DMs |
+| Hosting | Vercel (web), Render with Docker (API) |
+
+## Running locally
+
+**Prerequisites:** Python 3.10+, Node.js 18+, FFmpeg, and a [Groq](https://console.groq.com) API key.
+
 ```bash
 git clone https://github.com/imsayanpaul/Reeldex.git
 cd Reeldex
 ```
 
-### 2. Environment Setup
-Create a `.env` file in the root directory:
+**1. API.** Create a `.env` in the repo root:
+
 ```env
-GROQ_API_KEY=your_groq_api_key_here
-META_VERIFY_TOKEN=your_meta_webhook_verify_token
-INSTAGRAM_PAGE_ACCESS_TOKEN=your_instagram_graph_token
-HOST=127.0.0.1
-PORT=8000
+GROQ_API_KEY=your_groq_key
+# Optional: only needed for the Instagram DM bot
+INSTAGRAM_PAGE_ACCESS_TOKEN=your_instagram_token
+META_VERIFY_TOKEN=any_random_string
+META_APP_SECRET=your_meta_app_secret
 ```
 
-### 3. Backend Setup
 ```bash
-# Create and activate virtual environment
 python -m venv venv
-.\venv\Scripts\activate   # On Windows
-# source venv/bin/activate # On macOS/Linux
-
-# Install dependencies
+venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
-
-# Run FastAPI backend server
-uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn backend.main:app --reload --port 8000
 ```
 
-### 4. Frontend Setup
+**2. Web app**
+
 ```bash
 cd frontend
 npm install
-npm run dev
+VITE_API_URL=http://localhost:8000 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+On Windows PowerShell, run `$env:VITE_API_URL="http://localhost:8000"; npm run dev` instead. Then open http://localhost:5173 and paste a reel link to try it.
 
----
+## Project structure
 
-## 📦 Deployment
+```
+Reeldex/
+├── backend/
+│   ├── main.py            # App setup, CORS, startup migrations
+│   ├── routes.py          # Reels, collections, Ask Dex, saved chats, webhook
+│   ├── auth.py            # Bearer auth, ownership scoping, webhook signatures, rate limits
+│   ├── models.py          # Users, reels, transcripts, collections, saved chats
+│   ├── downloader.py      # yt-dlp audio extraction
+│   ├── transcriber.py     # Whisper transcription with fallback
+│   ├── summarizer.py      # Insights and topic classification
+│   ├── search.py          # Ranking and Ask Dex retrieval
+│   └── instagram_bot.py   # Webhook parsing and DM replies
+├── frontend/src/
+│   ├── components/        # Vault, reel cards & table, reel detail, collections, Ask Dex, dialogs
+│   └── lib/               # API client, session, vault state hook, formatting & exports
+├── Dockerfile
+└── render.yaml
+```
 
-- **Backend**: Containerized via `Dockerfile` and deployed on [Render](https://render.com) using `render.yaml`.
-- **Database**: PostgreSQL hosted on [Supabase](https://supabase.com).
-- **Frontend**: Single Page Application built with Vite and deployed on [Vercel](https://vercel.com).
+## License
 
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
+MIT
