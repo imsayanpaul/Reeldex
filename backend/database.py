@@ -49,7 +49,6 @@ def get_db():
 # and fails harmlessly when the column already exists (SQLite has no IF NOT EXISTS).
 _ADDED_COLUMNS = [
     ("reels", "collection_id", "INTEGER"),
-    ("reels", "collection_name", "TEXT"),
     ("transcripts", "translated_text", "TEXT"),
     ("transcripts", "translated_summary", "TEXT"),
 ]
@@ -59,12 +58,17 @@ def run_migrations():
     from sqlalchemy import inspect, text
     Base.metadata.create_all(bind=engine)
     inspector = inspect(engine)
+    is_postgres = engine.dialect.name == "postgresql"
     for table, column, col_type in _ADDED_COLUMNS:
         try:
             existing = {c["name"] for c in inspector.get_columns(table)}
             if column in existing:
                 continue
             with engine.begin() as conn:
+                # During a deploy the old instance still holds connections; never wait on its locks,
+                # or startup hangs and the health check fails the deploy
+                if is_postgres:
+                    conn.execute(text("SET LOCAL lock_timeout = '5s'"))
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
             print(f"[DB Migration] Added {table}.{column}")
         except Exception as e:
