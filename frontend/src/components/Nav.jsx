@@ -19,12 +19,17 @@ export const VIEWS = [
 
 export function Wordmark({ onClick }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-baseline gap-0.5 bg-transparent border-0 p-0 cursor-pointer" aria-label="ReelDex home">
+    <button type="button" onClick={onClick} className="bg-transparent border-0 p-0 cursor-pointer" aria-label="ReelDex home">
       <span className="rd-display text-[30px] leading-none">ReelDex</span>
-      <span className="text-[var(--blue)] text-[30px] font-black leading-none -translate-y-1">✱</span>
     </button>
   );
 }
+
+// The API falls back to "User #1234" when it doesn't know the real handle
+const igHandle = (name) => {
+  if (!name || /^User #/i.test(name)) return 'Instagram';
+  return `@${name.replace(/^@/, '')}`;
+};
 
 export function Nav({ view, onView, session, onLink }) {
   const linked = session?.is_instagram_linked;
@@ -48,9 +53,20 @@ export function Nav({ view, onView, session, onLink }) {
         </nav>
 
         {linked ? (
-          <button type="button" onClick={onLink} className="rd-pill rd-pill-ink cursor-pointer max-w-[46vw]">
-            <span className="w-2 h-2 rounded-full bg-[var(--green)] shrink-0" />
-            <span className="truncate">{session.instagram_username ? `@${session.instagram_username.replace(/^@/, '')}` : 'Instagram linked'}</span>
+          <button
+            type="button"
+            onClick={onLink}
+            className="group flex items-center gap-2.5 h-11 pl-1 pr-4 rounded-full border border-white/15 bg-white/[0.04] hover:border-white/35 hover:bg-white/[0.08] cursor-pointer transition-colors max-w-[52vw]"
+            title="Instagram connected"
+          >
+            <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-[var(--blue)] shrink-0">
+              <InstagramIcon size={17} />
+              <span className="absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full bg-[var(--green)] border-2 border-[var(--ink)]" />
+            </span>
+            <span className="flex flex-col items-start min-w-0 leading-none">
+              <span className="rd-mono text-white/45" style={{ fontSize: 10 }}>connected</span>
+              <span className="rd-label truncate max-w-full mt-1" style={{ fontSize: 13 }}>{igHandle(session.instagram_username)}</span>
+            </span>
           </button>
         ) : (
           <button type="button" onClick={onLink} className="rd-btn rd-btn-blue rd-btn-sm">
