@@ -75,6 +75,13 @@ def thumb_for(reel: ReelItem) -> Optional[str]:
     return f"/api/thumbnail/{reel.shortcode}" if reel.shortcode else (reel.thumbnail_url or None)
 
 
+def speech_flags(r: ReelItem) -> Dict[str, bool]:
+    """no_speech: processed but nobody talks. from_caption: the summary came from the caption instead."""
+    t = r.transcript
+    no_speech = r.status == "completed" and t is not None and not (t.full_text or "").strip()
+    return {"no_speech": no_speech, "from_caption": no_speech and caption_is_useful(clean_caption(r.caption))}
+
+
 def reel_card(r: ReelItem) -> Dict[str, Any]:
     """List view of a reel: everything the cards and search need, without full transcripts."""
     t = r.transcript
@@ -102,7 +109,14 @@ def reel_card(r: ReelItem) -> Dict[str, Any]:
         "preview_text": t.full_text[:140] if t and t.full_text else "",
         "summary": t.summary if t else "",
         "translated_summary": t.translated_summary if t else None,
+        **speech_flags(r),
     }
+
+
+NO_SPEECH_TIP = (
+    "💡 ReelDex works best with reels where someone explains something, like tips, tutorials, "
+    "reviews or recipes. Send one of those and I'll pull out the key points."
+)
 
 
 def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: str):
@@ -111,10 +125,24 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
         return
     user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
     creator = f" by @{reel.author}" if reel.author else ""
-    msg = (
-        f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
-        f"🏷️ [{reel.category or 'General Knowledge'}]\n\n🔗 View summary & transcript:\n{vault_link(user, reel.id)}"
-    )
+    flags = speech_flags(reel)
+    head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
+    link = vault_link(user, reel.id)
+    if flags["from_caption"]:
+        msg = (
+            f"{head}🏷️ [{reel.category or 'General Knowledge'}]\n\n"
+            "🔇 No one talks in this reel, so there's no transcript. I summarised it from the caption instead.\n\n"
+            f"🔗 View it:\n{link}"
+        )
+    elif flags["no_speech"]:
+        msg = (
+            f"{head}\n🔇 No one talks in this reel. It's just music or visuals, so there's nothing to transcribe or summarise.\n\n"
+            f"{NO_SPEECH_TIP}\n\n🔗 View it:\n{link}"
+        )
+    else:
+        msg = (
+            f"{head}🏷️ [{reel.category or 'General Knowledge'}]\n\n🔗 View summary & transcript:\n{link}"
+        )
     reel.dm_replied = send_instagram_dm_sync(sender_id, msg)
     db.commit()
 
@@ -216,8 +244,8 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         if len(full_text) < 10 and not caption_is_useful(caption):
             print(f"[Zero-Speech] Reel #{reel.id} has no spoken audio; skipping the LLM.")
             insights = {
-                "summary": "Visual reel with background music (no spoken dialogue).",
-                "key_points": ["Visual / background audio only"],
+                "summary": "No one talks in this reel, so there's nothing to transcribe or summarise.",
+                "key_points": [],
                 "category": "Music / Visual",
                 "tags": ["#visual", "#music"],
                 "action_items": [],

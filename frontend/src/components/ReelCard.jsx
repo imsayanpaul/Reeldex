@@ -5,6 +5,8 @@ import { formatDate, isPending, STATUS_LABEL, summaryText } from '../lib/format'
 
 const TONES = ['is-white', 'is-blue', 'is-gray'];
 
+export const NO_SPEECH_LINE = 'No one talks in this reel, so there’s nothing to transcribe.';
+
 export function Thumb({ reel, className = 'rd-thumb', style }) {
   const [broken, setBroken] = useState(false);
   const src = reelThumb(reel);
@@ -19,7 +21,9 @@ function ReelCardBase({ reel, index, selecting, selected, onOpen, onToggle, onMo
   const pending = isPending(reel);
   const failed = reel.status === 'failed';
   const tone = failed ? 'is-gray' : TONES[index % TONES.length];
-  const summary = summaryText(reel.summary) || reel.preview_text;
+  const summary = reel.no_speech && !reel.from_caption
+    ? NO_SPEECH_LINE
+    : summaryText(reel.summary) || reel.preview_text;
 
   const activate = () => (selecting ? onToggle(reel.id) : onOpen(reel.id));
 
@@ -61,7 +65,7 @@ function ReelCardBase({ reel, index, selecting, selected, onOpen, onToggle, onMo
         <div className="min-w-0 flex-1 rd-card-meta">
           {reel.author && <div className="text-[13px] font-semibold truncate">@{reel.author}</div>}
           <div className="rd-mono truncate">
-            {formatDate(reel.created_at)}{reel.collection_name ? ` · ${reel.collection_name}` : ''}
+            {formatDate(reel.created_at)}{reel.no_speech ? ' · no talking' : ''}{reel.collection_name ? ` · ${reel.collection_name}` : ''}
           </div>
         </div>
         {!selecting && failed && (

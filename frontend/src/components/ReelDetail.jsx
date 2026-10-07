@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Copy, Download, ExternalLink, FileText, FolderInput, Languages, Loader2, RotateCw, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Download, ExternalLink, FileText, FolderInput, Languages, Loader2, RotateCw, Trash2, VolumeX, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   cleanActions, copyText, downloadFile, fileSafe, formatDate, isInstagramUrl, isPending, linkify,
@@ -161,6 +161,26 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
 
               {!pending && !failed && (
                 <>
+                  {data.no_speech && (
+                    <div className="mt-8 rounded-lg border border-white/15 bg-white/[0.04] p-5">
+                      <div className="flex items-center gap-2 rd-label text-white"><VolumeX size={15} /> No talking in this reel</div>
+                      {data.from_caption ? (
+                        <p className="text-white/75 text-[14px] mt-2 mb-0">
+                          Nobody speaks in it, so there’s no transcript. The summary below comes from the creator’s caption.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-white/75 text-[14px] mt-2 mb-0">
+                            It’s just music or visuals, so there was nothing to transcribe or summarise.
+                          </p>
+                          <p className="text-white/55 text-[14px] mt-2 mb-0">
+                            ReelDex works best with reels where someone explains something, like tips, tutorials, reviews or recipes.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {canTranslate && (
                     <button type="button" className="rd-btn rd-btn-line rd-btn-sm mt-7" onClick={toggleTranslate} disabled={translating}>
                       {translating ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
@@ -168,7 +188,7 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                     </button>
                   )}
 
-                  {summary && (
+                  {summary && !(data.no_speech && !data.from_caption) && (
                     <Section title="Summary">
                       <p className="m-0 text-[17px] leading-relaxed text-white/90">{linkify(summary)}</p>
                     </Section>
@@ -265,13 +285,6 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                     </Section>
                   )}
 
-                  {!fullText && (
-                    <p className="mt-8 text-white/55">
-                      {data.caption
-                        ? 'No speech in this reel, so the summary comes from the creator’s caption.'
-                        : 'No speech was found in this reel (it may be music only).'}
-                    </p>
-                  )}
                 </>
               )}
             </div>

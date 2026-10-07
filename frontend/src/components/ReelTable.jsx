@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { ArrowUpRight, Check, Loader2, Minus, Plus } from 'lucide-react';
 import { cleanActions, formatDate, isPending, STATUS_LABEL, summaryText } from '../lib/format';
-import { Thumb } from './ReelCard';
+import { NO_SPEECH_LINE, Thumb } from './ReelCard';
 
 // Category checkboxes beside the table (multi-select; none ticked = everything)
 function FilterSidebar({ counts, cats, onToggleCat, onClear }) {
@@ -104,7 +104,9 @@ export function ReelTable({ reels, counts, cats, onToggleCat, onClearCats, onOpe
                       <td colSpan={4} className="px-4 py-4">
                         <div className="flex flex-col gap-3 max-w-[760px]">
                           <p className="m-0 text-[15px] text-black/75">
-                            {summaryText(r.summary) || r.preview_text || r.error_message || 'No summary yet.'}
+                            {r.no_speech && !r.from_caption
+                              ? NO_SPEECH_LINE
+                              : summaryText(r.summary) || r.preview_text || r.error_message || 'No summary yet.'}
                           </p>
                           {actions.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
