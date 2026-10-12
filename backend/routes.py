@@ -15,7 +15,7 @@ from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 
 from backend.database import get_db
-from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback
+from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback, ActivityDay
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
@@ -714,6 +714,36 @@ def delete_reel(reel_id: int, user: User = Depends(require_user), db: Session = 
 
 
 # --- Ask Dex AI (sync: runs in a worker thread so the LLM call can't block the server) ---
+
+# --- Time spent ---
+
+HEARTBEAT_SECONDS = 60
+
+
+@router.post("/heartbeat", dependencies=[Depends(rate_limit("heartbeat", 6, 60))])
+def heartbeat(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    """Adds a minute of active time. The page sends this once a minute while it's visible.
+
+    Beats closer than 50 seconds apart (a second tab, a retry) don't add time, so
+    the total can't run faster than the clock.
+    """
+    now = datetime.datetime.utcnow()
+    day = now.strftime("%Y-%m-%d")
+    row = db.query(ActivityDay).filter(ActivityDay.user_id == user.id, ActivityDay.day == day).first()
+    if row and row.last_beat_at and (now - row.last_beat_at).total_seconds() < HEARTBEAT_SECONDS - 10:
+        return {"counted": False}
+    if not row:
+        row = ActivityDay(user_id=user.id, day=day, seconds=0)
+        db.add(row)
+    row.seconds = (row.seconds or 0) + HEARTBEAT_SECONDS
+    row.last_beat_at = now
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()  # a simultaneous first beat created the row; skip this one
+        return {"counted": False}
+    return {"counted": True}
+
 
 # --- Feedback ---
 

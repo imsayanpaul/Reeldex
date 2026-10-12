@@ -10,6 +10,11 @@ const DAY = 86400000;
 
 // 1234 -> "1.2k", 2500000 -> "2.5M"
 const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n || 0));
+const duration = (sec) => {
+  if (!sec) return '—';
+  const m = Math.round(sec / 60);
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+};
 const minutes = (sec) => (sec ? `${Math.round(sec / 6) / 10} min` : '—');
 const FEATURE_LABEL = { transcription: 'Transcription', insights: 'Insights', 'ask-dex': 'Ask Dex', translate: 'Translate' };
 
@@ -48,15 +53,16 @@ const COLUMNS = [
   { key: 'fromDm', label: 'Via DM', sort: (u) => u.fromDm, num: true },
   { key: 'collections', label: 'Collections', sort: (u) => u.collections, num: true },
   { key: 'savedChats', label: 'Saved chats', sort: (u) => u.savedChats, num: true },
+  { key: 'activeSeconds', label: 'Time spent', sort: (u) => u.activeSeconds, num: true },
   { key: 'tokens', label: 'AI tokens', sort: (u) => u.tokens, num: true },
   { key: 'audioSeconds', label: 'Audio', sort: (u) => u.audioSeconds, num: true },
   { key: 'lastReelAt', label: 'Last reel', sort: (u) => u.lastReelAt || '' },
 ];
 
 function toCsv(users) {
-  const head = ['id', 'name', 'instagram', 'linked', 'joined', 'last_active', 'last_seen', 'last_reel', 'reels', 'completed', 'failed', 'via_dm', 'collections', 'saved_chats', 'input_tokens', 'output_tokens', 'tokens_30d', 'audio_seconds', 'ai_calls'];
+  const head = ['id', 'name', 'instagram', 'linked', 'joined', 'last_active', 'last_seen', 'last_reel', 'reels', 'completed', 'failed', 'via_dm', 'collections', 'saved_chats', 'input_tokens', 'output_tokens', 'tokens_30d', 'audio_seconds', 'ai_calls', 'active_seconds', 'active_seconds_7d'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  return [head.join(','), ...users.map((u) => [u.id, u.name, u.instagram, u.linked, u.joinedAt, u.lastActiveAt, u.lastSeenAt, u.lastReelAt, u.reels, u.completed, u.failed, u.fromDm, u.collections, u.savedChats, u.inputTokens, u.outputTokens, u.tokens30d, u.audioSeconds, u.aiCalls].map(esc).join(','))].join('\n');
+  return [head.join(','), ...users.map((u) => [u.id, u.name, u.instagram, u.linked, u.joinedAt, u.lastActiveAt, u.lastSeenAt, u.lastReelAt, u.reels, u.completed, u.failed, u.fromDm, u.collections, u.savedChats, u.inputTokens, u.outputTokens, u.tokens30d, u.audioSeconds, u.aiCalls, u.activeSeconds, u.activeSeconds7d].map(esc).join(','))].join('\n');
 }
 
 function Stat({ label, value, hint }) {
@@ -171,11 +177,12 @@ export default function AdminView() {
           </div>
         </div>
         {tab === 'feedback' ? <FeedbackStats data={feedback.data} /> : (<>
-        <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-5 gap-px bg-white/10">
+        <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-white/10">
           <Stat label="users" value={s ? s.totalUsers : '…'} hint={s ? `+${s.newLast7Days} this week · ${s.linkedInstagram} linked Instagram` : ''} />
           <Stat label="active 7 days" value={s ? s.activeLast7Days : '…'} hint={s ? `${s.activeLast30Days} in the last 30 days` : ''} />
           <Stat label="reels saved" value={s ? s.totalReels : '…'} hint={s ? `+${s.reelsLast7Days} this week · ${pct(s.fromDm, s.totalReels)} via DM` : ''} />
           <Stat label="failed reels" value={s ? s.failedReels : '…'} hint={s ? `${pct(s.failedReels, s.totalReels)} of all reels` : ''} />
+          <Stat label="time spent" value={s ? duration(s.activeSeconds) : '…'} hint={s ? `${duration(s.activeSeconds7d)} this week · ${s.usersWithTime ? duration(s.activeSeconds / s.usersWithTime) : '—'} per user` : ''} />
           <Stat label="ai tokens" value={s ? compact(s.totalTokens) : '…'} hint={s ? `${compact(s.tokensLast30Days)} in 30 days · ${minutes(s.audioSeconds)} audio` : ''} />
         </div>
         {data?.byFeature?.length > 0 && (
@@ -238,7 +245,7 @@ export default function AdminView() {
           </div>
 
           <div className="bg-white rounded-lg border border-[var(--line-light)] overflow-x-auto">
-            <table className="w-full min-w-[1160px] border-collapse text-left">
+            <table className="w-full min-w-[1260px] border-collapse text-left">
               <thead>
                 <tr className="border-b-2 border-[var(--ink)]">
                   {COLUMNS.map((c) => (
@@ -277,6 +284,9 @@ export default function AdminView() {
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.fromDm}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.collections}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.savedChats}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[14px] whitespace-nowrap" title={`${duration(u.activeSeconds7d)} in the last 7 days`}>
+                      {u.activeSeconds ? duration(u.activeSeconds) : <span className="text-black/40">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]" title={`${u.inputTokens.toLocaleString()} in · ${u.outputTokens.toLocaleString()} out · ${compact(u.tokens30d)} in the last 30 days · ${u.aiCalls} calls`}>
                       {u.tokens ? compact(u.tokens) : <span className="text-black/40">0</span>}
                     </td>
@@ -300,7 +310,7 @@ export default function AdminView() {
           />
           {data && (
             <p className="rd-mono text-black/50 mt-3 mb-0">
-              {rows.length} of {data.users.length} users · “last active” is the latest of a visit, a saved reel or a saved chat
+              {rows.length} of {data.users.length} users · “last active” is the latest of a visit, a saved reel or a saved chat · time spent counts minutes with ReelDex open and visible
             </p>
           )}
           </>)}

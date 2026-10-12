@@ -408,6 +408,26 @@ def test_ai_usage_is_recorded_per_user(client, user_a, monkeypatch):
     assert body["summary"]["totalTokens"] >= row["tokens"] + 10  # includes the unattributed call
 
 
+def test_heartbeat_counts_time_at_most_once_a_minute(client, db, user_a, monkeypatch):
+    import datetime as dt
+    from backend.config import settings
+    from backend.models import ActivityDay
+    me = _user_id(client, user_a)
+    assert client.post("/api/heartbeat").status_code == 401
+    assert client.post("/api/heartbeat", headers=bearer(user_a)).json()["counted"] is True
+    assert client.post("/api/heartbeat", headers=bearer(user_a)).json()["counted"] is False  # too soon
+    # a minute later it counts again
+    row = db.query(ActivityDay).filter(ActivityDay.user_id == me).first()
+    row.last_beat_at = dt.datetime.utcnow() - dt.timedelta(seconds=61)
+    db.commit()
+    assert client.post("/api/heartbeat", headers=bearer(user_a)).json()["counted"] is True
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(me))
+    body = client.get("/api/admin/users", headers=bearer(user_a)).json()
+    mine = next(u for u in body["users"] if u["id"] == me)
+    assert mine["activeSeconds"] == 120 and mine["activeSeconds7d"] == 120
+    assert body["summary"]["activeSeconds"] >= 120
+
+
 def test_feedback_needs_a_session(client):
     assert client.post("/api/feedback", json={"message": "hello there"}).status_code == 401
 

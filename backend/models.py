@@ -158,3 +158,13 @@ class Feedback(Base):
     contact = Column(String(200), nullable=True)  # optional email or Instagram handle for a reply
     page = Column(String(40), nullable=True)  # which screen it was sent from
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+
+
+class ActivityDay(Base):
+    """Seconds a user had ReelDex open and visible, per day (from a once-a-minute heartbeat)."""
+    __tablename__ = "activity_days"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    day = Column(String(10), primary_key=True)  # YYYY-MM-DD (UTC)
+    seconds = Column(Integer, nullable=False, default=0)
+    last_beat_at = Column(DateTime, nullable=True)

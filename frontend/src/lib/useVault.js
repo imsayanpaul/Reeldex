@@ -92,6 +92,15 @@ export function useVault() {
     };
   }, [ready, session?.auth_token, hasPending, refreshReels, refreshCollections]);
 
+  // 3. Time spent: one heartbeat a minute while the page is visible (the server ignores extras)
+  useEffect(() => {
+    if (!ready || !session?.auth_token) return undefined;
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') api('/heartbeat', { method: 'POST' }).catch(() => {});
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [ready, session?.auth_token]);
+
   // --- Actions ---
 
   const saveLink = useCallback(async (url) => {

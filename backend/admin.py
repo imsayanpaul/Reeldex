@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.auth import rate_limit, require_admin
 from backend.database import get_db
-from backend.models import AIUsage, Collection, Feedback, ReelItem, SavedChat, User
+from backend.models import ActivityDay, AIUsage, Collection, Feedback, ReelItem, SavedChat, User
 
 router = APIRouter()
 
@@ -96,6 +96,15 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
         ).group_by(AIUsage.user_id).all()
     }
 
+    week_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+    time_spent = {
+        row.user_id: row for row in db.query(
+            ActivityDay.user_id,
+            func.sum(ActivityDay.seconds).label("total"),
+            func.sum(case((ActivityDay.day >= week_ago, ActivityDay.seconds), else_=0)).label("week"),
+        ).group_by(ActivityDay.user_id).all()
+    }
+
     users = []
     for u in db.query(User).all():
         r = reel_stats.get(u.id)
@@ -122,6 +131,8 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "tokens30d": int(ai[u.id].t30 or 0) if u.id in ai else 0,
             "audioSeconds": round(float(ai[u.id].audio or 0), 1) if u.id in ai else 0,
             "aiCalls": int(ai[u.id].calls) if u.id in ai else 0,
+            "activeSeconds": int(time_spent[u.id].total or 0) if u.id in time_spent else 0,
+            "activeSeconds7d": int(time_spent[u.id].week or 0) if u.id in time_spent else 0,
         })
 
     now = datetime.datetime.utcnow()
@@ -154,6 +165,9 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "reelsLast7Days": reels_7d,
             "failedReels": failed,
             "fromDm": sum(u["fromDm"] for u in users),
+            "activeSeconds": sum(u["activeSeconds"] for u in users),
+            "activeSeconds7d": sum(u["activeSeconds7d"] for u in users),
+            "usersWithTime": sum(1 for u in users if u["activeSeconds"]),
             "totalTokens": sum(u["tokens"] for u in users) + (int((unattributed.tin or 0) + (unattributed.tout or 0)) if unattributed else 0),
             "tokensLast30Days": sum(u["tokens30d"] for u in users) + (int(unattributed.t30 or 0) if unattributed else 0),
             "audioSeconds": round(sum(u["audioSeconds"] for u in users) + (float(unattributed.audio or 0) if unattributed else 0), 1),
