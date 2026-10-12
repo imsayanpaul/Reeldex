@@ -2,7 +2,7 @@
 import datetime
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,15 @@ def admin_me():
 
 
 @router.get("/admin/users", dependencies=[Depends(rate_limit("admin", 30, 60))])
-def admin_users(admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> Dict[str, Any]:
+def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> Dict[str, Any]:
+    # Fill in missing @usernames for linked users, a few per visit (they appear on the next refresh)
+    from backend.routes import fill_instagram_username
+    missing = db.query(User.id, User.instagram_sender_id).filter(
+        User.instagram_sender_id.isnot(None), User.instagram_username.is_(None),
+    ).limit(25).all()
+    for user_id, sender_id in missing:
+        background_tasks.add_task(fill_instagram_username, user_id, sender_id)
+
     reel_stats = {
         row.user_id: row for row in db.query(
             ReelItem.user_id,

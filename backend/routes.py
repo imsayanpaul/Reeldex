@@ -22,7 +22,7 @@ from backend.summarizer import (
     extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
 )
 from backend.search import rank_reels_search, ask_reels_ai
-from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload
+from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload, fetch_instagram_username
 from backend.auth import (
     read_token, require_user, owned_reels, get_owned_reel, verify_meta_signature, rate_limit, touch_last_seen,
 )
@@ -115,6 +115,27 @@ def reel_card(r: ReelItem) -> Dict[str, Any]:
         "translated_summary": t.translated_summary if t else None,
         **speech_flags(r),
     }
+
+
+def fill_instagram_username(user_id: int, sender_id: str) -> None:
+    """Background task: look up and store the @username for a linked user who has none yet."""
+    from backend.database import SessionLocal
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user or user.instagram_username or user.instagram_sender_id != sender_id:
+            return
+        username = fetch_instagram_username(sender_id)
+        if username:
+            user.instagram_username = username
+            if not user.display_name or user.display_name.startswith(("Instagram @", "ReelDex Explorer", "ReelMind Explorer")):
+                user.display_name = username
+            db.commit()
+    except Exception as e:
+        print(f"[Username] Lookup failed for user #{user_id}: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 
 NO_SPEECH_TIP = (
@@ -920,6 +941,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     target_user.instagram_sender_id = sender_id
                     p_code.is_used = True
                     db.commit()
+                    if not target_user.instagram_username:
+                        background_tasks.add_task(fill_instagram_username, target_user.id, sender_id)
                     await send_instagram_dm(sender_id, (
                         "🎉 Your Instagram is now CONNECTED to ReelDex!\n\n"
                         "Any Reel you send here will be automatically transcribed, categorized, and searchable in your personal library.\n\n"
@@ -931,6 +954,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
 
             # 2. User for this sender
             user = get_or_create_user(db, sender_id=sender_id)
+            if not user.instagram_username:
+                background_tasks.add_task(fill_instagram_username, user.id, sender_id)
 
             # 3. Shared reels
             if reel_urls:

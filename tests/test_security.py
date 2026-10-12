@@ -339,6 +339,19 @@ def test_a_deletes_own_chat(client, user_a, chat_id):
     assert client.get("/api/chats", headers=bearer(user_a)).json() == []
 
 
+def test_dm_sender_gets_instagram_username(client, db, monkeypatch):
+    import backend.routes as routes
+    from backend.models import User
+    monkeypatch.setattr(routes, "send_instagram_dm", lambda *a, **k: None)
+    monkeypatch.setattr(routes, "fetch_instagram_username", lambda sender_id: "surf.daily" if sender_id == "4242" else None)
+    payload = dm("4242", "m-user-1", "hello")
+    assert client.post("/api/webhook/instagram", content=payload, headers=signed(payload)).status_code == 200
+    db.expire_all()
+    user = db.query(User).filter(User.instagram_sender_id == "4242").first()
+    assert user.instagram_username == "surf.daily"
+    assert user.display_name == "surf.daily"
+
+
 # --- Admin view ---
 
 def _user_id(client, token):

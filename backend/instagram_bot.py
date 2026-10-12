@@ -75,6 +75,29 @@ def send_instagram_dm_sync(recipient_id: str, message_text: str) -> bool:
                 print(f"[Instagram Bot Sync Error]: {e}")
     return False
 
+def fetch_instagram_username(sender_id: str) -> Optional[str]:
+    """The @username of someone who has messaged the account, or None.
+
+    Webhooks only carry an Instagram-scoped id; the profile lookup turns it into a handle.
+    """
+    if not settings.INSTAGRAM_PAGE_ACCESS_TOKEN or not sender_id or not str(sender_id).isdigit():
+        return None
+    headers = {"Authorization": f"Bearer {settings.INSTAGRAM_PAGE_ACCESS_TOKEN}"}
+    with httpx.Client() as client:
+        for base in ("https://graph.instagram.com/v21.0", "https://graph.facebook.com/v21.0"):
+            try:
+                resp = client.get(f"{base}/{sender_id}", params={"fields": "username"}, headers=headers, timeout=8.0)
+                if resp.status_code == 200:
+                    username = (resp.json() or {}).get("username")
+                    if username and re.fullmatch(r"[A-Za-z0-9._]{1,30}", username):
+                        return username
+                else:
+                    print(f"[Instagram Bot] Username lookup {resp.status_code} via {base}: {resp.text[:200]}")
+            except Exception as e:
+                print(f"[Instagram Bot] Username lookup error via {base}: {e}")
+    return None
+
+
 def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Parses incoming Meta Webhook payload for Instagram messaging events.
