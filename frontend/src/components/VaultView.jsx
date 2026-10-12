@@ -1,4 +1,5 @@
 import { useDeferredValue, useMemo, useState } from 'react';
+import { IgHandle } from './IgHandle';
 import { Bookmark, FolderPlus, LayoutGrid, Layers, Link2, ListChecks, Loader2, Search, Table2, Trash2, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { storage } from '../lib/session';
@@ -128,7 +129,7 @@ export function VaultView({ vault, onOpen, onMove, onAddToCollection, onLink }) 
             You saved it.<br /><span className="text-[var(--blue)]">Now find it.</span>
           </h1>
           <p className="mt-6 mb-8 max-w-[560px] text-white/70 text-[17px]">
-            Every reel you send to <b className="text-white">@reeldex.io</b> is transcribed, summarised and searchable here, down to the tools and links it mentions.
+            Every reel you send to <IgHandle /> is transcribed, summarised and searchable here, down to the tools and links it mentions.
           </p>
           <div className="rd-paper rounded-lg p-3 sm:p-4 max-w-[680px]" style={{ backgroundSize: '40px 40px' }}>
             <SaveLinkBar onSave={vault.saveLink} />

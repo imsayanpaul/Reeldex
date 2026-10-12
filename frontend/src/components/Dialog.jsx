@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { IgHandle } from './IgHandle';
 import { Check, Copy, FolderPlus, Loader2, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { reelThumb } from '../lib/api';
@@ -149,12 +150,12 @@ export function PairDialog({ open, onClose, generate, onLinked, linked }) {
   return (
     <Dialog open={open} onClose={onClose} kicker="instagram" title={linked ? 'Connected' : 'Link Instagram'}>
       {linked ? (
-        <p className="m-0 text-white/75">Your Instagram is connected. Share any reel to <b className="text-white">@reeldex.io</b> in a DM and it shows up here.</p>
+        <p className="m-0 text-white/75">Your Instagram is connected. Share any reel to <IgHandle /> in a DM and it shows up here.</p>
       ) : (
         <div className="flex flex-col gap-5">
           <ol className="m-0 pl-5 text-white/75 flex flex-col gap-1.5">
             <li>Copy this code.</li>
-            <li>Send it to <b className="text-white">@reeldex.io</b> in an Instagram DM.</li>
+            <li>Send it to <IgHandle /> in an Instagram DM.</li>
             <li>That's it. Reels you share there land in this vault.</li>
           </ol>
           <div className="rd-ticket flex items-center justify-between gap-3">
