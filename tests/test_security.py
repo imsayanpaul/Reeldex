@@ -388,6 +388,26 @@ def test_admin_sees_users_and_summary(client, user_a, monkeypatch):
     assert "auth_token" not in r.text  # never expose session tokens
 
 
+def test_ai_usage_is_recorded_per_user(client, user_a, monkeypatch):
+    from types import SimpleNamespace
+    from backend import usage
+    from backend.config import settings
+    me = _user_id(client, user_a)
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(me))
+    usage.for_user(me)
+    usage.record("insights", "test-model", SimpleNamespace(usage=SimpleNamespace(prompt_tokens=100, completion_tokens=50)))
+    usage.record("transcription", "whisper-test", audio_seconds=30)
+    usage.for_user(None)
+    usage.record("ask-dex", "test-model", {"usage": {"prompt_tokens": 7, "completion_tokens": 3}})  # no user
+
+    body = client.get("/api/admin/users", headers=bearer(user_a)).json()
+    row = next(u for u in body["users"] if u["id"] == me)
+    assert row["tokens"] >= 150 and row["inputTokens"] >= 100 and row["audioSeconds"] >= 30
+    features = {f["feature"]: f for f in body["byFeature"]}
+    assert features["insights"]["tokens"] >= 150 and features["transcription"]["audioSeconds"] >= 30
+    assert body["summary"]["totalTokens"] >= row["tokens"] + 10  # includes the unattributed call
+
+
 def test_cleanup_deletes_only_old_empty_guests(client, db, user_a, user_b, monkeypatch):
     import datetime as dt
     from backend.config import settings

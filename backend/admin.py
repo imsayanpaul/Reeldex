@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.auth import rate_limit, require_admin
 from backend.database import get_db
-from backend.models import Collection, ReelItem, SavedChat, User
+from backend.models import AIUsage, Collection, ReelItem, SavedChat, User
 
 router = APIRouter()
 
@@ -84,6 +84,18 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
         ).group_by(SavedChat.user_id).all()
     }
 
+    since_30d = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+    ai = {
+        row.user_id: row for row in db.query(
+            AIUsage.user_id,
+            func.sum(AIUsage.input_tokens).label("tin"),
+            func.sum(AIUsage.output_tokens).label("tout"),
+            func.sum(AIUsage.audio_seconds).label("audio"),
+            func.sum(case((AIUsage.created_at >= since_30d, AIUsage.input_tokens + AIUsage.output_tokens), else_=0)).label("t30"),
+            func.count(AIUsage.id).label("calls"),
+        ).group_by(AIUsage.user_id).all()
+    }
+
     users = []
     for u in db.query(User).all():
         r = reel_stats.get(u.id)
@@ -104,12 +116,27 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "fromDm": int(r.from_dm or 0) if r else 0,
             "collections": int(collections.get(u.id, 0)),
             "savedChats": int(c.n) if c else 0,
+            "inputTokens": int(ai[u.id].tin or 0) if u.id in ai else 0,
+            "outputTokens": int(ai[u.id].tout or 0) if u.id in ai else 0,
+            "tokens": int((ai[u.id].tin or 0) + (ai[u.id].tout or 0)) if u.id in ai else 0,
+            "tokens30d": int(ai[u.id].t30 or 0) if u.id in ai else 0,
+            "audioSeconds": round(float(ai[u.id].audio or 0), 1) if u.id in ai else 0,
+            "aiCalls": int(ai[u.id].calls) if u.id in ai else 0,
         })
 
     now = datetime.datetime.utcnow()
 
     def within(iso, days):
         return bool(iso) and now - datetime.datetime.fromisoformat(iso.rstrip("Z")) <= datetime.timedelta(days=days)
+
+    by_feature = [
+        {"feature": f, "calls": int(n), "tokens": int((tin or 0) + (tout or 0)), "audioSeconds": round(float(audio or 0), 1)}
+        for f, n, tin, tout, audio in db.query(
+            AIUsage.feature, func.count(AIUsage.id), func.sum(AIUsage.input_tokens),
+            func.sum(AIUsage.output_tokens), func.sum(AIUsage.audio_seconds),
+        ).group_by(AIUsage.feature).all()
+    ]
+    unattributed = ai.get(None)
 
     reels_7d = db.query(func.count(ReelItem.id)).filter(ReelItem.created_at >= now - datetime.timedelta(days=7)).scalar() or 0
     total_reels = sum(u["reels"] for u in users)
@@ -127,6 +154,10 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "reelsLast7Days": reels_7d,
             "failedReels": failed,
             "fromDm": sum(u["fromDm"] for u in users),
+            "totalTokens": sum(u["tokens"] for u in users) + (int((unattributed.tin or 0) + (unattributed.tout or 0)) if unattributed else 0),
+            "tokensLast30Days": sum(u["tokens30d"] for u in users) + (int(unattributed.t30 or 0) if unattributed else 0),
+            "audioSeconds": round(sum(u["audioSeconds"] for u in users) + (float(unattributed.audio or 0) if unattributed else 0), 1),
         },
+        "byFeature": sorted(by_feature, key=lambda f: -f["tokens"] - f["audioSeconds"]),
         "users": users,
     }

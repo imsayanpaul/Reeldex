@@ -3,6 +3,7 @@ import json
 import re
 from typing import Dict, Any, List, Optional
 from backend.config import settings
+from backend import usage
 
 # Standardized Categories
 CATEGORIES = [
@@ -171,6 +172,7 @@ Do NOT output any intro or outro markdown, only the JSON block."""
             response_format={"type": "json_object"}
         )
         
+        usage.record("insights", "openai/gpt-oss-120b", response)
         raw_content = response.choices[0].message.content
         data = clean_json_response(raw_content)
         if data and "summary" in data:
@@ -200,6 +202,7 @@ Do NOT output any intro or outro markdown, only the JSON block."""
                 max_tokens=2048,
                 response_format={"type": "json_object"}
             )
+            usage.record("insights", "openai/gpt-oss-20b", response)
             raw_content = response.choices[0].message.content
             data = clean_json_response(raw_content)
             if data and "summary" in data:

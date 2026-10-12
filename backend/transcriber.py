@@ -2,6 +2,7 @@ import os
 import json
 from typing import Dict, Any, Optional
 from backend.config import settings
+from backend import usage
 
 def transcribe_audio(audio_path: str, provider: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -37,6 +38,7 @@ def transcribe_audio(audio_path: str, provider: Optional[str] = None) -> Dict[st
                     response_format="verbose_json",
                     temperature=0.0
                 )
+            usage.record("transcription", "whisper-large-v3-turbo", audio_seconds=getattr(transcription, "duration", 0) or 0)
             
             # Parse segments
             segments = []
@@ -83,6 +85,7 @@ def transcribe_audio(audio_path: str, provider: Optional[str] = None) -> Dict[st
                     file=file,
                     response_format="verbose_json"
                 )
+            usage.record("transcription", "whisper-1", audio_seconds=getattr(transcription, "duration", 0) or 0)
             
             segments = []
             if hasattr(transcription, "segments") and transcription.segments:

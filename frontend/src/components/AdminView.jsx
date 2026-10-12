@@ -7,6 +7,11 @@ import { InstagramIcon } from './Nav';
 
 const DAY = 86400000;
 
+// 1234 -> "1.2k", 2500000 -> "2.5M"
+const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n || 0));
+const minutes = (sec) => (sec ? `${Math.round(sec / 6) / 10} min` : '—');
+const FEATURE_LABEL = { transcription: 'Transcription', insights: 'Insights', 'ask-dex': 'Ask Dex', translate: 'Translate' };
+
 const ago = (iso) => {
   if (!iso) return '—';
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -30,6 +35,7 @@ const FILTERS = [
   { id: 'new7', label: 'Joined 7 days', test: (u) => within(u.joinedAt, 7) },
   { id: 'failed', label: 'Has failed reels', test: (u) => u.failed > 0 },
   { id: 'guests', label: 'Guests, no reels', test: (u) => !u.linked && u.reels === 0 },
+  { id: 'ai', label: 'Used AI', test: (u) => u.aiCalls > 0 },
 ];
 
 const COLUMNS = [
@@ -41,13 +47,15 @@ const COLUMNS = [
   { key: 'fromDm', label: 'Via DM', sort: (u) => u.fromDm, num: true },
   { key: 'collections', label: 'Collections', sort: (u) => u.collections, num: true },
   { key: 'savedChats', label: 'Saved chats', sort: (u) => u.savedChats, num: true },
+  { key: 'tokens', label: 'AI tokens', sort: (u) => u.tokens, num: true },
+  { key: 'audioSeconds', label: 'Audio', sort: (u) => u.audioSeconds, num: true },
   { key: 'lastReelAt', label: 'Last reel', sort: (u) => u.lastReelAt || '' },
 ];
 
 function toCsv(users) {
-  const head = ['id', 'name', 'instagram', 'linked', 'joined', 'last_active', 'last_seen', 'last_reel', 'reels', 'completed', 'failed', 'via_dm', 'collections', 'saved_chats'];
+  const head = ['id', 'name', 'instagram', 'linked', 'joined', 'last_active', 'last_seen', 'last_reel', 'reels', 'completed', 'failed', 'via_dm', 'collections', 'saved_chats', 'input_tokens', 'output_tokens', 'tokens_30d', 'audio_seconds', 'ai_calls'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  return [head.join(','), ...users.map((u) => [u.id, u.name, u.instagram, u.linked, u.joinedAt, u.lastActiveAt, u.lastSeenAt, u.lastReelAt, u.reels, u.completed, u.failed, u.fromDm, u.collections, u.savedChats].map(esc).join(','))].join('\n');
+  return [head.join(','), ...users.map((u) => [u.id, u.name, u.instagram, u.linked, u.joinedAt, u.lastActiveAt, u.lastSeenAt, u.lastReelAt, u.reels, u.completed, u.failed, u.fromDm, u.collections, u.savedChats, u.inputTokens, u.outputTokens, u.tokens30d, u.audioSeconds, u.aiCalls].map(esc).join(','))].join('\n');
 }
 
 function Stat({ label, value, hint }) {
@@ -145,12 +153,22 @@ export default function AdminView() {
           <div className="rd-mono text-white/55 mb-3">admin · {data ? `updated ${ago(data.generatedAt)}` : 'loading'}</div>
           <h1 className="rd-display text-[clamp(56px,10vw,120px)]">Users</h1>
         </div>
-        <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10">
+        <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-5 gap-px bg-white/10">
           <Stat label="users" value={s ? s.totalUsers : '…'} hint={s ? `+${s.newLast7Days} this week · ${s.linkedInstagram} linked Instagram` : ''} />
           <Stat label="active 7 days" value={s ? s.activeLast7Days : '…'} hint={s ? `${s.activeLast30Days} in the last 30 days` : ''} />
           <Stat label="reels saved" value={s ? s.totalReels : '…'} hint={s ? `+${s.reelsLast7Days} this week · ${pct(s.fromDm, s.totalReels)} via DM` : ''} />
           <Stat label="failed reels" value={s ? s.failedReels : '…'} hint={s ? `${pct(s.failedReels, s.totalReels)} of all reels` : ''} />
+          <Stat label="ai tokens" value={s ? compact(s.totalTokens) : '…'} hint={s ? `${compact(s.tokensLast30Days)} in 30 days · ${minutes(s.audioSeconds)} audio` : ''} />
         </div>
+        {data?.byFeature?.length > 0 && (
+          <div className="mx-auto max-w-[1280px] px-5 md:px-6 py-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-white/10">
+            {data.byFeature.map((f) => (
+              <span key={f.feature} className="rd-mono text-white/55">
+                {FEATURE_LABEL[f.feature] || f.feature} · <span className="text-white">{f.audioSeconds ? minutes(f.audioSeconds) : `${compact(f.tokens)} tokens`}</span> · {f.calls} calls
+              </span>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rd-paper min-h-[60vh]">
@@ -200,7 +218,7 @@ export default function AdminView() {
           </div>
 
           <div className="bg-white rounded-lg border border-[var(--line-light)] overflow-x-auto">
-            <table className="w-full min-w-[980px] border-collapse text-left">
+            <table className="w-full min-w-[1160px] border-collapse text-left">
               <thead>
                 <tr className="border-b-2 border-[var(--ink)]">
                   {COLUMNS.map((c) => (
@@ -239,6 +257,10 @@ export default function AdminView() {
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.fromDm}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.collections}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-[15px]">{u.savedChats}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[15px]" title={`${u.inputTokens.toLocaleString()} in · ${u.outputTokens.toLocaleString()} out · ${compact(u.tokens30d)} in the last 30 days · ${u.aiCalls} calls`}>
+                      {u.tokens ? compact(u.tokens) : <span className="text-black/40">0</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[14px] whitespace-nowrap text-black/65">{minutes(u.audioSeconds)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-[14px] text-black/65" title={fullDate(u.lastReelAt)}>{ago(u.lastReelAt)}</td>
                   </tr>
                 ))}

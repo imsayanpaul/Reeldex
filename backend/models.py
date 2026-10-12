@@ -130,3 +130,17 @@ class WebhookEvent(Base):
 
     mid = Column(String(255), primary_key=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+
+
+class AIUsage(Base):
+    """One AI call: who it was for, what it was for, and what it cost in tokens or audio seconds."""
+    __tablename__ = "ai_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    feature = Column(String(40), nullable=False, index=True)  # transcription, insights, ask-dex, translate
+    model = Column(String(80), nullable=False)
+    input_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+    audio_seconds = Column(Float, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)

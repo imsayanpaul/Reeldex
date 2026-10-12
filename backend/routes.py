@@ -27,6 +27,7 @@ from backend.auth import (
     read_token, require_user, owned_reels, get_owned_reel, verify_meta_signature, rate_limit, touch_last_seen,
 )
 from backend.config import settings
+from backend import usage
 
 router = APIRouter()
 
@@ -190,6 +191,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         reel = db.query(ReelItem).filter(ReelItem.id == reel_id).first()
         if not reel:
             return
+        usage.for_user(user_id or reel.user_id)
 
         # STEP 0: global cache (0 tokens)
         cached_reel = None
@@ -513,6 +515,7 @@ def batch_delete_reels(req: BatchDeleteRequest, user: User = Depends(require_use
 @router.post("/reels/{reel_id}/translate", dependencies=[Depends(rate_limit("translate", 10, 60))])
 def translate_reel(reel_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)):
     """Translates transcript and summary into English, cached on the transcript."""
+    usage.for_user(user.id)
     reel = get_owned_reel(db, user, reel_id)
     t = reel.transcript
     if not t:
@@ -544,6 +547,7 @@ def translate_reel(reel_id: int, user: User = Depends(require_user), db: Session
                     temperature=0.2,
                     max_tokens=2000,
                 )
+                usage.record("translate", model_id, resp)
                 parsed = json.loads(resp.choices[0].message.content)
                 if parsed:
                     break
@@ -796,6 +800,7 @@ def delete_saved_chat(chat_id: int, user: User = Depends(require_user), db: Sess
 def ask_chat_endpoint(req: AskChatRequest, header_token: Optional[str] = Depends(read_token), db: Session = Depends(get_db)):
     """Answers a question across the user's own completed reels."""
     user = _user_from_body_or_header(db, header_token, req.token)
+    usage.for_user(user.id)
     reels_db = (
         owned_reels(db, user)
         .options(joinedload(ReelItem.transcript))

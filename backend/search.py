@@ -2,6 +2,7 @@ import math
 import re
 from typing import List, Dict, Any, Optional
 from backend.config import settings
+from backend import usage
 
 def tokenize(text: str) -> List[str]:
     """Tokenizes text into normalized lowercase alphanumeric words."""
@@ -311,6 +312,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                         temperature=0.3,
                         max_tokens=2500
                     )
+                    usage.record("ask-dex", model_id, response)
                     answer = response.choices[0].message.content
                     if answer:
                         break
@@ -332,6 +334,7 @@ Provide a direct, comprehensive answer listing ALL relevant items with specific 
                 temperature=0.3,
                 max_tokens=2500
             )
+            usage.record("ask-dex", "gpt-4o-mini", response)
             answer = response.choices[0].message.content
         except Exception as openai_err:
             last_error = openai_err
