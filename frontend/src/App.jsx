@@ -12,13 +12,15 @@ import { CollectionPicker, PairDialog, PromptDialog } from './components/Dialog'
 
 // react-markdown only loads when someone opens Ask Dex
 const AskDex = lazy(() => import('./components/AskDex'));
+// Not in the nav: only admins reach it, by going to #/admin
+const AdminView = lazy(() => import('./components/AdminView'));
 
 // --- Hash routes: #/vault, #/collections, #/collections/12, #/ask, plus ?reel=34 for the open reel ---
 function parseHash() {
   const raw = window.location.hash.replace(/^#\/?/, '');
   const [path, query = ''] = raw.split('?');
   const parts = path.split('/').filter(Boolean);
-  const view = VIEWS.some((v) => v.id === parts[0]) ? parts[0] : 'vault';
+  const view = VIEWS.some((v) => v.id === parts[0]) || parts[0] === 'admin' ? parts[0] : 'vault';
   const collectionId = view === 'collections' && parts[1] ? Number(parts[1]) || null : null;
   const reel = Number(new URLSearchParams(query).get('reel')) || null;
   return { view, collectionId, reel };
@@ -130,6 +132,11 @@ export default function App() {
         {route.view === 'ask' && (
           <Suspense fallback={<div className="rd-wrap py-20"><Loader2 className="animate-spin text-white/60" /></div>}>
             <AskDex messages={messages} setMessages={setMessages} chatId={chatId} setChatId={setChatId} onOpen={openReel} reelCount={vault.stats.reels} />
+          </Suspense>
+        )}
+        {route.view === 'admin' && (
+          <Suspense fallback={<div className="rd-wrap py-20"><Loader2 className="animate-spin text-white/60" /></div>}>
+            <AdminView />
           </Suspense>
         )}
       </main>

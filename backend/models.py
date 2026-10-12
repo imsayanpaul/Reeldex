@@ -14,6 +14,7 @@ class User(Base):
     instagram_username = Column(String(100), nullable=True)
     auth_token = Column(String(255), unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    last_seen_at = Column(DateTime, nullable=True)  # updated at most every 10 minutes
 
     # Relationships
     reels = relationship("ReelItem", back_populates="user", cascade="all, delete-orphan")

@@ -24,7 +24,7 @@ from backend.summarizer import (
 from backend.search import rank_reels_search, ask_reels_ai
 from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload
 from backend.auth import (
-    read_token, require_user, owned_reels, get_owned_reel, verify_meta_signature, rate_limit,
+    read_token, require_user, owned_reels, get_owned_reel, verify_meta_signature, rate_limit, touch_last_seen,
 )
 from backend.config import settings
 
@@ -328,6 +328,7 @@ class BatchDeleteRequest(BaseModel):
 def get_auth_session(req: AuthSessionRequest, header_token: Optional[str] = Depends(read_token), db: Session = Depends(get_db)):
     """Restores a session from a token, or starts a new guest session."""
     user = get_or_create_user(db, auth_token=req.token or header_token)
+    touch_last_seen(db, user)
     return {
         "user_id": user.id,
         "auth_token": user.auth_token,

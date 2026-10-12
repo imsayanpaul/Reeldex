@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     # Comma-separated origins allowed to call the API ("*" = any; auth uses a
     # bearer token, not cookies, so credentials are never shared cross-site)
     CORS_ORIGINS: str = "*"
+    # Comma-separated ReelDex user ids allowed to open the admin view (empty = nobody)
+    ADMIN_USER_IDS: str = ""
     
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./reeldex.db"

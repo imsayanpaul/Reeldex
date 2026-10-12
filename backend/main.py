@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse
 from backend.config import settings
 from backend.database import run_migrations
 from backend.routes import router as api_router
+from backend.admin import router as admin_router
 
 # Create tables and add any newer columns
 run_migrations()
@@ -48,6 +49,7 @@ app.add_middleware(
 
 # Include API Router
 app.include_router(api_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 @app.get("/privacy")
 def privacy_policy():

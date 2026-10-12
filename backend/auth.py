@@ -1,4 +1,5 @@
 """Request authentication, ownership checks and simple rate limiting."""
+import datetime
 import hashlib
 import hmac
 import threading
@@ -35,6 +36,30 @@ def require_user(raw_token: Optional[str] = Depends(read_token), db: Session = D
     user = db.query(User).filter(User.auth_token == raw_token).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
+    touch_last_seen(db, user)
+    return user
+
+
+def touch_last_seen(db: Session, user: User) -> None:
+    """Records activity for the admin view, writing at most once every 10 minutes."""
+    now = datetime.datetime.utcnow()
+    if user.last_seen_at and now - user.last_seen_at < datetime.timedelta(minutes=10):
+        return
+    try:
+        user.last_seen_at = now
+        db.commit()
+    except Exception:
+        db.rollback()  # never fail a request over a timestamp
+
+
+def admin_ids() -> set:
+    return {int(x) for x in (settings.ADMIN_USER_IDS or "").replace(" ", "").split(",") if x.isdigit()}
+
+
+def require_admin(user: User = Depends(require_user)) -> User:
+    """Only user ids in ADMIN_USER_IDS. Everyone else gets 404, so the endpoint stays hidden."""
+    if user.id not in admin_ids():
+        raise HTTPException(status_code=404, detail="Not found")
     return user
 
 

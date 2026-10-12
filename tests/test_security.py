@@ -339,6 +339,42 @@ def test_a_deletes_own_chat(client, user_a, chat_id):
     assert client.get("/api/chats", headers=bearer(user_a)).json() == []
 
 
+# --- Admin view ---
+
+def _user_id(client, token):
+    return client.post("/api/auth/session", json={"token": token}).json()["user_id"]
+
+
+def test_admin_hidden_when_no_admins_configured(client, user_a, monkeypatch):
+    from backend.config import settings
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", "")
+    assert client.get("/api/admin/users", headers=bearer(user_a)).status_code == 404
+
+
+def test_admin_needs_login(client):
+    assert client.get("/api/admin/users").status_code == 401
+
+
+def test_admin_hidden_from_normal_users(client, user_a, user_b, monkeypatch):
+    from backend.config import settings
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(_user_id(client, user_a)))
+    assert client.get("/api/admin/users", headers=bearer(user_b)).status_code == 404
+    assert client.get("/api/admin/me", headers=bearer(user_b)).status_code == 404
+
+
+def test_admin_sees_users_and_summary(client, user_a, monkeypatch):
+    from backend.config import settings
+    me = _user_id(client, user_a)
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", f"999, {me}")
+    r = client.get("/api/admin/users", headers=bearer(user_a))
+    assert r.status_code == 200
+    body = r.json()
+    row = next(u for u in body["users"] if u["id"] == me)
+    assert row["reels"] >= 1 and row["lastSeenAt"]
+    assert body["summary"]["totalUsers"] == len(body["users"])
+    assert "auth_token" not in r.text  # never expose session tokens
+
+
 # --- Rate limits (keep last: it exhausts the sign-in limit) ---
 
 def test_session_creation_is_rate_limited(client):
