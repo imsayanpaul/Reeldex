@@ -388,6 +388,36 @@ def test_admin_sees_users_and_summary(client, user_a, monkeypatch):
     assert "auth_token" not in r.text  # never expose session tokens
 
 
+def test_cleanup_deletes_only_old_empty_guests(client, db, user_a, user_b, monkeypatch):
+    import datetime as dt
+    from backend.config import settings
+    from backend.models import User, PairingCode
+    me = _user_id(client, user_a)
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(me))
+    old = dt.datetime.utcnow() - dt.timedelta(days=40)
+    stale = User(display_name="old guest", auth_token="rm_stale_guest", created_at=old, last_seen_at=old)
+    fresh = User(display_name="new guest", auth_token="rm_fresh_guest")
+    linked = User(display_name="ig", auth_token="rm_old_linked", instagram_sender_id="7777", created_at=old)
+    db.add_all([stale, fresh, linked]); db.commit()
+    db.add(PairingCode(code="MIND-000001", user_id=stale.id, expires_at=old)); db.commit()
+    stale_id, fresh_id, linked_id = stale.id, fresh.id, linked.id
+
+    # Not allowed for normal users
+    assert client.post("/api/admin/cleanup-guests?dry_run=false", headers=bearer(user_b)).status_code == 404
+    # Dry run counts without deleting
+    preview = client.post("/api/admin/cleanup-guests", headers=bearer(user_a)).json()
+    assert preview["count"] >= 1 and preview["deleted"] == 0
+    assert db.get(User, stale_id) is not None
+    # Real run deletes the old empty guest only
+    done = client.post("/api/admin/cleanup-guests?dry_run=false", headers=bearer(user_a)).json()
+    assert done["deleted"] == preview["count"]
+    db.expire_all()
+    assert db.get(User, stale_id) is None
+    assert db.get(User, fresh_id) is not None      # seen recently
+    assert db.get(User, linked_id) is not None     # has Instagram
+    assert db.get(User, me) is not None            # has reels, and is the admin
+
+
 # --- Rate limits (keep last: it exhausts the sign-in limit) ---
 
 def test_session_creation_is_rate_limited(client):

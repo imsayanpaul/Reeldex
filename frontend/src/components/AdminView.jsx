@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Download, Loader2, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, Loader2, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { ConfirmDialog } from './Dialog';
 import { api } from '../lib/api';
 import { InstagramIcon } from './Nav';
 
@@ -64,6 +66,27 @@ export default function AdminView() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState({ key: 'lastActiveAt', dir: 'desc' });
+  const [cleanup, setCleanup] = useState(null); // { count } while the confirm dialog is open
+  const [checking, setChecking] = useState(false);
+
+  const previewCleanup = async () => {
+    setChecking(true);
+    try {
+      const r = await api('/admin/cleanup-guests', { method: 'POST' });
+      if (!r.count) toast.info('No empty guest accounts to delete.');
+      else setCleanup(r);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const runCleanup = async () => {
+    const r = await api('/admin/cleanup-guests?dry_run=false', { method: 'POST' });
+    toast.success(`Deleted ${r.deleted} empty guest account${r.deleted === 1 ? '' : 's'}.`);
+    load();
+  };
 
   const load = async () => {
     setState((s) => (s === 'ready' ? 'refreshing' : 'loading'));
@@ -162,6 +185,9 @@ export default function AdminView() {
               <button type="button" onClick={exportCsv} className="rd-btn rd-btn-ink" style={{ minHeight: 52 }} disabled={!rows.length}>
                 <Download size={16} /> CSV
               </button>
+              <button type="button" onClick={previewCleanup} className="rd-btn rd-btn-line text-[var(--red)]" style={{ minHeight: 52 }} disabled={checking || !data} title="Delete guest accounts with no reels, collections, chats or Instagram">
+                {checking ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Empty guests
+              </button>
             </div>
           </div>
 
@@ -202,7 +228,7 @@ export default function AdminView() {
                         {u.linked && <span className="text-[var(--blue)] shrink-0"><InstagramIcon size={14} /></span>}
                         <span className="truncate max-w-[240px]">{u.linked ? (u.instagram.startsWith('User #') ? u.instagram : `@${u.instagram}`) : 'Guest'}</span>
                       </div>
-                      <div className="rd-mono text-black/45 mt-0.5">#{u.id}{u.name && u.name !== 'ReelDex Explorer' ? ` · ${u.name}` : ''}</div>
+                      <div className="rd-mono text-black/45 mt-0.5">#{u.id}{u.name ? ` · ${u.name}` : ''}</div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-[14px] text-black/65" title={fullDate(u.joinedAt)}>{ago(u.joinedAt)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-[14px]" title={fullDate(u.lastActiveAt)}>
@@ -222,6 +248,14 @@ export default function AdminView() {
               </tbody>
             </table>
           </div>
+          <ConfirmDialog
+            open={!!cleanup}
+            onClose={() => setCleanup(null)}
+            title={`Delete ${cleanup?.count || 0} empty guests?`}
+            body="These guest accounts have no Instagram link, reels, collections or saved chats, and haven't been active in the last 24 hours. Accounts with any data are never touched. This can't be undone."
+            confirmLabel="Delete"
+            onConfirm={runCleanup}
+          />
           {data && (
             <p className="rd-mono text-black/50 mt-3 mb-0">
               {rows.length} of {data.users.length} users · “last active” is the latest of a visit, a saved reel or a saved chat

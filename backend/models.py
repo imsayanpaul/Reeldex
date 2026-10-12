@@ -4,12 +4,12 @@ from sqlalchemy.orm import relationship
 from backend.database import Base
 
 class User(Base):
-    """Represents a registered or auto-onboarded ReelMind user."""
+    """A ReelDex user: a web guest, or an account linked to Instagram."""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=True)
-    display_name = Column(String(100), default="ReelMind Explorer")
+    display_name = Column(String(100), default="ReelDex Explorer")
     instagram_sender_id = Column(String(100), unique=True, index=True, nullable=True)
     instagram_username = Column(String(100), nullable=True)
     auth_token = Column(String(255), unique=True, index=True, nullable=False)

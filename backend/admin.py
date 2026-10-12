@@ -12,6 +12,9 @@ from backend.models import Collection, ReelItem, SavedChat, User
 
 router = APIRouter()
 
+# Default names given to new accounts; not worth showing as a real name
+PLACEHOLDER_NAMES = ("ReelDex Explorer", "ReelMind Explorer", "Instagram @")
+
 
 def _iso(dt):
     return dt.isoformat() + "Z" if dt else None
@@ -20,6 +23,38 @@ def _iso(dt):
 @router.get("/admin/me", dependencies=[Depends(require_admin)])
 def admin_me():
     return {"admin": True}
+
+
+def _empty_guests(db: Session, admin_id: int):
+    """Guests with no Instagram, reels, collections or chats, not seen in the last 24 hours."""
+    cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
+    has_reels = db.query(ReelItem.id).filter(ReelItem.user_id == User.id).exists()
+    has_collections = db.query(Collection.id).filter(Collection.user_id == User.id).exists()
+    has_chats = db.query(SavedChat.id).filter(SavedChat.user_id == User.id).exists()
+    return db.query(User).filter(
+        User.instagram_sender_id.is_(None),
+        User.id != admin_id,
+        ~has_reels, ~has_collections, ~has_chats,
+        (User.last_seen_at.is_(None)) | (User.last_seen_at < cutoff),
+        User.created_at < cutoff,
+    )
+
+
+@router.post("/admin/cleanup-guests", dependencies=[Depends(rate_limit("admin-cleanup", 5, 60))])
+def cleanup_guests(dry_run: bool = True, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Counts (dry_run) or deletes empty guest accounts. Accounts holding any data are never touched."""
+    from backend.models import PairingCode
+    ids = [u.id for u in _empty_guests(db, admin.id).with_entities(User.id).all()]
+    if dry_run or not ids:
+        return {"count": len(ids), "deleted": 0}
+    deleted = 0
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        db.query(PairingCode).filter(PairingCode.user_id.in_(chunk)).delete(synchronize_session=False)
+        deleted += db.query(User).filter(User.id.in_(chunk)).delete(synchronize_session=False)
+    db.commit()
+    print(f"[Admin] User #{admin.id} deleted {deleted} empty guest accounts")
+    return {"count": len(ids), "deleted": deleted}
 
 
 @router.get("/admin/users", dependencies=[Depends(rate_limit("admin", 30, 60))])
@@ -56,7 +91,7 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
         last_active = max([d for d in (u.last_seen_at, r.last_reel if r else None, c.last if c else None) if d], default=None)
         users.append({
             "id": u.id,
-            "name": u.display_name or "",
+            "name": "" if (u.display_name or "").startswith(PLACEHOLDER_NAMES) else (u.display_name or ""),
             "instagram": u.instagram_username or (f"User #{u.instagram_sender_id[-4:]}" if u.instagram_sender_id else ""),
             "linked": bool(u.instagram_sender_id),
             "joinedAt": _iso(u.created_at),
