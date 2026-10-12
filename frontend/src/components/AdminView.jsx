@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from './Dialog';
 import { api } from '../lib/api';
 import { InstagramIcon } from './Nav';
+import { FeedbackList, FeedbackStats, useAdminFeedback } from './AdminFeedback';
 
 const DAY = 86400000;
 
@@ -74,6 +75,8 @@ export default function AdminView() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState({ key: 'lastActiveAt', dir: 'desc' });
+  const [tab, setTab] = useState(() => (window.location.hash.includes('tab=feedback') ? 'feedback' : 'users'));
+  const feedback = useAdminFeedback();
   const [cleanup, setCleanup] = useState(null); // { count } while the confirm dialog is open
   const [checking, setChecking] = useState(false);
 
@@ -132,7 +135,7 @@ export default function AdminView() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  if (state === 'denied') {
+  if (state === 'denied' || feedback.state === 'denied') {
     return (
       <section className="rd-ink-grid min-h-[70vh] flex items-center">
         <div className="rd-wrap">
@@ -151,8 +154,23 @@ export default function AdminView() {
       <section className="rd-ink-grid border-b border-white/10">
         <div className="rd-wrap pt-10 md:pt-14 pb-8">
           <div className="rd-mono text-white/55 mb-3">admin · {data ? `updated ${ago(data.generatedAt)}` : 'loading'}</div>
-          <h1 className="rd-display text-[clamp(56px,10vw,120px)]">Users</h1>
+          <h1 className="rd-display text-[clamp(56px,10vw,120px)]">{tab === 'feedback' ? 'Feedback' : 'Users'}</h1>
+          <div className="flex gap-2 mt-6" role="tablist" aria-label="Admin sections">
+            {[['users', 'Users'], ['feedback', `Feedback${feedback.data ? ` · ${feedback.data.summary.total}` : ''}`]].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+                className={`rd-label px-4 h-10 rounded border cursor-pointer transition-colors ${tab === id ? 'bg-white text-[var(--ink)] border-white' : 'bg-transparent text-white/70 border-white/20 hover:text-white hover:border-white/50'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+        {tab === 'feedback' ? <FeedbackStats data={feedback.data} /> : (<>
         <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-5 gap-px bg-white/10">
           <Stat label="users" value={s ? s.totalUsers : '…'} hint={s ? `+${s.newLast7Days} this week · ${s.linkedInstagram} linked Instagram` : ''} />
           <Stat label="active 7 days" value={s ? s.activeLast7Days : '…'} hint={s ? `${s.activeLast30Days} in the last 30 days` : ''} />
@@ -169,10 +187,12 @@ export default function AdminView() {
             ))}
           </div>
         )}
+        </>)}
       </section>
 
       <section className="rd-paper min-h-[60vh]">
         <div className="rd-wrap pt-8 pb-32">
+          {tab === 'feedback' ? <FeedbackList data={feedback.data} state={feedback.state} onRefresh={feedback.load} /> : (<>
           {state === 'error' && (
             <div className="mb-6 rounded-lg border border-[var(--red)]/40 bg-white p-4 text-[14px]">
               Couldn’t load users. Check Render’s logs, then try again.
@@ -283,6 +303,7 @@ export default function AdminView() {
               {rows.length} of {data.users.length} users · “last active” is the latest of a visit, a saved reel or a saved chat
             </p>
           )}
+          </>)}
         </div>
       </section>
     </>

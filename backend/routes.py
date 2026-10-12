@@ -15,7 +15,7 @@ from sqlalchemy import desc
 from sqlalchemy.exc import IntegrityError
 
 from backend.database import get_db
-from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent
+from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
@@ -714,6 +714,37 @@ def delete_reel(reel_id: int, user: User = Depends(require_user), db: Session = 
 
 
 # --- Ask Dex AI (sync: runs in a worker thread so the LLM call can't block the server) ---
+
+# --- Feedback ---
+
+FEEDBACK_CATEGORIES = ("Idea", "Bug", "Praise", "Other")
+
+
+class FeedbackRequest(BaseModel):
+    category: str = Field("Other", max_length=30)
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    message: str = Field(..., min_length=2, max_length=2000)
+    contact: Optional[str] = Field(None, max_length=200)
+    page: Optional[str] = Field(None, max_length=40)
+
+
+@router.post("/feedback", dependencies=[Depends(rate_limit("feedback", 5, 60))])
+def send_feedback(req: FeedbackRequest, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    """Saves a message from the in-app feedback form."""
+    message = req.message.strip()
+    if len(message) < 2:
+        raise HTTPException(status_code=400, detail="Please write a short message.")
+    db.add(Feedback(
+        user_id=user.id,
+        category=req.category if req.category in FEEDBACK_CATEGORIES else "Other",
+        rating=req.rating,
+        message=message,
+        contact=(req.contact or "").strip() or None,
+        page=(req.page or "").strip() or None,
+    ))
+    db.commit()
+    return {"success": True}
+
 
 # --- Saved Ask Dex chats ---
 

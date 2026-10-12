@@ -1,4 +1,4 @@
-import { ArrowUpRight, FolderOpen, LayoutGrid, MessageSquare } from 'lucide-react';
+import { ArrowUpRight, FolderOpen, LayoutGrid, MessageSquare, MessageSquareText } from 'lucide-react';
 
 // lucide no longer ships brand icons
 export function InstagramIcon({ size = 16 }) {
@@ -31,7 +31,7 @@ const igHandle = (name) => {
   return `@${name.replace(/^@/, '')}`;
 };
 
-export function Nav({ view, onView, session, onLink }) {
+export function Nav({ view, onView, session, onLink, onFeedback }) {
   const linked = session?.is_instagram_linked;
   return (
     <header className="sticky top-0 z-50 bg-[var(--ink)]/95 backdrop-blur border-b border-white/10">
@@ -52,11 +52,22 @@ export function Nav({ view, onView, session, onLink }) {
           ))}
         </nav>
 
+        <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={onFeedback}
+          className="flex items-center gap-2 h-10 px-2.5 min-[900px]:px-3 rounded border border-white/15 bg-transparent hover:border-white/35 hover:bg-white/[0.06] text-white/80 hover:text-white cursor-pointer transition-colors shrink-0"
+          aria-label="Send feedback"
+          title="Send feedback"
+        >
+          <MessageSquareText size={17} />
+          <span className="rd-label hidden min-[900px]:inline" style={{ fontSize: 12 }}>Feedback</span>
+        </button>
         {linked ? (
           <button
             type="button"
             onClick={onLink}
-            className="flex items-center gap-2 h-10 pl-1 pr-3 rounded border border-white/15 bg-white/[0.04] hover:border-white/35 hover:bg-white/[0.08] text-white cursor-pointer transition-colors max-w-[55vw]"
+            className="flex items-center gap-2 h-10 pl-1 pr-3 rounded border border-white/15 bg-white/[0.04] hover:border-white/35 hover:bg-white/[0.08] text-white cursor-pointer transition-colors max-w-[44vw]"
             title="Instagram connected"
           >
             <span className="relative flex items-center justify-center w-8 h-8 rounded-[3px] bg-[var(--blue)] shrink-0">
@@ -75,11 +86,12 @@ export function Nav({ view, onView, session, onLink }) {
               <InstagramIcon size={16} />
             </span>
             <span className="rd-label whitespace-nowrap" style={{ fontSize: 13 }}>
-              <span className="max-[359px]:hidden">Link Instagram</span><span className="hidden max-[359px]:inline">Link</span>
+              <span className="max-[419px]:hidden">Link Instagram</span><span className="hidden max-[419px]:inline">Link</span>
             </span>
             <ArrowUpRight size={15} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 max-[420px]:hidden" />
           </button>
         )}
+        </div>
       </div>
     </header>
   );

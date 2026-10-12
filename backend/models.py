@@ -144,3 +144,17 @@ class AIUsage(Base):
     output_tokens = Column(Integer, default=0)
     audio_seconds = Column(Float, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+
+
+class Feedback(Base):
+    """A message sent from the in-app feedback form."""
+    __tablename__ = "feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    category = Column(String(30), nullable=False, default="Other")
+    rating = Column(Integer, nullable=True)  # 1-5, optional
+    message = Column(Text, nullable=False)
+    contact = Column(String(200), nullable=True)  # optional email or Instagram handle for a reply
+    page = Column(String(40), nullable=True)  # which screen it was sent from
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)

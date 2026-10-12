@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.auth import rate_limit, require_admin
 from backend.database import get_db
-from backend.models import AIUsage, Collection, ReelItem, SavedChat, User
+from backend.models import AIUsage, Collection, Feedback, ReelItem, SavedChat, User
 
 router = APIRouter()
 
@@ -160,4 +160,37 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
         },
         "byFeature": sorted(by_feature, key=lambda f: -f["tokens"] - f["audioSeconds"]),
         "users": users,
+    }
+
+
+@router.get("/admin/feedback", dependencies=[Depends(rate_limit("admin", 30, 60))])
+def admin_feedback(admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> Dict[str, Any]:
+    rows = db.query(Feedback, User).outerjoin(User, User.id == Feedback.user_id).order_by(Feedback.created_at.desc()).all()
+    items = []
+    for f, u in rows:
+        instagram = ""
+        if u and u.instagram_sender_id:
+            instagram = u.instagram_username or f"User #{u.instagram_sender_id[-4:]}"
+        items.append({
+            "id": f.id,
+            "userId": f.user_id,
+            "instagram": instagram,
+            "category": f.category,
+            "rating": f.rating,
+            "message": f.message,
+            "contact": f.contact or "",
+            "page": f.page or "",
+            "createdAt": _iso(f.created_at),
+        })
+    now = datetime.datetime.utcnow()
+    rated = [i["rating"] for i in items if i["rating"]]
+    return {
+        "generatedAt": _iso(now),
+        "summary": {
+            "total": len(items),
+            "last7Days": sum(1 for f, _ in rows if f.created_at and now - f.created_at <= datetime.timedelta(days=7)),
+            "averageRating": round(sum(rated) / len(rated), 1) if rated else None,
+            "fromLinked": sum(1 for i in items if i["instagram"]),
+        },
+        "feedback": items,
     }

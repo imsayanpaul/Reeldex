@@ -408,6 +408,32 @@ def test_ai_usage_is_recorded_per_user(client, user_a, monkeypatch):
     assert body["summary"]["totalTokens"] >= row["tokens"] + 10  # includes the unattributed call
 
 
+def test_feedback_needs_a_session(client):
+    assert client.post("/api/feedback", json={"message": "hello there"}).status_code == 401
+
+
+def test_feedback_validates_input(client, user_b):
+    assert client.post("/api/feedback", json={"message": "x" * 2001}, headers=bearer(user_b)).status_code == 422
+    assert client.post("/api/feedback", json={"message": "ok", "rating": 9}, headers=bearer(user_b)).status_code == 422
+
+
+def test_feedback_reaches_admin_only(client, user_a, user_b, monkeypatch):
+    from backend.config import settings
+    r = client.post("/api/feedback", headers=bearer(user_b), json={
+        "category": "Bug", "rating": 2, "message": "Ask Dex cut off my answer", "contact": "b@example.com", "page": "ask"})
+    assert r.status_code == 200
+    client.post("/api/feedback", headers=bearer(user_b), json={"category": "Weird", "message": "Unknown category"})
+    me = _user_id(client, user_a)
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(me))
+    assert client.get("/api/admin/feedback", headers=bearer(user_b)).status_code == 404
+    body = client.get("/api/admin/feedback", headers=bearer(user_a)).json()
+    messages = {f["message"]: f for f in body["feedback"]}
+    bug = messages["Ask Dex cut off my answer"]
+    assert bug["category"] == "Bug" and bug["rating"] == 2 and bug["contact"] == "b@example.com" and bug["page"] == "ask"
+    assert messages["Unknown category"]["category"] == "Other"
+    assert body["summary"]["total"] >= 2
+
+
 def test_cleanup_deletes_only_old_empty_guests(client, db, user_a, user_b, monkeypatch):
     import datetime as dt
     from backend.config import settings

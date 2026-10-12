@@ -9,6 +9,7 @@ import { VaultView } from './components/VaultView';
 import { CollectionsView } from './components/CollectionsView';
 import { ReelDetail } from './components/ReelDetail';
 import { CollectionPicker, PairDialog, PromptDialog } from './components/Dialog';
+import { FeedbackDialog } from './components/FeedbackDialog';
 
 // react-markdown only loads when someone opens Ask Dex
 const AskDex = lazy(() => import('./components/AskDex'));
@@ -59,6 +60,7 @@ export default function App() {
   const [messages, setMessages] = useState(loadChat);
   const [chatId, setChatId] = useState(loadChatId); // set once the open chat is saved
   const [pairOpen, setPairOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [move, setMove] = useState(null); // { ids, current, single, after }
   const [createFor, setCreateFor] = useState(null);
 
@@ -120,7 +122,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen pb-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] min-[900px]:pb-0">
-      <Nav view={route.view} onView={setView} session={vault.session} onLink={() => setPairOpen(true)} />
+      <Nav view={route.view} onView={setView} session={vault.session} onLink={() => setPairOpen(true)} onFeedback={() => setFeedbackOpen(true)} />
 
       <main>
         {route.view === 'vault' && (
@@ -173,6 +175,8 @@ export default function App() {
         onLinked={vault.refreshSession}
         linked={linked}
       />
+
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} page={route.view} />
 
       <Toaster position="top-center" />
     </div>
