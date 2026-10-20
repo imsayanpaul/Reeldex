@@ -173,6 +173,22 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     db.commit()
 
 
+def reply_failed_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: str):
+    """Tells the sender when a reel couldn't be saved, so a DM never goes unanswered."""
+    if source != "instagram_dm" or not sender_id or not settings.INSTAGRAM_PAGE_ACCESS_TOKEN or reel.dm_replied:
+        return
+    try:
+        user = db.query(User).filter(User.id == reel.user_id).first() if reel.user_id else None
+        msg = (
+            "😕 I couldn't save this reel. It may be private, removed, or Instagram blocked the download.\n\n"
+            f"You can retry it from your vault:\n{vault_link(user, reel.id)}"
+        )
+        reel.dm_replied = send_instagram_dm_sync(sender_id, msg)
+        db.commit()
+    except Exception as dm_error:
+        print(f"[DM] Couldn't send the failure reply for reel #{reel.id}: {dm_error}")
+
+
 # --- Background Processing Worker ---
 def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
     """
@@ -246,14 +262,15 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             f"https://www.instagram.com/p/{reel.shortcode}/media/?size=l" if reel.shortcode else None)
         reel.duration = dl.get("duration")
         db.commit()
-        if not audio_path or not os.path.exists(audio_path):
+        silent = bool(dl.get("no_audio"))
+        if not silent and (not audio_path or not os.path.exists(audio_path)):
             raise Exception(dl.get("error") or "Couldn't get the audio from this reel. It may be private or removed.")
 
         reel.status = "transcribing"
         db.commit()
 
-        # 2. Transcribe. A failed call is an error, not silence.
-        tr = transcribe_audio_file(audio_path)
+        # 2. Transcribe. A failed call is an error, not silence. A reel with no sound track skips this.
+        tr = {"success": True, "full_text": "", "segments": [], "language": "en"} if silent else transcribe_audio_file(audio_path)
         if not tr.get("success"):
             raise Exception(tr.get("error") or "Transcription failed.")
         full_text = (tr.get("full_text") or tr.get("text") or "").strip()
@@ -305,6 +322,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             reel.status = "failed"
             reel.error_message = str(e)[:500]
             db.commit()
+            reply_failed_in_dm(db, reel, sender_id, source)
     finally:
         try:
             if audio_path and os.path.exists(audio_path):

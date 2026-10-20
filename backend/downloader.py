@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import glob
 import yt_dlp
 from typing import Dict, Any, Optional
 from backend.config import settings
@@ -29,6 +30,38 @@ def normalize_instagram_url(url: str) -> str:
     if shortcode:
         return f"https://www.instagram.com/reel/{shortcode}/"
     return url.split("?")[0].split("#")[0].strip()
+
+# yt-dlp's wording when the reel's video has no sound track at all
+NO_AUDIO_ERRORS = ("unable to obtain file audio codec", "does not contain any stream", "output file is empty")
+
+
+def _is_no_audio_error(message: str) -> bool:
+    text = (message or "").lower()
+    return any(needle in text for needle in NO_AUDIO_ERRORS)
+
+
+def _remove_partials(output_filename: str) -> None:
+    for leftover in glob.glob(os.path.join(settings.AUDIO_DIR, f"{output_filename}.*")):
+        try:
+            os.remove(leftover)
+        except OSError:
+            pass
+
+
+def _metadata(info: Dict[str, Any], shortcode: str, clean_url: str, audio_path: Optional[str]) -> Dict[str, Any]:
+    return {
+        "success": True,
+        "audio_path": audio_path,
+        "title": info.get("title") or (info.get("description") or "Instagram Reel")[:60],
+        "caption": info.get("description") or "",
+        # "channel" is the @handle on Instagram; "uploader" is the display name
+        "author": info.get("channel") or info.get("uploader") or "Instagram User",
+        "thumbnail": info.get("thumbnail"),
+        "duration": info.get("duration"),
+        "shortcode": shortcode,
+        "original_url": clean_url,
+    }
+
 
 def download_audio_from_reel(url: str) -> Dict[str, Any]:
     """
@@ -102,19 +135,34 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
                         audio_path = candidate
                         break
 
-            return {
-                "success": True,
-                "audio_path": audio_path if os.path.exists(audio_path) else None,
-                "title": info.get("title") or (info.get("description") or "Instagram Reel")[:60],
-                "caption": info.get("description") or "",
-                # "channel" is the @handle on Instagram; "uploader" is the display name
-                "author": info.get("channel") or info.get("uploader") or "Instagram User",
-                "thumbnail": info.get("thumbnail"),
-                "duration": info.get("duration"),
-                "shortcode": shortcode,
-                "original_url": clean_url
-            }
+            return _metadata(info, shortcode, clean_url, audio_path if os.path.exists(audio_path) else None)
     except Exception as e:
+        if _is_no_audio_error(str(e)):
+            _remove_partials(output_filename)
+            # Instagram sometimes serves a video-only file as "best". Ask for the sound track separately
+            # and merge it before giving up on the audio.
+            try:
+                merged_opts = {**ydl_opts, 'format': 'bv*+ba/ba*'}
+                with yt_dlp.YoutubeDL(merged_opts) as ydl:
+                    info = ydl.extract_info(clean_url, download=True)
+                audio_path = os.path.join(settings.AUDIO_DIR, f"{output_filename}.mp3")
+                if os.path.exists(audio_path):
+                    print(f"[Downloader] {shortcode}: recovered the audio from the separate sound track")
+                    return _metadata(info, shortcode, clean_url, audio_path)
+            except Exception as retry_error:
+                print(f"[Downloader] {shortcode}: separate sound track failed too ({str(retry_error)[:120]})")
+            _remove_partials(output_filename)
+            # Truly silent reel. Keep the metadata so the caption can still be summarised.
+            try:
+                meta_opts = {k: v for k, v in ydl_opts.items() if k not in ("postprocessors", "format")}
+                with yt_dlp.YoutubeDL(meta_opts) as ydl:
+                    info = ydl.extract_info(clean_url, download=False)
+                result = _metadata(info, shortcode, clean_url, None)
+                result["no_audio"] = True
+                print(f"[Downloader] {shortcode} has no sound track; continuing with the caption only")
+                return result
+            except Exception as meta_error:
+                e = meta_error
         return {
             "success": False,
             "error": str(e),
