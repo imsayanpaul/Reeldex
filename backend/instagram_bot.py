@@ -71,6 +71,7 @@ def send_instagram_dm_sync(recipient_id: str, message_text: str) -> bool:
                 if resp.status_code == 200:
                     print(f"[Instagram Bot Sync] Sent DM reply to {recipient_id}")
                     return True
+                print(f"[Instagram Bot Sync] {url} status: {resp.status_code} - {resp.text[:300]}")
             except Exception as e:
                 print(f"[Instagram Bot Sync Error]: {e}")
     return False
