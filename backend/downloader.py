@@ -159,7 +159,8 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
                     info = ydl.extract_info(clean_url, download=False)
                 result = _metadata(info, shortcode, clean_url, None)
                 result["no_audio"] = True
-                print(f"[Downloader] {shortcode} has no sound track; continuing with the caption only")
+                formats = [(f.get("format_id"), f.get("acodec"), f.get("vcodec")) for f in info.get("formats") or []]
+                print(f"[Downloader] {shortcode} has no sound track; continuing with the caption only. Formats: {formats[:15]}")
                 return result
             except Exception as meta_error:
                 e = meta_error
