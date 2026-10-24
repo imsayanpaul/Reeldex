@@ -40,7 +40,7 @@ Everyone saves reels: a design tool, a recipe, an interview tip, a workout. Inst
 1. **Share any reel to `@reeldex.io` in an Instagram DM**, or paste the link on the web.
 2. **ReelDex pulls only the audio** and transcribes every spoken word with timestamps.
 3. **AI pulls out what matters:** a title, a summary, key points, the tools and links mentioned, promo codes, and step-by-step instructions. Then it files the reel under a topic. The creator's caption is used too: it fixes misheard names, and for music-only reels with text on screen it's often where the content is.
-4. **The bot replies in your DM** with the summary and a link to the reel in your vault.
+4. **The bot replies in your DM** with the summary and a link to the reel in your vault. If a reel can't be saved, it still replies, with a link to retry it.
 5. **Search everything, or just ask:** *"What AI design tools have I saved?"* returns an answer that cites the exact reels it came from.
 
 ## Features
@@ -119,9 +119,25 @@ Most reels are saved on a phone, so the app is built mobile-first. It has a bott
 
 Link your Instagram by sending a one-time code (`MIND-123456`) to `@reeldex.io` in a DM. The DM bot sends a magic link that signs you straight in. The token is removed from the address bar as soon as it's read.
 
+### Reels with no talking
+
+Music-only and text-on-screen reels are common. A reel counts as having speech only if the transcript has at least five distinct words, so background lyrics or a stray "wow" don't produce a fake summary. Without speech, the summary comes from the creator's caption, and the DM says so.
+
+### Feedback, built in
+
+A Feedback button in the app sends a category, a rating, a message and an optional contact straight to the database, where the owner reads it in the admin panel.
+
+### Admin panel
+
+A private page for the owner, listed by user ID in `ADMIN_USER_IDS` (everyone else gets a 404):
+- every user with their Instagram @handle, reels, collections, chats, last seen and time spent in the app
+- AI usage per user: tokens for each model call and seconds of audio for Whisper
+- a Feedback tab with ratings and filters
+- a one-click cleanup of empty guest accounts, with a dry run first
+
 ## Security and reliability
 
-ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request. All of it is covered by **48 automated tests** in [`tests/test_security.py`](tests/test_security.py), run by CI on every push:
+ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request. All of it is covered by **59 automated tests** in [`tests/test_security.py`](tests/test_security.py), run by CI on every push:
 
 - **Ownership checks on every endpoint.** Reels, collections and saved chats are scoped to the signed-in user. Guessing another reel's ID returns 404.
 - **Signed webhooks.** Instagram webhook calls must carry a valid Meta `X-Hub-Signature-256` HMAC, compared in constant time. The verify handshake uses a constant-time compare too.
@@ -132,6 +148,9 @@ ReelDex handles other people's Instagram accounts and libraries, so access contr
 - **Locked-down server config.** API keys can't be changed over HTTP, and the status endpoint reports only true/false flags.
 - **Duplicate-safe webhooks.** Meta sometimes delivers a message twice, sometimes to two workers at once. Handled message ids are recorded in the database, so each reel is saved and answered once.
 - **Model fallbacks.** Transcription, insights and Ask Dex each try a chain of models, so one busy or retired model doesn't take the feature down.
+- **Reels that arrive without sound.** Instagram sometimes serves a video file with no audio track. The downloader then fetches the sound track separately and merges it; a reel that truly has no audio is summarised from its caption instead of failing.
+- **No silent failures.** A reel that fails to save still gets a DM reply with a retry link, and every rejected DM is logged with Instagram's own error (an expired access token shows up as error 190).
+- **Admin access tested.** No login, a normal user, a missing admin setting and a real admin are each covered by tests.
 
 ## Performance
 
@@ -191,6 +210,10 @@ GROQ_API_KEY=your_groq_key
 INSTAGRAM_PAGE_ACCESS_TOKEN=your_instagram_token
 META_VERIFY_TOKEN=any_random_string
 META_APP_SECRET=your_meta_app_secret
+# Optional: full Netscape cookie file contents, so reel downloads match what a browser gets
+INSTAGRAM_COOKIES=
+# Optional: comma-separated user ids that can open the admin panel at #/admin
+ADMIN_USER_IDS=
 ```
 
 ```bash
@@ -226,9 +249,11 @@ Reeldex/
 ├── backend/
 │   ├── main.py            # App setup, CORS, startup migrations
 │   ├── routes.py          # Reels, collections, Ask Dex, saved chats, webhook
-│   ├── auth.py            # Bearer auth, ownership scoping, webhook signatures, rate limits
-│   ├── models.py          # Users, reels, transcripts, collections, saved chats
-│   ├── downloader.py      # yt-dlp audio extraction
+│   ├── auth.py            # Bearer auth, ownership scoping, webhook signatures, rate limits, admin check
+│   ├── admin.py           # Admin panel: users, AI usage, time spent, feedback, guest cleanup
+│   ├── usage.py           # Per-user AI token and audio-second tracking
+│   ├── models.py          # Users, reels, transcripts, collections, saved chats, feedback, usage
+│   ├── downloader.py      # yt-dlp audio extraction, with a separate-sound-track fallback
 │   ├── transcriber.py     # Whisper transcription with fallback
 │   ├── summarizer.py      # Insights and topic classification
 │   ├── search.py          # Ranking and Ask Dex retrieval
@@ -236,7 +261,7 @@ Reeldex/
 ├── frontend/src/
 │   ├── components/        # Vault, reel cards & table, reel detail, collections, Ask Dex, dialogs
 │   └── lib/               # API client, session, vault state hook, formatting & exports
-├── tests/               # Security and access-control tests (pytest)
+├── tests/               # 59 security, access-control and webhook tests (pytest)
 ├── .github/workflows/   # CI: lint, build, startup on SQLite + Postgres, security tests
 ├── Dockerfile
 └── render.yaml
