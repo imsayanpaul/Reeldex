@@ -251,6 +251,37 @@ def test_same_reel_in_two_messages_saves_one_reel(client, db, monkeypatch):
     assert db.query(ReelItem).filter(ReelItem.shortcode == "DUPtest02").count() == 1
 
 
+def test_resending_a_saved_reel_gets_a_reply(client, db, monkeypatch):
+    """A reel the sender already has isn't saved twice, and they're told it's already in their vault."""
+    import datetime as dt
+    import backend.routes as routes
+    from backend.models import WebhookEvent
+    sent = []
+    monkeypatch.setattr(routes, "send_instagram_dm", lambda *a, **k: None)
+    monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda to, text: sent.append((to, text)) or True)
+    monkeypatch.setattr(routes, "process_reel_pipeline", lambda *a, **k: None)
+
+    def share(mid):
+        msg = {"entry": [{"id": "bot", "messaging": [{"sender": {"id": "557"}, "message": {
+            "mid": mid, "attachments": [{"type": "ig_reel", "payload": {"url": "https://www.instagram.com/reel/DUPtest03/"}}]}}]}]}
+        payload = json.dumps(msg).encode()
+        assert client.post("/api/webhook/instagram", content=payload, headers=signed(payload)).status_code == 200
+
+    share("resend-1")
+    db.expire_all()
+    reel = db.query(ReelItem).filter(ReelItem.shortcode == "DUPtest03").one()
+    reel.status, reel.title = "completed", "Three habits that changed my mornings"
+    # The 2-minute duplicate window has passed: this is a real second share
+    db.query(WebhookEvent).filter(WebhookEvent.mid.like("reel:%DUPtest03")).update({"created_at": dt.datetime.utcnow() - dt.timedelta(minutes=5)}, synchronize_session=False)
+    db.commit()
+
+    share("resend-2")
+    db.expire_all()
+    assert db.query(ReelItem).filter(ReelItem.shortcode == "DUPtest03").count() == 1
+    assert len(sent) == 1 and sent[0][0] == "557"
+    assert "already saved" in sent[0][1] and "Three habits" in sent[0][1]
+
+
 def test_reel_can_be_saved_again_later(db):
     """A claim older than the window is renewed, so re-sending a deleted reel later still works."""
     import datetime as dt

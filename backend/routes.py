@@ -145,6 +145,15 @@ NO_SPEECH_TIP = (
 )
 
 
+def already_saved_message(user: Optional[User], reel: ReelItem) -> str:
+    """Reply for a reel the sender has already saved (or is still being saved)."""
+    if reel.status in IN_FLIGHT:
+        return "⏳ I'm still saving this reel from your last message. I'll DM you as soon as it's ready."
+    title = reel.title or "this reel"
+    saved = f" on {reel.created_at.day} {reel.created_at.strftime('%b')}" if reel.created_at else ""
+    return f"📌 You've already saved this one{saved}!\n\n🎬 {title}\n\n🔗 Open it in your vault:\n{vault_link(user, reel.id)}"
+
+
 def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: str):
     """Sends the 'saved to your ReelDex' DM once per reel."""
     if source != "instagram_dm" or not sender_id or not settings.INSTAGRAM_PAGE_ACCESS_TOKEN or reel.dm_replied:
@@ -1053,6 +1062,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         continue
                     existing = owned_reels(db, user).filter(match).order_by(ReelItem.id.desc()).first()
                     if existing and existing.status != "failed":
+                        # Already in their vault: say so instead of staying silent
+                        background_tasks.add_task(send_instagram_dm_sync, sender_id, already_saved_message(user, existing))
                         continue
                     if existing:
                         existing.status = "processing"
