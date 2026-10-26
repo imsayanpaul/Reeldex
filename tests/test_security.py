@@ -282,6 +282,41 @@ def test_resending_a_saved_reel_gets_a_reply(client, db, monkeypatch):
     assert "already saved" in sent[0][1] and "Three habits" in sent[0][1]
 
 
+def test_reel_without_audio_is_not_called_silent_and_resend_retries(client, db, monkeypatch):
+    """When Instagram sends no sound, the reel isn't labelled 'no talking', and sending it again reprocesses it."""
+    import datetime as dt
+    import backend.routes as routes
+    from backend.models import WebhookEvent
+    sent, queued = [], []
+    monkeypatch.setattr(routes, "send_instagram_dm", lambda *a, **k: None)
+    monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda to, text: sent.append(text) or True)
+    monkeypatch.setattr(routes, "process_reel_pipeline", lambda reel_id, *a, **k: queued.append(reel_id))
+
+    def share(mid):
+        msg = {"entry": [{"id": "bot", "messaging": [{"sender": {"id": "558"}, "message": {
+            "mid": mid, "attachments": [{"type": "ig_reel", "payload": {"url": "https://www.instagram.com/reel/NOAUDIO01/"}}]}}]}]}
+        payload = json.dumps(msg).encode()
+        assert client.post("/api/webhook/instagram", content=payload, headers=signed(payload)).status_code == 200
+
+    share("noaudio-1")
+    db.expire_all()
+    reel = db.query(ReelItem).filter(ReelItem.shortcode == "NOAUDIO01").one()
+    reel.status, reel.dm_replied = "completed", True
+    db.add(Transcript(reel_id=reel.id, full_text="", language=routes.NO_AUDIO, summary="From the caption"))
+    db.query(WebhookEvent).filter(WebhookEvent.mid.like("reel:%NOAUDIO01")).update({"created_at": dt.datetime.utcnow() - dt.timedelta(minutes=5)}, synchronize_session=False)
+    db.commit()
+    db.refresh(reel)
+
+    flags = routes.speech_flags(reel)
+    assert flags["audio_missing"] and not flags["no_speech"]
+
+    share("noaudio-2")
+    db.expire_all()
+    reel = db.query(ReelItem).filter(ReelItem.shortcode == "NOAUDIO01").one()
+    assert queued == [reel.id, reel.id]          # processed again, not "already saved"
+    assert reel.dm_replied is False and not sent  # a fresh reply will follow the new run
+
+
 def test_reel_can_be_saved_again_later(db):
     """A claim older than the window is renewed, so re-sending a deleted reel later still works."""
     import datetime as dt

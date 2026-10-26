@@ -80,11 +80,19 @@ def thumb_for(reel: ReelItem) -> Optional[str]:
     return f"/api/thumbnail/{reel.shortcode}" if reel.shortcode else (reel.thumbnail_url or None)
 
 
+# Marks a transcript whose reel came without a sound track, which almost always means
+# Instagram sent a degraded file, not that the reel is silent
+NO_AUDIO = "no-audio"
+
+
 def speech_flags(r: ReelItem) -> Dict[str, bool]:
-    """no_speech: processed but nobody talks. from_caption: the summary came from the caption instead."""
+    """no_speech: processed but nobody talks. from_caption: the summary came from the caption instead.
+    audio_missing: Instagram didn't send the sound, so we can't tell whether anyone talks."""
     t = r.transcript
-    no_speech = r.status == "completed" and t is not None and not has_real_speech(t.full_text)
-    return {"no_speech": no_speech, "from_caption": no_speech and caption_is_useful(clean_caption(r.caption))}
+    audio_missing = r.status == "completed" and t is not None and t.language == NO_AUDIO
+    no_speech = r.status == "completed" and t is not None and not audio_missing and not has_real_speech(t.full_text)
+    from_caption = (no_speech or audio_missing) and caption_is_useful(clean_caption(r.caption))
+    return {"no_speech": no_speech, "audio_missing": audio_missing, "from_caption": from_caption}
 
 
 def reel_card(r: ReelItem) -> Dict[str, Any]:
@@ -163,7 +171,14 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     flags = speech_flags(reel)
     head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
     link = vault_link(user, reel.id)
-    if flags["from_caption"]:
+    if flags["audio_missing"]:
+        summary_note = "so I summarised it from the caption for now" if flags["from_caption"] else "so I couldn't summarise it yet"
+        msg = (
+            f"{head}\n🎧 Instagram didn't send me this reel's audio this time, {summary_note}.\n\n"
+            "Send the reel again in a few minutes, or tap Retry on it, to get the full transcript.\n\n"
+            f"🔗 View it:\n{link}"
+        )
+    elif flags["from_caption"]:
         msg = (
             f"{head}🏷️ [{reel.category or 'General Knowledge'}]\n\n"
             "🔇 No one really talks in this reel, so I summarised it from the caption instead.\n\n"
@@ -242,6 +257,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                         cached_reel = done
                         break
 
+        # A copy saved without its audio isn't worth reusing: fetch the reel again instead
+        if cached_reel and cached_reel.transcript and cached_reel.transcript.language == NO_AUDIO:
+            cached_reel = None
         if cached_reel and cached_reel.transcript and (cached_reel.transcript.full_text or cached_reel.transcript.summary):
             print(f"[Global Cache HIT] Reel #{cached_reel.id} -> #{reel.id} (0 tokens)")
             for field in ("title", "author", "thumbnail_url", "duration", "caption", "category", "tags", "action_items"):
@@ -262,6 +280,13 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
 
         # 1. Audio + metadata
         dl = download_audio_from_reel(reel_url)
+        if dl.get("no_audio"):
+            # Instagram sometimes serves a file without sound; a second request often gets the full one
+            time.sleep(8)
+            retry = download_audio_from_reel(reel_url)
+            if retry.get("success") and (retry.get("audio_path") or not retry.get("no_audio")):
+                print(f"[Downloader] Reel #{reel.id}: the second try got the audio")
+                dl = retry
         audio_path = dl.get("audio_path")
         reel.caption = (dl.get("caption") or "")[:5000] or None
         title = dl.get("title") or reel.title or f"Reel {reel.shortcode or ''}"
@@ -279,7 +304,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         db.commit()
 
         # 2. Transcribe. A failed call is an error, not silence. A reel with no sound track skips this.
-        tr = {"success": True, "full_text": "", "segments": [], "language": "en"} if silent else transcribe_audio_file(audio_path)
+        tr = {"success": True, "full_text": "", "segments": [], "language": NO_AUDIO} if silent else transcribe_audio_file(audio_path)
         if not tr.get("success"):
             raise Exception(tr.get("error") or "Transcription failed.")
         full_text = (tr.get("full_text") or tr.get("text") or "").strip()
@@ -1061,7 +1086,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         print(f"[Webhook] Same reel again within 2 minutes, skipped: {shortcode}")
                         continue
                     existing = owned_reels(db, user).filter(match).order_by(ReelItem.id.desc()).first()
-                    if existing and existing.status != "failed":
+                    audio_was_missing = bool(existing and existing.status == "completed" and speech_flags(existing)["audio_missing"])
+                    if existing and existing.status != "failed" and not audio_was_missing:
                         # Already in their vault: say so instead of staying silent
                         background_tasks.add_task(send_instagram_dm_sync, sender_id, already_saved_message(user, existing))
                         continue
@@ -1069,6 +1095,7 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         existing.status = "processing"
                         existing.error_message = None
                         existing.created_at = datetime.datetime.utcnow()
+                        existing.dm_replied = False  # they sent it again, so they get a fresh reply
                         db.commit()
                         background_tasks.add_task(process_reel_pipeline, existing.id, clean_url, sender_id, "instagram_dm", user.id)
                         continue

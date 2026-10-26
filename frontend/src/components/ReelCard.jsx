@@ -65,7 +65,7 @@ function ReelCardBase({ reel, index, selecting, selected, onOpen, onToggle, onMo
         <div className="min-w-0 flex-1 rd-card-meta">
           {reel.author && <div className="text-[13px] font-semibold truncate">@{reel.author}</div>}
           <div className="rd-mono truncate">
-            {formatDate(reel.created_at)}{reel.no_speech ? ' · no talking' : ''}{reel.collection_name ? ` · ${reel.collection_name}` : ''}
+            {formatDate(reel.created_at)}{reel.no_speech ? ' · no talking' : reel.audio_missing ? ' · no audio, retry' : ''}{reel.collection_name ? ` · ${reel.collection_name}` : ''}
           </div>
         </div>
         {!selecting && failed && (

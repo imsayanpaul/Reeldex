@@ -161,6 +161,15 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
 
               {!pending && !failed && (
                 <>
+                  {data.audio_missing && (
+                    <div className="mt-8 rounded-lg border border-white/15 bg-white/[0.04] p-5">
+                      <div className="flex items-center gap-2 rd-label text-white"><VolumeX size={15} /> Audio didn’t come through</div>
+                      <p className="text-white/75 text-[14px] mt-2 mb-0">
+                        Instagram didn’t send this reel’s sound this time{data.from_caption ? ', so the summary below comes from the creator’s caption' : ''}. Retry in a few minutes to get the full transcript.
+                      </p>
+                    </div>
+                  )}
+
                   {data.no_speech && (
                     <div className="mt-8 rounded-lg border border-white/15 bg-white/[0.04] p-5">
                       <div className="flex items-center gap-2 rd-label text-white"><VolumeX size={15} /> No talking in this reel</div>
