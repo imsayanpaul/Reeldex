@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import glob
+import subprocess
 import yt_dlp
 from typing import Dict, Any, Optional
 from backend.config import settings
@@ -46,6 +47,39 @@ def _remove_partials(output_filename: str) -> None:
             os.remove(leftover)
         except OSError:
             pass
+
+
+def _extract_audio_directly(output_filename: str, shortcode: str) -> Optional[str]:
+    """Pulls the sound out of a downloaded file with ffmpeg, without yt-dlp's codec check.
+    Logs what the file really contains, so a failure explains itself. Returns the mp3 path or None."""
+    target = os.path.join(settings.AUDIO_DIR, f"{output_filename}.mp3")
+    files = [p for p in glob.glob(os.path.join(settings.AUDIO_DIR, f"{output_filename}.*"))
+             if p != target and not p.endswith((".part", ".ytdl"))]
+    if not files:
+        print(f"[Downloader] {shortcode}: no downloaded file to read")
+        return None
+    source = max(files, key=os.path.getsize)
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,codec_name", "-of", "csv=p=0", source],
+            capture_output=True, text=True, timeout=30,
+        )
+        print(f"[Downloader] {shortcode}: {os.path.getsize(source)} byte file, streams: "
+              f"{probe.stdout.split()} {probe.stderr.strip()[:200]}")
+        done = subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-i", source, "-vn", "-acodec", "libmp3lame", "-q:a", "4", target],
+            capture_output=True, text=True, timeout=180,
+        )
+        if done.returncode == 0 and os.path.exists(target) and os.path.getsize(target) > 1024:
+            print(f"[Downloader] {shortcode}: extracted the audio directly with ffmpeg")
+            os.remove(source)
+            return target
+        print(f"[Downloader] {shortcode}: ffmpeg found no audio ({done.stderr.strip()[:200]})")
+    except (OSError, subprocess.SubprocessError) as err:
+        print(f"[Downloader] {shortcode}: couldn't read the file ({err})")
+    if os.path.exists(target):
+        os.remove(target)
+    return None
 
 
 def _metadata(info: Dict[str, Any], shortcode: str, clean_url: str, audio_path: Optional[str]) -> Dict[str, Any]:
@@ -138,6 +172,18 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
             return _metadata(info, shortcode, clean_url, audio_path if os.path.exists(audio_path) else None)
     except Exception as e:
         if _is_no_audio_error(str(e)):
+            # The check failed, but the file may still have sound: read it directly before giving up
+            direct = _extract_audio_directly(output_filename, shortcode)
+            if direct:
+                try:
+                    meta_opts = {k: v for k, v in ydl_opts.items() if k not in ("postprocessors", "format")}
+                    with yt_dlp.YoutubeDL(meta_opts) as ydl:
+                        info = ydl.extract_info(clean_url, download=False)
+                    return _metadata(info, shortcode, clean_url, direct)
+                except Exception as meta_error:
+                    print(f"[Downloader] {shortcode}: got the audio but not the details ({str(meta_error)[:120]})")
+                    return {"success": True, "audio_path": direct, "title": None, "caption": "", "author": None,
+                            "thumbnail": None, "duration": None, "shortcode": shortcode, "original_url": clean_url}
             _remove_partials(output_filename)
             # Instagram sometimes serves a video-only file as "best". Ask for the sound track separately
             # and merge it before giving up on the audio.
