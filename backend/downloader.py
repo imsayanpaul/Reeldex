@@ -3,9 +3,13 @@ import re
 import uuid
 import glob
 import subprocess
+import httpx
 import yt_dlp
 from typing import Dict, Any, Optional
+from urllib.parse import urlparse
 from backend.config import settings
+
+MAX_HELPER_BYTES = 80 * 1024 * 1024
 
 def extract_shortcode(url: str) -> Optional[str]:
     """Extract clean Instagram shortcode from reel/post/share URL, ignoring tracking parameters."""
@@ -80,6 +84,64 @@ def _extract_audio_directly(output_filename: str, shortcode: str) -> Optional[st
     if os.path.exists(target):
         os.remove(target)
     return None
+
+
+def _instagram_media_host(url: str) -> bool:
+    """Only Instagram's own media servers: the link comes over the network, so it's checked before use."""
+    parts = urlparse(str(url or ""))
+    host = (parts.hostname or "").lower()
+    return parts.scheme == "https" and (
+        host.endswith(".cdninstagram.com") or host.endswith(".fbcdn.net") or host == "cdninstagram.com")
+
+
+def _audio_from_helper(shortcode: str, output_filename: str, cookie_path: Optional[str]) -> Optional[str]:
+    """Asks the helper in Vercel's Mumbai region for the reel's audio link, then downloads it here.
+    Off unless REEL_HELPER_SECRET is set. Returns the mp3 path or None."""
+    secret = settings.REEL_HELPER_SECRET
+    if not secret:
+        return None
+    url = settings.REEL_HELPER_URL or f"{settings.FRONTEND_URL.rstrip('/')}/api/reel_audio"
+    cookies = ""
+    if cookie_path and os.path.exists(cookie_path):
+        with open(cookie_path) as f:
+            cookies = f.read()
+    source = os.path.join(settings.AUDIO_DIR, f"{output_filename}.helper")
+    try:
+        res = httpx.post(url, json={"shortcode": shortcode, "cookies": cookies},
+                         headers={"x-reel-helper-secret": secret}, timeout=45.0)
+        if res.status_code != 200:
+            print(f"[Downloader] {shortcode}: helper answered {res.status_code}: {res.text[:200]}")
+            return None
+        data = res.json()
+        print(f"[Downloader] {shortcode}: helper in India has_audio={data.get('has_audio')} "
+              f"({data.get('kind')}). Formats: {data.get('formats')}")
+        audio_url = data.get("audio_url")
+        if not audio_url:
+            return None
+        if not _instagram_media_host(audio_url):
+            print(f"[Downloader] {shortcode}: helper returned an unexpected host, ignored")
+            return None
+        size = 0
+        with httpx.stream("GET", audio_url, timeout=60.0, follow_redirects=True) as media:
+            if media.status_code != 200:
+                print(f"[Downloader] {shortcode}: audio link answered {media.status_code}")
+                return None
+            with open(source, "wb") as out:
+                for chunk in media.iter_bytes():
+                    size += len(chunk)
+                    if size > MAX_HELPER_BYTES:
+                        raise ValueError("audio file too large")
+                    out.write(chunk)
+        extracted = _extract_audio_directly(output_filename, shortcode)
+        if extracted:
+            print(f"[Downloader] {shortcode}: recovered the audio through the helper in India")
+        return extracted
+    except (httpx.HTTPError, ValueError, OSError) as err:
+        print(f"[Downloader] {shortcode}: helper failed ({str(err)[:200]})")
+        return None
+    finally:
+        if os.path.exists(source):
+            os.remove(source)
 
 
 def _metadata(info: Dict[str, Any], shortcode: str, clean_url: str, audio_path: Optional[str]) -> Dict[str, Any]:
@@ -198,17 +260,24 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
             except Exception as retry_error:
                 print(f"[Downloader] {shortcode}: separate sound track failed too ({str(retry_error)[:120]})")
             _remove_partials(output_filename)
+            # Instagram withholds some reels' sound from the server's region: ask from India
+            helper_audio = _audio_from_helper(shortcode, output_filename, ydl_opts.get('cookiefile'))
             # Truly silent reel. Keep the metadata so the caption can still be summarised.
             try:
                 meta_opts = {k: v for k, v in ydl_opts.items() if k not in ("postprocessors", "format")}
                 with yt_dlp.YoutubeDL(meta_opts) as ydl:
                     info = ydl.extract_info(clean_url, download=False)
+                if helper_audio:
+                    return _metadata(info, shortcode, clean_url, helper_audio)
                 result = _metadata(info, shortcode, clean_url, None)
                 result["no_audio"] = True
                 formats = [(f.get("format_id"), f.get("acodec"), f.get("vcodec")) for f in info.get("formats") or []]
                 print(f"[Downloader] {shortcode} has no sound track; continuing with the caption only. Formats: {formats[:15]}")
                 return result
             except Exception as meta_error:
+                if helper_audio:
+                    return {"success": True, "audio_path": helper_audio, "title": None, "caption": "", "author": None,
+                            "thumbnail": None, "duration": None, "shortcode": shortcode, "original_url": clean_url}
                 e = meta_error
         return {
             "success": False,

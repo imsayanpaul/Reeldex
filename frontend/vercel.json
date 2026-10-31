@@ -1,7 +1,11 @@
 {
+  "regions": ["bom1"],
+  "functions": {
+    "api/reel_audio.py": { "maxDuration": 30 }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

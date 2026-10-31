@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "*"
     # Comma-separated ReelDex user ids allowed to open the admin view (empty = nobody)
     ADMIN_USER_IDS: str = ""
+    # Helper in Vercel's Mumbai region for reels whose sound Instagram withholds from the
+    # server's region (frontend/api/reel_audio.py). Off unless the secret is set on both sides.
+    REEL_HELPER_SECRET: Optional[str] = None
+    REEL_HELPER_URL: Optional[str] = None
     
     # Storage & Paths
     DATABASE_URL: str = "sqlite:///./reeldex.db"

@@ -172,10 +172,9 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
     link = vault_link(user, reel.id)
     if flags["audio_missing"]:
-        summary_note = "so I summarised it from the caption for now" if flags["from_caption"] else "so I couldn't summarise it yet"
+        summary_note = "so I summarised it from the caption instead" if flags["from_caption"] else "so I couldn't summarise it"
         msg = (
-            f"{head}\n🎧 Instagram didn't send me this reel's audio this time, {summary_note}.\n\n"
-            "Send the reel again in a few minutes, or tap Retry on it, to get the full transcript.\n\n"
+            f"{head}\n🎧 Instagram wouldn't give me this reel's audio, which can happen with licensed music, {summary_note}.\n\n"
             f"🔗 View it:\n{link}"
         )
     elif flags["from_caption"]:
