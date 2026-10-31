@@ -40,7 +40,7 @@ Everyone saves reels: a design tool, a recipe, an interview tip, a workout. Inst
 1. **Share any reel to `@reeldex.io` in an Instagram DM**, or paste the link on the web.
 2. **ReelDex pulls only the audio** and transcribes every spoken word with timestamps.
 3. **AI pulls out what matters:** a title, a summary, key points, the tools and links mentioned, promo codes, and step-by-step instructions. Then it files the reel under a topic. The creator's caption is used too: it fixes misheard names, and for music-only reels with text on screen it's often where the content is.
-4. **The bot replies in your DM** with the summary and a link to the reel in your vault. If a reel can't be saved, it still replies, with a link to retry it.
+4. **The bot replies in your DM** with the summary and a link to the reel in your vault. If a reel can't be saved, it still replies, with a link to retry it. Send a reel you've already saved and it tells you so, with a link to it.
 5. **Search everything, or just ask:** *"What AI design tools have I saved?"* returns an answer that cites the exact reels it came from.
 
 ## Features
@@ -137,7 +137,7 @@ A private page for the owner, listed by user ID in `ADMIN_USER_IDS` (everyone el
 
 ## Security and reliability
 
-ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request. All of it is covered by **59 automated tests** in [`tests/test_security.py`](tests/test_security.py), run by CI on every push:
+ReelDex handles other people's Instagram accounts and libraries, so access control is enforced on the server for every request. All of it is covered by **61 automated tests** in [`tests/test_security.py`](tests/test_security.py), run by CI on every push:
 
 - **Ownership checks on every endpoint.** Reels, collections and saved chats are scoped to the signed-in user. Guessing another reel's ID returns 404.
 - **Signed webhooks.** Instagram webhook calls must carry a valid Meta `X-Hub-Signature-256` HMAC, compared in constant time. The verify handshake uses a constant-time compare too.
@@ -148,7 +148,7 @@ ReelDex handles other people's Instagram accounts and libraries, so access contr
 - **Locked-down server config.** API keys can't be changed over HTTP, and the status endpoint reports only true/false flags.
 - **Duplicate-safe webhooks.** Meta sometimes delivers a message twice, sometimes to two workers at once. Handled message ids are recorded in the database, so each reel is saved and answered once.
 - **Model fallbacks.** Transcription, insights and Ask Dex each try a chain of models, so one busy or retired model doesn't take the feature down.
-- **Reels that arrive without sound.** Instagram sometimes serves a video file with no audio track. The downloader then fetches the sound track separately and merges it; a reel that truly has no audio is summarised from its caption instead of failing.
+- **Reels Instagram sends without sound.** Instagram withholds the sound of some reels from the API's US server, likely because of music rights. When that happens, the API asks a small secured function in Vercel's Mumbai region for the audio link, checks it points to Instagram's own media servers, then downloads and transcribes as normal. If there's still no audio, the reel is summarised from its caption, the user is told why, and sending it again reprocesses it. These copies are never reused from the shared cache. Reels with sound never touch the helper.
 - **No silent failures.** A reel that fails to save still gets a DM reply with a retry link, and every rejected DM is logged with Instagram's own error (an expired access token shows up as error 190).
 - **Admin access tested.** No login, a normal user, a missing admin setting and a real admin are each covered by tests.
 
@@ -190,7 +190,7 @@ flowchart LR
 | Media | yt-dlp, FFmpeg |
 | Data | PostgreSQL in production, SQLite locally, with automatic column migrations |
 | Messaging | Instagram Graph API webhooks and DMs |
-| Hosting | Vercel (web), Render with Docker (API) |
+| Hosting | Vercel (web, plus the audio helper in Mumbai), Render with Docker (API) |
 | CI/CD | GitHub Actions on every push; auto-deploy to Vercel and Render |
 
 ## Running locally
@@ -214,6 +214,8 @@ META_APP_SECRET=your_meta_app_secret
 INSTAGRAM_COOKIES=
 # Optional: comma-separated user ids that can open the admin panel at #/admin
 ADMIN_USER_IDS=
+# Optional: turns on the Mumbai audio helper (set the same value on Vercel)
+REEL_HELPER_SECRET=
 ```
 
 ```bash
@@ -253,15 +255,16 @@ Reeldex/
 │   ├── admin.py           # Admin panel: users, AI usage, time spent, feedback, guest cleanup
 │   ├── usage.py           # Per-user AI token and audio-second tracking
 │   ├── models.py          # Users, reels, transcripts, collections, saved chats, feedback, usage
-│   ├── downloader.py      # yt-dlp audio extraction, with a separate-sound-track fallback
+│   ├── downloader.py      # yt-dlp audio extraction, with ffmpeg and Mumbai helper fallbacks
 │   ├── transcriber.py     # Whisper transcription with fallback
 │   ├── summarizer.py      # Insights and topic classification
 │   ├── search.py          # Ranking and Ask Dex retrieval
 │   └── instagram_bot.py   # Webhook parsing and DM replies
+├── frontend/api/          # Audio helper, a serverless function in Vercel's Mumbai region
 ├── frontend/src/
 │   ├── components/        # Vault, reel cards & table, reel detail, collections, Ask Dex, dialogs
 │   └── lib/               # API client, session, vault state hook, formatting & exports
-├── tests/               # 59 security, access-control and webhook tests (pytest)
+├── tests/               # 61 security, access-control and webhook tests (pytest)
 ├── .github/workflows/   # CI: lint, build, startup on SQLite + Postgres, security tests
 ├── Dockerfile
 └── render.yaml
