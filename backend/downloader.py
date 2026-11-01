@@ -94,9 +94,11 @@ def _instagram_media_host(url: str) -> bool:
         host.endswith(".cdninstagram.com") or host.endswith(".fbcdn.net") or host == "cdninstagram.com")
 
 
-def _audio_from_helper(shortcode: str, output_filename: str, cookie_path: Optional[str]) -> Optional[str]:
+def _audio_from_helper(shortcode: str, output_filename: str, cookie_path: Optional[str],
+                       details: Optional[Dict[str, Any]] = None) -> Optional[str]:
     """Asks the helper in Vercel's Mumbai region for the reel's audio link, then downloads it here.
-    Off unless REEL_HELPER_SECRET is set. Returns the mp3 path or None."""
+    Off unless REEL_HELPER_SECRET is set. Returns the mp3 path or None; what the helper
+    learned about the reel goes into details."""
     secret = settings.REEL_HELPER_SECRET
     if not secret:
         return None
@@ -115,6 +117,8 @@ def _audio_from_helper(shortcode: str, output_filename: str, cookie_path: Option
         data = res.json()
         print(f"[Downloader] {shortcode}: helper in India has_audio={data.get('has_audio')} "
               f"({data.get('kind')}). Formats: {data.get('formats')}")
+        if details is not None:
+            details.update(data)
         audio_url = data.get("audio_url")
         if not audio_url:
             return None
@@ -157,6 +161,42 @@ def _metadata(info: Dict[str, Any], shortcode: str, clean_url: str, audio_path: 
         "shortcode": shortcode,
         "original_url": clean_url,
     }
+
+
+def _recover_failed_fetch(clean_url: str, shortcode: str, output_filename: str,
+                         ydl_opts: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Instagram sometimes answers the server with nothing. Tries without the saved session,
+    then asks from India. Returns the result, or None if the reel still can't be read."""
+    _remove_partials(output_filename)
+    if ydl_opts.get('cookiefile'):
+        try:
+            no_session = {k: v for k, v in ydl_opts.items() if k != 'cookiefile'}
+            with yt_dlp.YoutubeDL(no_session) as ydl:
+                info = ydl.extract_info(clean_url, download=True)
+            audio_path = os.path.join(settings.AUDIO_DIR, f"{output_filename}.mp3")
+            if os.path.exists(audio_path):
+                print(f"[Downloader] {shortcode}: worked without the saved session")
+                return _metadata(info, shortcode, clean_url, audio_path)
+        except Exception as err:
+            print(f"[Downloader] {shortcode}: failed without the saved session too ({str(err)[:120]})")
+        _remove_partials(output_filename)
+
+    details: Dict[str, Any] = {}
+    audio = _audio_from_helper(shortcode, output_filename, ydl_opts.get('cookiefile'), details)
+    if audio:
+        return _metadata(details, shortcode, clean_url, audio)
+    if details.get("has_audio") is False:
+        result = _metadata(details, shortcode, clean_url, None)
+        result["no_audio"] = True
+        return result
+    return None
+
+
+def _readable_error(message: str) -> str:
+    """yt-dlp's wording for an empty answer from Instagram means nothing to the person reading it."""
+    if "failed to parse json" in (message or "").lower():
+        return "Instagram didn't send this reel to our server. Please try again in a few minutes."
+    return message
 
 
 def download_audio_from_reel(url: str) -> Dict[str, Any]:
@@ -279,9 +319,12 @@ def download_audio_from_reel(url: str) -> Dict[str, Any]:
                     return {"success": True, "audio_path": helper_audio, "title": None, "caption": "", "author": None,
                             "thumbnail": None, "duration": None, "shortcode": shortcode, "original_url": clean_url}
                 e = meta_error
+        recovered = _recover_failed_fetch(clean_url, shortcode, output_filename, ydl_opts)
+        if recovered:
+            return recovered
         return {
             "success": False,
-            "error": str(e),
+            "error": _readable_error(str(e)),
             "shortcode": shortcode,
             "original_url": clean_url
         }

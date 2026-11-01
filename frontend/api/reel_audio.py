@@ -37,8 +37,17 @@ def lookup(shortcode, cookies=""):
             with os.fdopen(handle, "w") as f:
                 f.write(cookies)
             opts["cookiefile"] = cookie_path
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(f"https://www.instagram.com/reel/{shortcode}/", download=False)
+        url = f"https://www.instagram.com/reel/{shortcode}/"
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+        except Exception:
+            # The saved session may be what Instagram refused, so try once without it
+            if not cookie_path:
+                raise
+            opts.pop("cookiefile")
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=False)
     finally:
         if cookie_path and os.path.exists(cookie_path):
             os.remove(cookie_path)
@@ -49,6 +58,8 @@ def lookup(shortcode, cookies=""):
         "audio_url": chosen.get("url") if chosen else None,
         "kind": kind,
         "formats": [(f.get("format_id"), f.get("acodec"), f.get("vcodec")) for f in info.get("formats") or []][:15],
+        # The API may not have been able to read these itself
+        **{key: info.get(key) for key in ("title", "description", "channel", "uploader", "thumbnail", "duration")},
     }
 
 
