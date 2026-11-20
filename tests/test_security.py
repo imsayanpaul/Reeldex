@@ -220,6 +220,26 @@ def test_exact_pairing_code_links(client, user_a):
     assert client.post("/api/auth/session", json={"token": user_a}).json()["is_instagram_linked"]
 
 
+def test_carousel_share_with_only_media_id_saves_post(client, db, monkeypatch):
+    import backend.routes as routes
+
+    async def resolve(media_id):
+        assert media_id == "123456789"
+        return "https://www.instagram.com/p/CarouselTest/"
+
+    monkeypatch.setattr(routes, "resolve_shared_post", resolve)
+    attachment = {"type": "ig_post", "payload": {
+        "ig_post_media_id": "123456789", "url": "https://lookaside.fbsbx.com/ig_messaging_cdn/"
+    }}
+    event = {"sender": {"id": "559"}, "message": {"mid": "carousel-mid", "attachments": [attachment]}}
+    payload = json.dumps({"entry": [{"id": "bot", "messaging": [event]}]}).encode()
+    response = client.post("/api/webhook/instagram", content=payload, headers=signed(payload))
+    assert response.status_code == 200
+    assert db.query(ReelItem).filter_by(sender_id="559", shortcode="CarouselTest").one().reel_url == (
+        "https://www.instagram.com/p/CarouselTest/"
+    )
+
+
 def test_same_message_delivered_twice_saves_one_reel(client, db, monkeypatch):
     import threading
     import backend.routes as routes

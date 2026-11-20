@@ -99,6 +99,27 @@ def fetch_instagram_username(sender_id: str) -> Optional[str]:
     return None
 
 
+async def resolve_shared_post(media_id: str) -> Optional[str]:
+    """Ask Meta for the permalink when a shared post only supplies a media ID."""
+    token = settings.INSTAGRAM_PAGE_ACCESS_TOKEN
+    if not token or not re.fullmatch(r"[0-9]{1,20}", media_id):
+        return None
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        for host in ("graph.instagram.com", "graph.facebook.com"):
+            try:
+                response = await client.get(
+                    f"https://{host}/v21.0/{media_id}", params={"fields": "permalink"},
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                if response.is_success:
+                    urls = extract_reel_urls_from_text(response.json().get("permalink") or "")
+                    if urls:
+                        return urls[0]
+            except (httpx.HTTPError, ValueError):
+                continue
+    return None
+
+
 def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Parses incoming Meta Webhook payload for Instagram messaging events.
@@ -144,10 +165,12 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             # Shared attachments (ig_reel, share, video, etc.)
             attachments = message.get("attachments", [])
             shared_post = False
+            post_ids = []
             for att in attachments:
                 att_type = att.get("type", "")
                 shared_post |= att_type in {"ig_post", "share", "post"}
                 att_payload = att.get("payload", {})
+                url_count = len(reel_urls)
                 payload_url = att_payload.get("url") if isinstance(att_payload, dict) else None
                 if not payload_url:
                     payload_url = att.get("url")
@@ -159,11 +182,17 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                 elif isinstance(att_payload, dict) and att_payload.get("reel_video_id"):
                     # Fallback if URL is missing
                     reel_urls.append(f"https://www.instagram.com/reel/{att_payload.get('reel_video_id')}/")
+                if len(reel_urls) == url_count and isinstance(att_payload, dict):
+                    post_id = str(att_payload.get("ig_post_media_id", ""))
+                    if re.fullmatch(r"[0-9]{1,20}", post_id):
+                        shared_post = True
+                        post_ids.append(post_id)
             
             mid = message.get("mid")
             results.append({
                 "message_id": mid,
                 "shared_post": shared_post,
+                "post_ids": list(dict.fromkeys(post_ids)),
                 "sender_id": sender_id,
                 "message_text": text,
                 "reel_urls": list(set(reel_urls))
