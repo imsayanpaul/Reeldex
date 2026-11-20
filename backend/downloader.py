@@ -33,7 +33,8 @@ def normalize_instagram_url(url: str) -> str:
     """Ensure standard canonical reel URL format without tracking query parameters."""
     shortcode = extract_shortcode(url)
     if shortcode:
-        return f"https://www.instagram.com/reel/{shortcode}/"
+        kind = "p" if "/p/" in url.split("?")[0] else "reel"
+        return f"https://www.instagram.com/{kind}/{shortcode}/"
     return url.split("?")[0].split("#")[0].strip()
 
 # yt-dlp's wording when the reel's video has no sound track at all

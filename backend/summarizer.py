@@ -84,7 +84,7 @@ def readable_title(title: Optional[str], caption: Optional[str]) -> Optional[str
     return first if len(first) <= 90 else first[:87].rstrip() + "…"
 
 
-def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None) -> Dict[str, Any]:
+def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None, *, slides: bool = False) -> Dict[str, Any]:
     """
     Uses Groq LLaMA to generate:
     1. 2-sentence summary
@@ -95,7 +95,7 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None, cap
     """
     caption = clean_caption(caption)
     has_speech = has_real_speech(transcript_text)
-    if not has_speech and not caption_is_useful(caption):
+    if not slides and not has_speech and not caption_is_useful(caption):
         return {
             "summary": "Short or non-verbal media clip.",
             "key_points": [],
@@ -106,6 +106,8 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None, cap
 
     api_key = settings.GROQ_API_KEY
     if not api_key:
+        if slides:
+            raise RuntimeError("Slide text saved. Configure Groq and retry to generate the summary.")
         print("[Summarizer] No GROQ_API_KEY found, returning fallback.")
         return {
             "summary": (transcript_text or caption)[:180] + "...",
@@ -115,7 +117,9 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None, cap
             "action_items": []
         }
 
-    if has_speech:
+    if slides:
+        source = f"Summarize the ideas across all numbered slides, including the final slide. Preserve specific details. Slide text follows:\n{transcript_text}"
+    elif has_speech:
         source = f"""Analyze the following transcript from an Instagram Reel and extract structured insights.
 
 Transcript:
@@ -209,6 +213,9 @@ Do NOT output any intro or outro markdown, only the JSON block."""
                 return data
         except Exception as e2:
             print(f"[Summarizer Fallback Error]: {e2}")
+
+    if slides:
+        raise RuntimeError("Slide text saved. Retry to generate the summary.")
 
     # Both models failed or returned no summary: a plain fallback, never None
     return {

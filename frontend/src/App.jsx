@@ -24,10 +24,11 @@ function parseHash() {
   const view = VIEWS.some((v) => v.id === parts[0]) || parts[0] === 'admin' ? parts[0] : 'vault';
   const collectionId = view === 'collections' && parts[1] ? Number(parts[1]) || null : null;
   const reel = Number(new URLSearchParams(query).get('reel')) || null;
-  return { view, collectionId, reel };
+  const slide = Number(new URLSearchParams(query).get("slide")) || null;
+  return { view, collectionId, reel, slide };
 }
 
-const toHash = ({ view, collectionId, reel }) => `#/${view}${collectionId ? `/${collectionId}` : ''}${reel ? `?reel=${reel}` : ''}`;
+const toHash = ({ view, collectionId, reel, slide }) => `#/${view}${collectionId ? `/${collectionId}` : ''}${reel ? `?reel=${reel}${slide ? `&slide=${slide}` : ''}` : ''}`;
 
 function useRoute() {
   const [route, setRoute] = useState(parseHash);
@@ -101,7 +102,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const openReel = useCallback((id) => go({ ...parseHash(), reel: id }, { state: { reel: true } }), [go]);
+  const openReel = useCallback((id, slide = null) => go({ ...parseHash(), reel: id, slide }, { state: { reel: true } }), [go]);
   const closeReel = useCallback(() => {
     if (window.history.state?.reel) window.history.back();
     else go({ ...parseHash(), reel: null }, { replace: true });
@@ -145,7 +146,7 @@ export default function App() {
 
       <TabBar view={route.view} onView={setView} />
 
-      {route.reel && <ReelDetail key={route.reel} reelId={route.reel} vault={vault} onClose={closeReel} onMove={onMove} />}
+      {route.reel && <ReelDetail key={route.reel} reelId={route.reel} initialSlide={route.slide} vault={vault} onClose={closeReel} onMove={onMove} />}
 
       <CollectionPicker
         open={!!move}

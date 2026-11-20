@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.database import get_db
 from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback, ActivityDay
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
+from backend.carousel import post_images, extract_slides, slide_insights
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
     extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
@@ -89,6 +90,8 @@ def speech_flags(r: ReelItem) -> Dict[str, bool]:
     """no_speech: processed but nobody talks. from_caption: the summary came from the caption instead.
     audio_missing: Instagram didn't send the sound, so we can't tell whether anyone talks."""
     t = r.transcript
+    if r.slides:
+        return dict(no_speech=False, audio_missing=False, from_caption=False)
     audio_missing = r.status == "completed" and t is not None and t.language == NO_AUDIO
     no_speech = r.status == "completed" and t is not None and not audio_missing and not has_real_speech(t.full_text)
     from_caption = (no_speech or audio_missing) and caption_is_useful(clean_caption(r.caption))
@@ -117,6 +120,7 @@ def reel_card(r: ReelItem) -> Dict[str, Any]:
         "status": r.status,
         "error_message": r.error_message,
         "created_at": r.created_at.isoformat() if r.created_at else "",
+        "slide_count": len(r.slides or []),
         "has_transcript": bool(t),
         "language": t.language if t else "en",
         "preview_text": t.full_text[:140] if t and t.full_text else "",
@@ -171,7 +175,10 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     flags = speech_flags(reel)
     head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
     link = vault_link(user, reel.id)
-    if flags["audio_missing"]:
+    if reel.slides:
+        count = sum(1 for s in reel.slides if s["text"])
+        msg = f"{head}\nRead {count} of {len(reel.slides)} slides. Open the slide text and summary:\n{link}"
+    elif flags["audio_missing"]:
         summary_note = "so I summarised it from the caption instead" if flags["from_caption"] else "so I couldn't summarise it"
         msg = (
             f"{head}\n🎧 Instagram wouldn't give me this reel's audio, which can happen with licensed music, {summary_note}.\n\n"
@@ -232,6 +239,47 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             return
         usage.for_user(user_id or reel.user_id)
 
+        video_download = None
+        if "/p/" in reel_url:
+            try:
+                post = post_images(reel.shortcode)
+            except Exception as metadata_error:
+                # Some video posts are available through the existing downloader only.
+                video_download = download_audio_from_reel(reel_url)
+                audio_path = video_download.get("audio_path")
+                if not audio_path:
+                    raise ValueError("Could not retrieve the post pages from Instagram. Retry from the vault.") from metadata_error
+                post = None
+            if post is not None:
+                images, caption, author = post
+                reel.caption, reel.author, reel.reel_url = caption, author, reel_url
+                reel.status = "downloading"
+                previous = reel.slides or []
+                db.commit()
+
+                def save_progress(done):
+                    completed = {s["number"]: s for s in previous + done}
+                    reel.slides = [completed[i] for i in sorted(completed)]
+                    db.commit()
+
+                slides = extract_slides(images, previous, save_progress)
+                reel.slides = slides
+                first_text = next((s["text"] for s in slides if s["text"]), "")
+                reel.title = (first_text or caption or "Instagram post").splitlines()[0][:300]
+                full_text, insights = slide_insights(slides, reel.title)
+                transcript = reel.transcript or Transcript(reel_id=reel.id)
+                transcript.full_text, transcript.summary = full_text, insights["summary"]
+                transcript.key_points = insights.get("key_points", [])
+                transcript.language, transcript.segments = "und", []
+                transcript.translated_text = transcript.translated_summary = None
+                reel.tags, reel.action_items = insights.get("tags", []), insights.get("action_items", [])
+                reel.category = insights.get("category", "General Knowledge")
+                reel.status, reel.error_message = "completed", None
+                db.add(transcript)
+                db.commit()
+                reply_in_dm(db, reel, sender_id, source)
+                return
+
         # STEP 0: global cache (0 tokens)
         cached_reel = None
         if reel.shortcode or reel_url:
@@ -257,7 +305,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                         break
 
         # A copy saved without its audio isn't worth reusing: fetch the reel again instead
-        if cached_reel and cached_reel.transcript and cached_reel.transcript.language == NO_AUDIO:
+        if cached_reel and (cached_reel.slides or (cached_reel.transcript and cached_reel.transcript.language == NO_AUDIO)):
             cached_reel = None
         if cached_reel and cached_reel.transcript and (cached_reel.transcript.full_text or cached_reel.transcript.summary):
             print(f"[Global Cache HIT] Reel #{cached_reel.id} -> #{reel.id} (0 tokens)")
@@ -278,7 +326,7 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         db.commit()
 
         # 1. Audio + metadata
-        dl = download_audio_from_reel(reel_url)
+        dl = video_download or download_audio_from_reel(reel_url)
         if dl.get("no_audio"):
             # Instagram sometimes serves a file without sound; a second request often gets the full one
             time.sleep(8)
@@ -691,9 +739,11 @@ def list_reels(
     now_utc = datetime.datetime.utcnow()
     stale = False
     for r in reels_db:
-        if r.status in IN_FLIGHT and r.created_at:
-            c_at = r.created_at.replace(tzinfo=None) if getattr(r.created_at, "tzinfo", None) else r.created_at
-            if (now_utc - c_at).total_seconds() > 180:
+        is_post = "/p/" in r.reel_url
+        last_progress = r.updated_at if is_post else r.created_at
+        if r.status in IN_FLIGHT and last_progress:
+            c_at = last_progress.replace(tzinfo=None)
+            if (now_utc - c_at).total_seconds() > (900 if is_post else 180):
                 r.status = "failed"
                 r.error_message = "Transcription timed out. Tap retry."
                 stale = True
@@ -717,6 +767,8 @@ def list_reels(
 def retry_reel(reel_id: int, background_tasks: BackgroundTasks, user: User = Depends(require_user), db: Session = Depends(get_db)):
     """Re-runs download and transcription for a failed or stuck reel."""
     reel = get_owned_reel(db, user, reel_id)
+    if reel.status in IN_FLIGHT:
+        return {"success": True, "status": reel.status}
     reel.status = "processing"
     reel.error_message = None
     reel.created_at = datetime.datetime.utcnow()
@@ -744,6 +796,7 @@ def get_reel_detail(reel_id: int, user: User = Depends(require_user), db: Sessio
         full_text_val = t.full_text or " ".join(s.get("text", "").strip() for s in segments_data if isinstance(s, dict))
 
     data = reel_card(reel)
+    data["slides"] = reel.slides or []
     data["caption"] = reel.caption
     data["transcript"] = {
         "full_text": full_text_val,
@@ -932,6 +985,7 @@ def ask_chat_endpoint(req: AskChatRequest, header_token: Optional[str] = Depends
             "tags": r.tags or [],
             "action_items": r.action_items or [],
             "summary": (t.summary if t else "") or "",
+            "slides": r.slides or [],
             # The caption is searchable too: music + text reels often only have content there
             "full_text": "\n".join(x for x in ((t.full_text if t else ""), clean_caption(r.caption)) if x),
         })
@@ -956,6 +1010,7 @@ def transcribe_reel_endpoint(req: TranscribeRequest, background_tasks: Backgroun
 
     if existing:
         reel = existing
+        reel.reel_url = clean_url
         reel.status = "processing"
         reel.error_message = None
         reel.created_at = datetime.datetime.utcnow()
@@ -1091,6 +1146,7 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         background_tasks.add_task(send_instagram_dm_sync, sender_id, already_saved_message(user, existing))
                         continue
                     if existing:
+                        existing.reel_url = clean_url
                         existing.status = "processing"
                         existing.error_message = None
                         existing.created_at = datetime.datetime.utcnow()
@@ -1107,6 +1163,8 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                     db.refresh(reel)
                     background_tasks.add_task(process_reel_pipeline, reel.id, clean_url, sender_id, "instagram_dm", user.id)
 
+            elif item.get("shared_post"):
+                background_tasks.add_task(send_instagram_dm_sync, sender_id, "Please copy the Instagram post link and send it here so I can read the slides.")
             elif message_text:
                 lower = message_text.lower()
                 if "http" in lower or "reeldex" in lower or "saved to your" in lower:

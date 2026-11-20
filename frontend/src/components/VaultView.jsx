@@ -43,8 +43,8 @@ function SaveLinkBar({ onSave }) {
           style={{ paddingLeft: 44 }}
           type="url"
           inputMode="url"
-          placeholder="Paste a reel link"
-          aria-label="Instagram reel link"
+          placeholder="Paste a reel or post link"
+          aria-label="Instagram reel or post link"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
         />

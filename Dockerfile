@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Install system dependencies (ffmpeg for yt-dlp audio stream handling)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr tesseract-ocr-eng \
     ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*

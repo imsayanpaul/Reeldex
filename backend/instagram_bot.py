@@ -143,13 +143,17 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             
             # Shared attachments (ig_reel, share, video, etc.)
             attachments = message.get("attachments", [])
+            shared_post = False
             for att in attachments:
                 att_type = att.get("type", "")
+                shared_post |= att_type in {"ig_post", "share", "post"}
                 att_payload = att.get("payload", {})
                 payload_url = att_payload.get("url") if isinstance(att_payload, dict) else None
                 if not payload_url:
                     payload_url = att.get("url")
                 
+                if isinstance(att_payload, dict) and att_payload.get("permalink"):
+                    reel_urls.extend(extract_reel_urls_from_text(str(att_payload["permalink"])))
                 if payload_url:
                     reel_urls.extend(extract_reel_urls_from_text(payload_url))
                 elif isinstance(att_payload, dict) and att_payload.get("reel_video_id"):
@@ -159,6 +163,7 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             mid = message.get("mid")
             results.append({
                 "message_id": mid,
+                "shared_post": shared_post,
                 "sender_id": sender_id,
                 "message_text": text,
                 "reel_urls": list(set(reel_urls))

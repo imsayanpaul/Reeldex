@@ -29,7 +29,7 @@ function Section({ title, children, action }) {
   );
 }
 
-export function ReelDetail({ reelId, vault, onClose, onMove }) {
+export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
   const listReel = vault.reels.find((r) => r.id === reelId);
   const [reel, setReel] = useState(null);
   const [error, setError] = useState(null);
@@ -63,7 +63,11 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
   const tools = actions.filter((a) => a.type !== 'step');
   const steps = actions.filter((a) => a.type === 'step');
   const keyPoints = (t?.key_points || []).map((k) => (typeof k === 'string' ? k : k?.text || k?.point || '')).filter(Boolean);
-  const canTranslate = t && !isEnglish(t.language);
+  const slides = data?.slides || [];
+  useEffect(() => {
+    if (initialSlide && reel?.slides?.length) document.getElementById(`slide-${initialSlide}`)?.scrollIntoView({ block: "center" });
+  }, [initialSlide, reel]);
+  const canTranslate = t && !slides.length && !isEnglish(t.language);
 
   const tr = translated || (t?.translated_text ? { translated_text: t.translated_text, translated_summary: t.translated_summary } : null);
   const summary = showTranslated && tr?.translated_summary ? tr.translated_summary : summaryText(t?.summary || data?.summary);
@@ -159,7 +163,7 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                 </div>
               )}
 
-              {!pending && !failed && (
+              {!pending && (!failed || slides.length > 0) && (
                 <>
                   {data.audio_missing && (
                     <div className="mt-8 rounded-lg border border-white/15 bg-white/[0.04] p-5">
@@ -198,7 +202,7 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                   )}
 
                   {summary && !(data.no_speech && !data.from_caption) && (
-                    <Section title="Summary">
+                    <Section title={slides.length ? `Summary · based on ${slides.filter(s => s.text).length} of ${slides.length} slides` : "Summary"}>
                       <p className="m-0 text-[17px] leading-relaxed text-white/90">{linkify(summary)}</p>
                     </Section>
                   )}
@@ -242,7 +246,22 @@ export function ReelDetail({ reelId, vault, onClose, onMove }) {
                     </Section>
                   )}
 
-                  {fullText && (
+                  {slides.length > 0 && (
+                    <Section title="Slide text">
+                      <p className="rd-mono">Read {slides.filter(s => s.text).length} of {slides.length} slides</p>
+                      {slides.map(slide => (
+                        <section key={slide.number} id={`slide-${slide.number}`} className="mt-5">
+                          <h4>Slide {slide.number}</h4>
+                          <p className="whitespace-pre-wrap">{slide.text || ({video: 'Video slide', no_text: 'No text detected', unreadable: 'Could not read this slide'}[slide.status])}</p>
+                        </section>
+                      ))}
+                      {!failed && slides.some(s => s.status === 'unreadable' || s.status === 'no_text') && (
+                        <button className="rd-btn rd-btn-line rd-btn-sm" onClick={() => vault.retryReel(reelId)}>Retry slide text</button>
+                      )}
+                    </Section>
+                  )}
+
+                  {fullText && !slides.length && (
                     <Section
                       title="Transcript"
                       action={segments.length > 0 && (

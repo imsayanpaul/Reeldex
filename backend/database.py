@@ -59,6 +59,7 @@ def get_db():
 _ADDED_COLUMNS = [
     ("reels", "collection_id", "INTEGER"),
     ("users", "last_seen_at", "TIMESTAMP"),
+    ("reels", "slides", "JSON"),
     ("reels", "caption", "TEXT"),
     ("transcripts", "translated_text", "TEXT"),
     ("transcripts", "translated_summary", "TEXT"),

@@ -229,6 +229,14 @@ def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], histor
         # Context compression: Include summary + top 350 chars of transcript
         summary_text = r.get("summary") or ""
         transcript_snippet = (r.get("full_text") or "")[:350]
+        if r.get("slides"):
+            passages = [(s["number"], s["text"][i:i+700]) for s in r["slides"]
+                        for i in range(0, len(s["text"]), 700)]
+            terms = set(tokenize(user_question))
+            passages.sort(key=lambda p: len(terms.intersection(tokenize(p[1]))), reverse=True)
+            if passages:
+                citations[-1]["slide"] = passages[0][0]
+            transcript_snippet = "\n".join(f"Slide {n}: {part}" for n, part in passages[:4])
         reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
@@ -250,6 +258,7 @@ def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], histor
 
     system_prompt = (
         "You are Dex AI, an intelligent personal knowledge assistant for a user's saved Instagram Reels vault. "
+        "For numbered slide excerpts cite the slide number alongside the post link. "
         "Answer the user's question accurately using the provided reels context. "
         "STRICT FORMATTING RULE 1 (NO TABLES): NEVER use Markdown tables (`| ... |`). "
         "STRICT FORMATTING RULE 2 (CATEGORIZED PUNCHY BULLETS): Group your response into logical category headings (e.g. `### 🎨 Web Design Tools & Libraries`, `### 🌿 Health & Wellness Tips`). "

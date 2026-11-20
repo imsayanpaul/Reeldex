@@ -66,6 +66,8 @@ class ReelItem(Base):
     duration = Column(Float, nullable=True)
     caption = Column(Text, nullable=True)  # the creator's Instagram caption
     
+    slides = Column(JSON, nullable=True)  # ordered OCR results for image posts
+
     # Metadata & Source
     source = Column(String(50), default="web_ui")  # "web_ui" or "instagram_dm"
     sender_id = Column(String(100), nullable=True)  # Instagram sender ID

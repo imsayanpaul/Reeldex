@@ -54,11 +54,11 @@ function Answer({ msg, question, onOpen, onMore, busy }) {
               <button
                 key={`${c.reel_id || c.id}-${i}`}
                 type="button"
-                onClick={() => onOpen(c.reel_id || c.id)}
+                onClick={() => onOpen(c.reel_id || c.id, c.slide)}
                 className={`rd-card shrink-0 w-[220px] !min-h-0 !p-3 ${['is-white', 'is-blue', 'is-gray'][i % 3]}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-[14px] font-semibold leading-snug line-clamp-2">{c.title}</span>
+                  <span className="text-[14px] font-semibold leading-snug line-clamp-2">{c.title}{c.slide ? ` · Slide ${c.slide}` : ''}</span>
                   <ArrowUpRight size={15} className="shrink-0" />
                 </div>
                 {c.author && <span className="rd-mono opacity-60 mt-2 truncate">@{c.author}</span>}

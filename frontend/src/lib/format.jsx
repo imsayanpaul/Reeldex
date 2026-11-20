@@ -76,6 +76,10 @@ export function openInstagramUrl(rawUrl, e) {
     return;
   }
 
+  if (rawUrl.includes("/p/")) {
+    window.open(rawUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
   const shortcode = rawUrl.match(/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i)?.[1];
   if (isAndroid) {
     const path = shortcode ? `reel/${shortcode}/` : rawUrl.replace(/^https?:\/\/(?:www\.)?instagram\.com\//i, '');
