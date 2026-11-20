@@ -240,6 +240,28 @@ def test_carousel_share_with_only_media_id_saves_post(client, db, monkeypatch):
     )
 
 
+def test_carousel_preview_recovers_permalink_from_dm(client, db, monkeypatch):
+    import httpx
+    import backend.instagram_bot as bot
+    import backend.routes as routes
+
+    def message_lookup(request):
+        assert request.url.path == "/v21.0/carousel-preview-mid"
+        assert request.url.params["fields"] == "shares{link}"
+        return httpx.Response(200, json={"shares": {"data": [{"link": "https://www.instagram.com/p/CoverTest/"}]}})
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(bot.settings, "INSTAGRAM_PAGE_ACCESS_TOKEN", "test-token")
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: original_client(
+        transport=httpx.MockTransport(message_lookup), **kw))
+    monkeypatch.setattr(routes, "fill_instagram_username", lambda *args: None)
+    share = {"type": "share", "payload": {"url": "https://lookaside.fbsbx.com/ig_messaging_cdn/"}}
+    event = {"sender": {"id": "560"}, "message": {"mid": "carousel-preview-mid", "attachments": [share]}}
+    payload = json.dumps({"entry": [{"id": "bot", "messaging": [event]}]}).encode()
+    client.post("/api/webhook/instagram", content=payload, headers=signed(payload))
+    assert db.query(ReelItem).filter_by(sender_id="560", shortcode="CoverTest").one().reel_url.endswith("/p/CoverTest/")
+
+
 def test_same_message_delivered_twice_saves_one_reel(client, db, monkeypatch):
     import threading
     import backend.routes as routes

@@ -23,7 +23,7 @@ from backend.summarizer import (
     extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
 )
 from backend.search import rank_reels_search, ask_reels_ai
-from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload, fetch_instagram_username, resolve_shared_post
+from backend.instagram_bot import send_instagram_dm, send_instagram_dm_sync, parse_webhook_payload, fetch_instagram_username, resolve_shared_post, shared_message_links
 from backend.auth import (
     read_token, require_user, owned_reels, get_owned_reel, verify_meta_signature, rate_limit, touch_last_seen,
 )
@@ -1097,6 +1097,9 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                 permalink = await resolve_shared_post(post_id)
                 if permalink and permalink not in reel_urls:
                     reel_urls.append(permalink)
+            if item.get("shared_post") and not reel_urls:
+                print(f"[Carousel] Looking up DM share; media IDs supplied: {len(item.get('post_ids', []))}")
+                reel_urls.extend(await shared_message_links(item.get("message_id")))
             message_text = (item.get("message_text") or "").strip()
 
             # 1. Pairing code (exact match on the generated MIND-XXXXXX code)

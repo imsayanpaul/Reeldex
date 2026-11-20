@@ -1,4 +1,5 @@
 import re
+from urllib.parse import quote, urlsplit
 import httpx
 from typing import Optional, List, Dict, Any
 from backend.config import settings
@@ -118,6 +119,35 @@ async def resolve_shared_post(media_id: str) -> Optional[str]:
             except (httpx.HTTPError, ValueError):
                 continue
     return None
+
+
+async def shared_message_links(message_id: str) -> List[str]:
+    """Recover post links from the message when its webhook contains only a preview."""
+    token = settings.INSTAGRAM_PAGE_ACCESS_TOKEN
+    if not token or not isinstance(message_id, str) or not message_id or len(message_id) > 2000:
+        return []
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        for host in ("graph.instagram.com", "graph.facebook.com"):
+            try:
+                response = await client.get(
+                    f"https://{host}/v21.0/{quote(message_id, safe='')}",
+                    params={"fields": "shares{link}"}, headers={"Authorization": f"Bearer {token}"},
+                )
+                if not response.is_success:
+                    print(f"[Carousel] Message lookup via {host}: HTTP {response.status_code}")
+                    continue
+                shares = response.json().get("shares") or {}
+                links = []
+                for share in shares.get("data", []):
+                    link = share.get("link")
+                    if isinstance(link, str) and urlsplit(link).hostname in {"instagram.com", "www.instagram.com"}:
+                        links.extend(extract_reel_urls_from_text(link.split("?")[0]))
+                if links:
+                    return list(dict.fromkeys(links))
+                print(f"[Carousel] Message lookup via {host}: no post permalink")
+            except (httpx.HTTPError, ValueError, AttributeError) as error:
+                print(f"[Carousel] Message lookup via {host}: {type(error).__name__}")
+    return []
 
 
 def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
