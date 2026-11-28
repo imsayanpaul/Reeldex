@@ -6,6 +6,8 @@ import hmac
 import datetime
 import random
 import urllib.request
+
+import httpx
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request, Response
 from fastapi.responses import FileResponse
@@ -19,7 +21,7 @@ from backend.models import ReelItem, Transcript, User, PairingCode, Collection, 
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
 from backend.carousel import (
     post_images, extract_slides, slide_insights, shared_album_images, preview_url,
-    MEDIA_PREFIX, media_placeholder, public_reel_url,
+    MEDIA_PREFIX, media_placeholder, public_reel_url, shortcode_from_media_id, caption_matches,
 )
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
@@ -264,9 +266,22 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         if "/p/" in reel_url or no_link:
             try:
                 if no_link:
-                    raise ValueError("Instagram did not share this post's link")
-                post = post_images(reel.shortcode)
+                    # The shared media id may be Instagram's own post id, which converts to the
+                    # post's shortcode. Only trust the guess if its caption matches the share's.
+                    guess = shortcode_from_media_id(reel.shared_media_id) if reel.caption else None
+                    if not guess:
+                        raise ValueError("Instagram did not share this post's link")
+                    found = post_images(guess)
+                    if found is None or not caption_matches(reel.caption, found[1]):
+                        raise ValueError("The media id did not lead to the shared post")
+                    print(f"[Carousel] Found the shared post from its media id; reading all {len(found[0])} slides")
+                    post, no_link = found, False
+                    reel.shortcode, reel_url = guess, f"https://www.instagram.com/p/{guess}/"
+                else:
+                    post = post_images(reel.shortcode)
             except Exception as metadata_error:
+                if no_link:
+                    print(f"[Carousel] No post from the media id: {type(metadata_error).__name__}")
                 post = None
                 # 1. A post shared by DM has a media ID: ask the Graph API for the album
                 album = shared_album_images(reel.shared_media_id) if reel.shared_media_id else []
@@ -300,7 +315,8 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 images, caption, author = post
                 reel.caption, reel.author, reel.reel_url = caption, author, reel_url
                 reel.status = "downloading"
-                previous = reel.slides or []
+                # A cover read earlier from a DM preview is not reused once the full post is readable
+                previous = [s for s in (reel.slides or []) if cover_only or not s.get("cover_only")]
                 db.commit()
 
                 def save_progress(done):
@@ -312,10 +328,13 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 if cover_only:
                     # Only the DM preview was readable: tell the reply and the page it's partial
                     slides = [dict(s, cover_only=True) for s in slides]
+                    thumb = save_cover_thumbnail(reel.shared_media_id, images[0])
+                    if thumb:
+                        reel.thumbnail_url = thumb
                 reel.slides = slides
                 first_text = next((s["text"] for s in slides if s["text"]), "")
                 reel.title = (first_text or caption or "Instagram post").splitlines()[0][:300]
-                full_text, insights = slide_insights(slides, reel.title)
+                full_text, insights = slide_insights(slides, reel.title, caption=caption)
                 transcript = reel.transcript or Transcript(reel_id=reel.id)
                 transcript.full_text, transcript.summary = full_text, insights["summary"]
                 transcript.key_points = insights.get("key_points", [])
@@ -717,6 +736,32 @@ def translate_reel(reel_id: int, user: User = Depends(require_user), db: Session
 THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "downloads", "thumbnails")
 os.makedirs(THUMBNAIL_DIR, exist_ok=True)
 
+# Covers saved from DM previews, for posts that have no shortcode ("m" + media id)
+COVER_KEY_RE = re.compile(r"^m[0-9]{1,20}$")
+
+
+def save_cover_thumbnail(media_id: Optional[str], url: str) -> Optional[str]:
+    """Keep the DM preview as the post's thumbnail; its signed link expires, so store the image."""
+    key = f"m{media_id}" if media_id else ""
+    if not COVER_KEY_RE.match(key) or not preview_url(url):
+        return None
+    try:
+        image = bytearray()
+        with httpx.stream("GET", url, timeout=15) as response:
+            response.raise_for_status()
+            for chunk in response.iter_bytes():
+                image.extend(chunk)
+                if len(image) > 5_000_000:
+                    return None
+        if len(image) < 1000:
+            return None
+        with open(os.path.join(THUMBNAIL_DIR, f"{key}.jpg"), "wb") as f:
+            f.write(image)
+        return f"/api/thumbnail/{key}"
+    except (httpx.HTTPError, OSError) as error:
+        print(f"[Carousel] Could not keep the cover as a thumbnail: {type(error).__name__}")
+        return None
+
 
 @router.get("/thumbnail/{shortcode}")
 def get_thumbnail_proxy(shortcode: str):
@@ -725,6 +770,9 @@ def get_thumbnail_proxy(shortcode: str):
     if not SHORTCODE_RE.match(clean_code):
         raise HTTPException(status_code=400, detail="Invalid shortcode")
     cache_path = os.path.join(THUMBNAIL_DIR, f"{clean_code}.jpg")
+    if COVER_KEY_RE.match(clean_code) and not os.path.exists(cache_path):
+        # A saved DM cover that is gone (the disk was reset): there is no post page to refetch
+        raise HTTPException(status_code=404, detail="Thumbnail not found")
     cache_headers = {"Cache-Control": "public, max-age=604800, immutable"}
 
     if os.path.exists(cache_path) and os.path.getsize(cache_path) > 1000:

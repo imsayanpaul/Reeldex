@@ -409,9 +409,92 @@ def _stub_slide_steps(monkeypatch, read):
 
     monkeypatch.setattr(routes, "post_images", blocked)
     monkeypatch.setattr(routes, "extract_slides", extract)
-    monkeypatch.setattr(routes, "slide_insights", lambda slides, title: (
+    monkeypatch.setattr(routes, "slide_insights", lambda slides, title, caption=None: (
         "Slide 1\nFive tools for designers", {"summary": "Design tools", "category": "Design"}))
     monkeypatch.setattr(routes, "reply_in_dm", lambda *args: None)
+    monkeypatch.setattr(routes, "save_cover_thumbnail", lambda media_id, url: None)
+
+
+def test_media_id_converts_to_shortcode_and_caption_must_match():
+    from backend.carousel import shortcode_from_media_id, caption_matches
+    assert shortcode_from_media_id("1") == "B"
+    assert shortcode_from_media_id("64") == "BA"
+    assert shortcode_from_media_id(str(64 ** 2 * 3 + 64 * 62 + 63)) == "D-_"
+    assert shortcode_from_media_id("12ab") is None and shortcode_from_media_id("0") is None
+    share = "Want to sound more confident and impressive while speaking in public? ⭐ Your opening lines…"
+    assert caption_matches(share, "Want to sound more confident and impressive while speaking in public? ⭐ Your opening lines matter")
+    assert not caption_matches(share, "Ten pasta recipes for busy weeknights")
+    assert not caption_matches("Hi", "Hi there")  # too short to trust
+    assert not caption_matches(None, "anything")
+
+
+def _linkless_reel(db, media_id, caption):
+    reel = ReelItem(reel_url=f"instagram-media:{media_id}", source="instagram_dm", status="processing",
+                    shared_media_id=media_id, caption=caption)
+    db.add(reel)
+    db.commit()
+    return reel.id
+
+
+def test_shared_media_id_leads_to_the_full_post(db, monkeypatch):
+    import backend.routes as routes
+    from backend.carousel import shortcode_from_media_id
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+    shortcode = shortcode_from_media_id("3123456789012345678")
+    slides = [f"https://scontent.cdninstagram.com/{n}.jpg" for n in range(10)]
+    caption = "Want to sound more confident and impressive while speaking in public? Ten openers inside"
+    monkeypatch.setattr(routes, "post_images", lambda code: (slides, caption, "passionatelearners") if code == shortcode else None)
+    reel_id = _linkless_reel(db, "3123456789012345678", "Want to sound more confident and impressive while speaking in public?")
+    routes.real_process_reel_pipeline(reel_id, "instagram-media:3123456789012345678",
+                                      preview="https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=9")
+    assert read == [slides]  # every slide, not the cover
+    db.expire_all()
+    done = db.get(ReelItem, reel_id)
+    assert done.status == "completed"
+    assert done.shortcode == shortcode and done.reel_url == f"https://www.instagram.com/p/{shortcode}/"
+    assert not any(s.get("cover_only") for s in done.slides)
+
+
+def test_wrong_post_from_media_id_is_not_used(db, monkeypatch):
+    import backend.routes as routes
+    read, thumbs = [], []
+    _stub_slide_steps(monkeypatch, read)
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: [])
+    monkeypatch.setattr(routes, "post_images", lambda code: (["https://scontent.cdninstagram.com/x.jpg"], "Ten pasta recipes for busy weeknights", "chef"))
+    monkeypatch.setattr(routes, "save_cover_thumbnail", lambda media_id, url: thumbs.append((media_id, url)) or f"/api/thumbnail/m{media_id}")
+    cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=10"
+    reel_id = _linkless_reel(db, "17841400000000001", "Want to sound more confident and impressive while speaking in public?")
+    routes.real_process_reel_pipeline(reel_id, "instagram-media:17841400000000001", preview=cover)
+    assert read == [[cover]]  # the guessed post's caption didn't match, so only the cover
+    db.expire_all()
+    done = db.get(ReelItem, reel_id)
+    assert done.shortcode is None and done.reel_url == "instagram-media:17841400000000001"
+    assert all(s.get("cover_only") for s in done.slides)
+    # The cover is kept as the thumbnail
+    assert thumbs == [("17841400000000001", cover)]
+    assert done.thumbnail_url == "/api/thumbnail/m17841400000000001"
+
+
+def test_cover_only_summary_uses_the_caption_and_is_told_not_to_invent(monkeypatch):
+    import backend.carousel as carousel
+    calls = []
+    monkeypatch.setattr(carousel, "extract_reel_insights",
+                        lambda text, title, caption=None, **kw: calls.append((text, caption, kw)) or {"summary": "s"})
+    slides = [{"number": 1, "text": "Powerful Phrases to Start a Speech", "status": "read", "cover_only": True}]
+    carousel.slide_insights(slides, "Powerful Phrases", caption="Want to sound more confident?")
+    assert calls == [("Slide 1\nPowerful Phrases to Start a Speech", "Want to sound more confident?",
+                      {"slides": True, "partial": True})]
+
+
+def test_missing_saved_cover_is_a_404(client):
+    assert client.get("/api/thumbnail/m99999999").status_code == 404
+
+
+def test_cover_thumbnail_only_from_meta_hosts():
+    import backend.routes as routes
+    assert routes.save_cover_thumbnail("123", "https://evil.example/ig_messaging_cdn/") is None
+    assert routes.save_cover_thumbnail("../x", "https://lookaside.fbsbx.com/ig_messaging_cdn/") is None
 
 
 def _status(db, reel_id):
