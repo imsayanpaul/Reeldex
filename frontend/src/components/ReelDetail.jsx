@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Copy, Download, ExternalLink, FileText, FolderInput, Languages, Loader2, RotateCw, Trash2, VolumeX, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Download, ExternalLink, FileText, FolderInput, Languages, Loader2, RotateCw, Trash2, VolumeX, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   cleanActions, copyText, downloadFile, fileSafe, formatDate, isInstagramUrl, isPending, linkify,
@@ -31,7 +31,8 @@ function Section({ title, children, action }) {
 
 export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
   const listReel = vault.reels.find((r) => r.id === reelId);
-  const [reel, setReel] = useState(null);
+  // Show what's already on this device at once; the request below refreshes it
+  const [reel, setReel] = useState(() => vault.peekReel(reelId));
   const [error, setError] = useState(null);
   const [translated, setTranslated] = useState(null);
   const [showTranslated, setShowTranslated] = useState(false);
@@ -56,6 +57,8 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
   }, [reelId, status, getReel]);
 
   const data = reel?.id === reelId ? { ...reel, ...(listReel || {}), transcript: reel.transcript } : listReel;
+  // The list has the summary but not key points or the transcript: show placeholders until they arrive
+  const detailLoading = reel?.id !== reelId && !error;
   const t = data?.transcript;
   const pending = isPending(data);
   const failed = data?.status === 'failed';
@@ -209,6 +212,14 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
                     </Section>
                   )}
 
+                  {detailLoading && (
+                    <Section title="Key points">
+                      <div className="flex flex-col gap-3" aria-busy="true" aria-label="Loading key points and transcript">
+                        {[92, 78, 85].map((w) => <div key={w} className="rd-skeleton" style={{ height: 18, width: `${w}%` }} />)}
+                      </div>
+                    </Section>
+                  )}
+
                   {keyPoints.length > 0 && (
                     <Section title="Key points">
                       <ul className="m-0 p-0 list-none flex flex-col gap-3">
@@ -305,15 +316,20 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
                   {data.caption && (
                     <Section
                       title="Caption"
-                      action={data.caption.length > CAPTION_PREVIEW && (
-                        <button type="button" className="rd-mono bg-transparent border-0 cursor-pointer text-white/55 hover:text-white" onClick={() => setCaptionOpen((v) => !v)}>
-                          {captionOpen ? 'show less' : 'show all'}
-                        </button>
-                      )}
                     >
                       <p className="m-0 text-[15px] leading-relaxed text-white/80 whitespace-pre-wrap">
                         {linkify(captionOpen || data.caption.length <= CAPTION_PREVIEW ? data.caption : `${data.caption.slice(0, CAPTION_PREVIEW).trimEnd()}…`)}
                       </p>
+                      {data.caption.length > CAPTION_PREVIEW && (
+                        <button
+                          type="button"
+                          className="rd-btn rd-btn-line rd-btn-sm mt-4"
+                          aria-expanded={captionOpen}
+                          onClick={() => setCaptionOpen((v) => !v)}
+                        >
+                          {captionOpen ? <>Show less <ChevronUp size={15} /></> : <>Show full caption <ChevronDown size={15} /></>}
+                        </button>
+                      )}
                     </Section>
                   )}
 

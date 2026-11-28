@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { api } from './api';
 import { cachedSession, readLaunchParams, saveSession, storage } from './session';
 import { isPending } from './format';
+import { fetchReel, forgetReels, peekReel } from './reelCache';
 
 const REELS_KEY = 'reelmind_cached_reels';
 const COLLECTIONS_KEY = 'reelmind_cached_collections';
@@ -111,7 +112,8 @@ export function useVault() {
     return data.reel_id;
   }, [refreshReels]);
 
-  const getReel = useCallback((id) => api(`/reels/${id}`), []);
+  // Full details come from a cache shared with the cards' prefetch (see reelCache.js)
+  const getReel = useCallback((id) => fetchReel(id), []);
 
   const deleteReels = useCallback(async (ids) => {
     const set = new Set(ids);
@@ -120,6 +122,7 @@ export function useVault() {
     try {
       if (ids.length === 1) await api(`/reels/${ids[0]}`, { method: 'DELETE' });
       else await api('/reels/batch/delete', { method: 'POST', body: { reel_ids: ids } });
+      forgetReels(ids);
       toast.success(ids.length === 1 ? 'Reel removed' : `${ids.length} reels removed`);
       refreshCollections();
     } catch (err) {
@@ -220,7 +223,7 @@ export function useVault() {
   return {
     session, ready, reels, collections, categories, loading, stats,
     refreshReels, refreshCollections, refreshSession,
-    saveLink, getReel, deleteReels, retryReel, moveReel, addToCollection, setCollectionReels,
+    saveLink, getReel, peekReel, deleteReels, retryReel, moveReel, addToCollection, setCollectionReels,
     createCollection, renameCollection, deleteCollection, translate, generatePairingCode,
   };
 }

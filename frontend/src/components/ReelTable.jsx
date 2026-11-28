@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { ArrowUpRight, Check, Loader2, Minus, Plus } from 'lucide-react';
 import { cleanActions, formatDate, isPending, STATUS_LABEL, summaryText } from '../lib/format';
 import { NO_SPEECH_LINE, Thumb } from './ReelCard';
+import { prefetchReel } from '../lib/reelCache';
 
 // Category checkboxes beside the table (multi-select; none ticked = everything)
 function FilterSidebar({ counts, cats, onToggleCat, onClear }) {
@@ -114,7 +115,7 @@ export function ReelTable({ reels, counts, cats, onToggleCat, onClearCats, onOpe
                             </div>
                           )}
                           <div>
-                            <button type="button" className="rd-btn rd-btn-ink rd-btn-sm" onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
+                            <button type="button" className="rd-btn rd-btn-ink rd-btn-sm" onPointerEnter={() => prefetchReel(r)} onPointerDown={() => prefetchReel(r)} onFocus={() => prefetchReel(r)} onClick={(e) => { e.stopPropagation(); onOpen(r.id); }}>
                               Open reel <ArrowUpRight size={15} />
                             </button>
                           </div>
