@@ -112,7 +112,65 @@ def shared_album_images(media_id):
     return []
 
 
+def _best_image(item):
+    candidates = (item.get("image_versions2") or {}).get("candidates") or []
+    urls = [c for c in candidates if isinstance(c, dict) and _instagram_media_host(c.get("url"))]
+    if not urls:
+        return None
+    return max(urls, key=lambda c: (c.get("width") or 0) * (c.get("height") or 0))["url"]
+
+
+def _post_from_ytdlp(shortcode):
+    """The post's slides via yt-dlp's logged-out Instagram query.
+
+    instaloader's logged-out reads now fail for every post (BadResponseException), but the
+    query yt-dlp uses still returns the post, including every carousel slide. yt-dlp itself
+    only handles videos, so its extractor is asked for the post data and nothing else.
+    """
+    import yt_dlp
+    from yt_dlp.extractor.instagram import InstagramIE
+
+    class PostData(InstagramIE):
+        product = None
+
+        def _extract_product(self, product_info, *args, **kwargs):
+            if self.product is None and isinstance(product_info, dict):
+                self.product = product_info
+            return super()._extract_product(product_info, *args, **kwargs)
+
+    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True, "socket_timeout": 20}) as ydl:
+        reader = PostData(ydl)
+        reader.extract(f"https://www.instagram.com/p/{shortcode}/")
+    return slides_from_post_data(reader.product)
+
+
+def slides_from_post_data(post):
+    """(images, caption, owner) from Instagram's post data, or None for a single video."""
+    if not post:
+        raise ValueError("Instagram returned no post data")
+    caption = (post.get("caption") or {}).get("text") or ""
+    owner = (post.get("user") or {}).get("username")
+    items = post.get("carousel_media")
+    if not items:
+        if post.get("media_type") == 2:
+            return None  # a single video: the audio pipeline handles it
+        items = [post]
+    images = [None if item.get("media_type") == 2 else _best_image(item) for item in items]
+    if not any(images):
+        raise ValueError("Instagram did not provide the slides.")
+    return images, caption, owner
+
+
 def post_images(shortcode):
+    """(slide image urls in order, caption, owner) for a post, or None for a video post."""
+    try:
+        return _post_from_ytdlp(shortcode)
+    except Exception as error:
+        print(f"[Carousel] yt-dlp post read failed: {type(error).__name__}: {str(error)[:200]}")
+    return _post_from_instaloader(shortcode)
+
+
+def _post_from_instaloader(shortcode):
     import instaloader
 
     loader = instaloader.Instaloader(max_connection_attempts=1, request_timeout=15)
@@ -143,11 +201,23 @@ def read_slide(url):
             if len(image) + len(chunk) > 12 * 1024 * 1024:
                 raise ValueError("Slide exceeds image size limit")
             image.extend(chunk)
+    image = as_png_if_webp(bytes(image))
     result = subprocess.run(
         ["tesseract", "stdin", "stdout"], input=image, capture_output=True,
         timeout=35, check=True,
     )
     return result.stdout.decode("utf-8").strip()
+
+
+def as_png_if_webp(image):
+    """Instagram serves slides as WEBP, which Tesseract may not read: convert with ffmpeg."""
+    if image[:4] != b"RIFF" or image[8:12] != b"WEBP":
+        return image
+    result = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-frames:v", "1", "-f", "image2pipe", "-vcodec", "png", "pipe:1"],
+        input=image, capture_output=True, timeout=30, check=True,
+    )
+    return result.stdout
 
 
 def extract_slides(images, previous, save_progress):
