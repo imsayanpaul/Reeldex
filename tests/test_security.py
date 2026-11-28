@@ -329,7 +329,8 @@ def test_linkless_reel_reads_only_the_preview_and_says_so(db, monkeypatch):
     monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda sender, msg: sent.append(msg) or True)
     done.dm_replied = False
     real_reply(db, done, "563", "instagram_dm")
-    assert sent and "only let me see the first slide" in sent[0]
+    assert sent and "I saved the first slide" in sent[0]
+    assert "Copy link" in sent[0] and "Paste the link here" in sent[0]  # step-by-step link instructions
 
 
 def test_linkless_reel_retry_without_preview_fails_with_advice(db, monkeypatch):
