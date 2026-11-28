@@ -546,6 +546,55 @@ def test_link_never_removes_someone_elses_cover_copy(db, monkeypatch):
     assert replies == [0]
 
 
+def _image(url, w=1080, h=1350):
+    return {"image_versions2": {"candidates": [{"url": url.replace(".jpg", "-small.jpg"), "width": 320, "height": 400},
+                                               {"url": url, "width": w, "height": h}]}}
+
+
+def test_post_data_gives_every_slide_in_order():
+    from backend.carousel import slides_from_post_data
+    post = {"caption": {"text": "Ten openers"}, "user": {"username": "passionatelearners"}, "media_type": 8,
+            "carousel_media": [
+                dict(_image("https://instagram.fccu27-3.fna.fbcdn.net/1.jpg"), media_type=1),
+                {"media_type": 2},  # a video slide
+                dict(_image("https://scontent.cdninstagram.com/3.jpg"), media_type=1),
+                dict(_image("https://evil.example/4.jpg"), media_type=1),  # never an outside host
+            ]}
+    images, caption, owner = slides_from_post_data(post)
+    assert images == ["https://instagram.fccu27-3.fna.fbcdn.net/1.jpg", None, "https://scontent.cdninstagram.com/3.jpg", None]
+    assert caption == "Ten openers" and owner == "passionatelearners"
+
+
+def test_post_data_single_image_and_video():
+    from backend.carousel import slides_from_post_data
+    single = dict(_image("https://scontent.cdninstagram.com/only.jpg"), media_type=1, caption=None, user={})
+    assert slides_from_post_data(single) == (["https://scontent.cdninstagram.com/only.jpg"], "", None)
+    assert slides_from_post_data({"media_type": 2}) is None  # a reel goes to the audio pipeline
+    with pytest.raises(ValueError):
+        slides_from_post_data({})
+
+
+def test_post_reader_prefers_ytdlp_and_falls_back_to_instaloader(monkeypatch):
+    import backend.carousel as carousel
+    used = []
+    monkeypatch.setattr(carousel, "_post_from_ytdlp", lambda code: used.append("yt-dlp") or (["a"], "c", "o"))
+    monkeypatch.setattr(carousel, "_post_from_instaloader", lambda code: used.append("instaloader") or (["b"], "c", "o"))
+    assert carousel.post_images("Abc123") == (["a"], "c", "o") and used == ["yt-dlp"]
+
+    def blocked(code):
+        raise ConnectionError("rate limited")
+
+    used.clear()
+    monkeypatch.setattr(carousel, "_post_from_ytdlp", blocked)
+    assert carousel.post_images("Abc123") == (["b"], "c", "o") and used == ["instaloader"]
+
+
+def test_non_webp_slides_go_to_ocr_unchanged():
+    from backend.carousel import as_png_if_webp
+    jpeg = b"\xff\xd8\xff\xe0" + b"0" * 100
+    assert as_png_if_webp(jpeg) is jpeg
+
+
 def test_graph_api_id_from_a_share_is_not_guessed(db, monkeypatch):
     import backend.routes as routes
     from backend.carousel import looks_like_post_id

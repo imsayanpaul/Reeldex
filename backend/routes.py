@@ -286,6 +286,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             except Exception as metadata_error:
                 if no_link:
                     print(f"[Carousel] No post from the media id: {type(metadata_error).__name__}")
+                else:
+                    # The real reason, so a blocked or broken post reader shows up in the logs
+                    print(f"[Carousel] Post read failed for {reel.shortcode}: {type(metadata_error).__name__}: {str(metadata_error)[:200]}")
                 post = None
                 # 1. A post shared by DM has a media ID: ask the Graph API for the album
                 album = shared_album_images(reel.shared_media_id) if reel.shared_media_id else []
