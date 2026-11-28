@@ -68,6 +68,8 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
     if (initialSlide && reel?.slides?.length) document.getElementById(`slide-${initialSlide}`)?.scrollIntoView({ block: "center" });
   }, [initialSlide, reel]);
   const canTranslate = t && !slides.length && !isEnglish(t.language);
+  // Saved from a DM preview: Instagram only showed the first slide of the post
+  const coverOnly = slides.some(s => s.cover_only);
 
   const tr = translated || (t?.translated_text ? { translated_text: t.translated_text, translated_summary: t.translated_summary } : null);
   const summary = showTranslated && tr?.translated_summary ? tr.translated_summary : summaryText(t?.summary || data?.summary);
@@ -202,7 +204,7 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
                   )}
 
                   {summary && !(data.no_speech && !data.from_caption) && (
-                    <Section title={slides.length ? `Summary · based on ${slides.filter(s => s.text).length} of ${slides.length} slides` : "Summary"}>
+                    <Section title={coverOnly ? 'Summary · cover slide and caption only' : slides.length ? `Summary · based on ${slides.filter(s => s.text).length} of ${slides.length} slides` : "Summary"}>
                       <p className="m-0 text-[17px] leading-relaxed text-white/90">{linkify(summary)}</p>
                     </Section>
                   )}
@@ -248,7 +250,9 @@ export function ReelDetail({ reelId, initialSlide, vault, onClose, onMove }) {
 
                   {slides.length > 0 && (
                     <Section title="Slide text">
-                      <p className="rd-mono">Read {slides.filter(s => s.text).length} of {slides.length} slides</p>
+                      {coverOnly
+                        ? <p className="rd-mono">Only the cover slide was available. Send the post link to @reeldex.io to read every slide.</p>
+                        : <p className="rd-mono">Read {slides.filter(s => s.text).length} of {slides.length} slides</p>}
                       {slides.map(slide => (
                         <section key={slide.number} id={`slide-${slide.number}`} className="mt-5">
                           <h4>Slide {slide.number}</h4>

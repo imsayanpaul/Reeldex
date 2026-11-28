@@ -23,6 +23,38 @@ def public_reel_url(url):
     return "" if isinstance(url, str) and url.startswith(MEDIA_PREFIX) else url
 
 
+_SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+
+def shortcode_from_media_id(media_id):
+    """Instagram's post shortcode is its numeric media id written in base 64.
+
+    This only holds when the id is Instagram's own media id, which a DM share may or
+    may not carry, so a guessed post must still be confirmed (see caption_matches).
+    """
+    if not isinstance(media_id, str) or not media_id.isascii() or not media_id.isdigit():
+        return None
+    number = int(media_id)
+    code = ""
+    while number:
+        number, digit = divmod(number, 64)
+        code = _SHORTCODE_ALPHABET[digit] + code
+    return code or None
+
+
+def _words(text):
+    return " ".join(str(text or "").lower().replace("…", " ").replace("...", " ").split())
+
+
+def caption_matches(share_text, caption):
+    """True when the guessed post's caption starts like the text the DM share carried."""
+    shared, full = _words(share_text), _words(caption)
+    if len(shared) < 15 or not full:
+        return False
+    head = shared[:60].rsplit(" ", 1)[0] if len(shared) > 60 else shared
+    return full.startswith(head)
+
+
 def preview_url(url):
     if not isinstance(url, str) or len(url) > 1000:
         return None
@@ -132,8 +164,13 @@ def extract_slides(images, previous, save_progress):
     return slides
 
 
-def slide_insights(slides, title):
+def slide_insights(slides, title, caption=None):
     source = "\n\n".join(f"Slide {s['number']}\n{s['text']}" for s in slides if s["text"])
+    if any(s.get("cover_only") for s in slides):
+        # Only the cover was readable: summarise the cover and the caption, and nothing more
+        if not source and not (caption or "").strip():
+            return "", {"summary": "No readable slide text was available."}
+        return source, extract_reel_insights(source, title, caption, slides=True, partial=True)
     if not source:
         return "", {"summary": "No readable slide text was available."}
     notes = source

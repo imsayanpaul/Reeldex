@@ -84,7 +84,7 @@ def readable_title(title: Optional[str], caption: Optional[str]) -> Optional[str
     return first if len(first) <= 90 else first[:87].rstrip() + "…"
 
 
-def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None, *, slides: bool = False) -> Dict[str, Any]:
+def extract_reel_insights(transcript_text: str, title: Optional[str] = None, caption: Optional[str] = None, *, slides: bool = False, partial: bool = False) -> Dict[str, Any]:
     """
     Uses Groq LLaMA to generate:
     1. 2-sentence summary
@@ -117,7 +117,17 @@ def extract_reel_insights(transcript_text: str, title: Optional[str] = None, cap
             "action_items": []
         }
 
-    if slides:
+    if slides and partial:
+        source = (
+            "Only the first slide (the cover) of this Instagram post could be read. The other slides were not available.\n"
+            "Summarize only what the cover text and the creator's caption below actually say. "
+            "Do not invent points, steps, tools or examples that are not written there. "
+            "If they say little, keep the summary short and leave key_points and action_items short or empty.\n\n"
+            f"Cover slide text:\n\"\"\"{transcript_text or '(none)'}\"\"\"\n"
+        )
+        if caption:
+            source += f"\nCreator's caption (hashtags removed):\n\"\"\"{caption}\"\"\"\n"
+    elif slides:
         source = f"Summarize the ideas across all numbered slides, including the final slide. Preserve specific details. Slide text follows:\n{transcript_text}"
     elif has_speech:
         source = f"""Analyze the following transcript from an Instagram Reel and extract structured insights.
