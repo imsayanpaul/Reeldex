@@ -476,6 +476,35 @@ def test_admin_needs_login(client):
     assert client.get("/api/admin/users").status_code == 401
 
 
+def _instagram_user(db, token, username, sender_id):
+    from backend.models import User
+    user = User(display_name=username or "guest", auth_token=token,
+                instagram_username=username, instagram_sender_id=sender_id)
+    db.add(user)
+    db.commit()
+    return token
+
+
+def test_admin_by_linked_instagram_username(client, db, monkeypatch):
+    from backend.config import settings
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", "")
+    monkeypatch.setattr(settings, "ADMIN_INSTAGRAM_USERNAMES", "@ImSayanPaul, someone_else")
+    owner = _instagram_user(db, "rm_ig_owner", "imsayanpaul", "90001")
+    assert client.get("/api/admin/me", headers=bearer(owner)).status_code == 200
+    assert client.get("/api/admin/users", headers=bearer(owner)).status_code == 200
+
+
+def test_admin_username_needs_a_linked_account(client, db, monkeypatch):
+    from backend.config import settings
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", "")
+    monkeypatch.setattr(settings, "ADMIN_INSTAGRAM_USERNAMES", "imsayanpaul")
+    # Same name but no linked Instagram sender, and a different linked account
+    unlinked = _instagram_user(db, "rm_ig_unlinked", "imsayanpaul", None)
+    other = _instagram_user(db, "rm_ig_other", "not_the_owner", "90002")
+    assert client.get("/api/admin/me", headers=bearer(unlinked)).status_code == 404
+    assert client.get("/api/admin/me", headers=bearer(other)).status_code == 404
+
+
 def test_admin_hidden_from_normal_users(client, user_a, user_b, monkeypatch):
     from backend.config import settings
     monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(_user_id(client, user_a)))
