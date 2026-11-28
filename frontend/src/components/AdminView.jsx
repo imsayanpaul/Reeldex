@@ -37,7 +37,8 @@ const FILTERS = [
   { id: 'all', label: 'All', test: () => true },
   { id: 'linked', label: 'Instagram linked', test: (u) => u.linked },
   { id: 'reels', label: 'Has reels', test: (u) => u.reels > 0 },
-  { id: 'active7', label: 'Active 7 days', test: (u) => within(u.lastActiveAt, 7) },
+  // Real users only: empty guests (link previews, crawlers, one-off visits) aren't activity
+  { id: 'active7', label: 'Active 7 days', test: (u) => u.real && within(u.lastActiveAt, 7) },
   { id: 'new7', label: 'Joined 7 days', test: (u) => within(u.joinedAt, 7) },
   { id: 'failed', label: 'Has failed reels', test: (u) => u.failed > 0 },
   { id: 'guests', label: 'Guests, no reels', test: (u) => !u.linked && u.reels === 0 },
@@ -178,8 +179,12 @@ export default function AdminView() {
         </div>
         {tab === 'feedback' ? <FeedbackStats data={feedback.data} /> : (<>
         <div className="mx-auto max-w-[1280px] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-white/10">
-          <Stat label="users" value={s ? s.totalUsers : '…'} hint={s ? `+${s.newLast7Days} this week · ${s.linkedInstagram} linked Instagram` : ''} />
-          <Stat label="active 7 days" value={s ? s.activeLast7Days : '…'} hint={s ? `${s.activeLast30Days} in the last 30 days` : ''} />
+          <Stat label="users" value={s ? s.totalUsers : '…'} hint={s ? `${s.realUsers} real · ${s.linkedInstagram} linked Instagram · +${s.newLast7Days} this week` : ''} />
+          <Stat
+            label="active 7 days"
+            value={s ? s.activeLast7Days : '…'}
+            hint={s ? `${s.activeLast30Days} in 30 days · not counting ${s.emptyGuestsLast7Days} empty guests` : ''}
+          />
           <Stat label="reels saved" value={s ? s.totalReels : '…'} hint={s ? `+${s.reelsLast7Days} this week · ${pct(s.fromDm, s.totalReels)} via DM` : ''} />
           <Stat label="failed reels" value={s ? s.failedReels : '…'} hint={s ? `${pct(s.failedReels, s.totalReels)} of all reels` : ''} />
           <Stat label="time spent" value={s ? duration(s.activeSeconds) : '…'} hint={s ? `${duration(s.activeSeconds7d)} this week · ${s.usersWithTime ? duration(s.activeSeconds / s.usersWithTime) : '—'} per user` : ''} />
