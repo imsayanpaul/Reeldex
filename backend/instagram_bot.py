@@ -196,6 +196,7 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             attachments = message.get("attachments", [])
             shared_post = False
             post_ids = []
+            post_previews = {}
             for att in attachments:
                 att_type = att.get("type", "")
                 shared_post |= att_type in {"ig_post", "share", "post"}
@@ -217,12 +218,17 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                     if re.fullmatch(r"[0-9]{1,20}", post_id):
                         shared_post = True
                         post_ids.append(post_id)
+                        post_previews[post_id] = {
+                            "title": att_payload.get("title"),
+                            "url": payload_url,
+                        }
             
             mid = message.get("mid")
             results.append({
                 "message_id": mid,
                 "shared_post": shared_post,
                 "post_ids": list(dict.fromkeys(post_ids)),
+                "post_previews": post_previews,
                 "sender_id": sender_id,
                 "message_text": text,
                 "reel_urls": list(set(reel_urls))

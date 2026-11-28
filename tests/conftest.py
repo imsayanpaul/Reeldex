@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import backend.routes as routes  # noqa: E402
 
+routes.real_process_reel_pipeline = routes.process_reel_pipeline  # for tests that stub every network step
 routes.process_reel_pipeline = lambda *args, **kwargs: None  # never download or transcribe in tests
 
 from backend.main import app  # noqa: E402

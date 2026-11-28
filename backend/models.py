@@ -67,6 +67,7 @@ class ReelItem(Base):
     caption = Column(Text, nullable=True)  # the creator's Instagram caption
     
     slides = Column(JSON, nullable=True)  # ordered OCR results for image posts
+    shared_media_id = Column(String(20), nullable=True)
 
     # Metadata & Source
     source = Column(String(50), default="web_ui")  # "web_ui" or "instagram_dm"
