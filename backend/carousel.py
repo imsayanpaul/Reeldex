@@ -7,6 +7,20 @@ import httpx
 from backend.downloader import _instagram_media_host
 from backend.summarizer import extract_reel_insights
 from backend.config import settings
+from backend.instagram_bot import LOOKUP_HOSTS
+
+# A post shared by DM whose link Instagram won't give us is saved under this
+# placeholder instead of a post URL, and read from the DM's preview image.
+MEDIA_PREFIX = "instagram-media:"
+
+
+def media_placeholder(media_id):
+    return f"{MEDIA_PREFIX}{media_id}"
+
+
+def public_reel_url(url):
+    """The link shown to users: never the internal placeholder."""
+    return "" if isinstance(url, str) and url.startswith(MEDIA_PREFIX) else url
 
 
 def preview_url(url):
@@ -27,7 +41,7 @@ def shared_album_images(media_id):
     if not token or not media_id.isascii() or not media_id.isdigit():
         return []
     with httpx.Client(timeout=5) as client:
-        for host in ("graph.instagram.com", "graph.facebook.com"):
+        for host in LOOKUP_HOSTS:
             params = {"fields": "media_type,media_url", "limit": 50}
             images, cursors = [], set()
             try:

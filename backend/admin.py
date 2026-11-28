@@ -60,9 +60,12 @@ def cleanup_guests(dry_run: bool = True, admin: User = Depends(require_admin), d
 @router.get("/admin/users", dependencies=[Depends(rate_limit("admin", 30, 60))])
 def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> Dict[str, Any]:
     # Fill in missing @usernames for linked users, a few per visit (they appear on the next refresh)
-    from backend.routes import fill_instagram_username
+    from backend.routes import fill_instagram_username, USERNAME_RETRY_AFTER
+    retry_before = datetime.datetime.utcnow() - USERNAME_RETRY_AFTER
     missing = db.query(User.id, User.instagram_sender_id).filter(
         User.instagram_sender_id.isnot(None), User.instagram_username.is_(None),
+        # Skip accounts Instagram had no @username for in the last week
+        (User.username_lookup_failed_at.is_(None)) | (User.username_lookup_failed_at < retry_before),
     ).limit(25).all()
     for user_id, sender_id in missing:
         background_tasks.add_task(fill_instagram_username, user_id, sender_id)
