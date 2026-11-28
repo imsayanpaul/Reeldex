@@ -15,6 +15,7 @@ class User(Base):
     auth_token = Column(String(255), unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_seen_at = Column(DateTime, nullable=True)  # updated at most every 10 minutes
+    username_lookup_failed_at = Column(DateTime, nullable=True)  # Instagram had no @username; retried weekly
 
     # Relationships
     reels = relationship("ReelItem", back_populates="user", cascade="all, delete-orphan")

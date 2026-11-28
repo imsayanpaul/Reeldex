@@ -3,6 +3,7 @@ import re
 from typing import List, Dict, Any, Optional
 from backend.config import settings
 from backend import usage
+from backend.carousel import public_reel_url
 
 def tokenize(text: str) -> List[str]:
     """Tokenizes text into normalized lowercase alphanumeric words."""
@@ -210,7 +211,7 @@ def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], histor
             "reel_id": r.get("id"),
             "title": r.get("title") or f"Reel #{r.get('id')}",
             "author": r.get("author") or r.get("sender_username"),
-            "reel_url": r.get("reel_url"),
+            "reel_url": public_reel_url(r.get("reel_url")),
             "category": r.get("category"),
             "summary": r.get("summary")
         })
@@ -237,7 +238,7 @@ def ask_reels_ai(user_question: str, reels_context: List[Dict[str, Any]], histor
             if passages:
                 citations[-1]["slide"] = passages[0][0]
             transcript_snippet = "\n".join(f"Slide {n}: {part}" for n, part in passages[:4])
-        reel_url = r.get("reel_url") or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
+        reel_url = public_reel_url(r.get("reel_url")) or (f"https://www.instagram.com/reel/{r.get('shortcode')}/" if r.get("shortcode") else "")
 
         block = (
             f"[Reel {idx}]: \"{r.get('title')}\" by @{r.get('author') or 'creator'}\n"

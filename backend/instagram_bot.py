@@ -4,6 +4,10 @@ import httpx
 from typing import Optional, List, Dict, Any
 from backend.config import settings
 
+# Read lookups (usernames, post links, albums) only go to graph.instagram.com: the bot's
+# token is an Instagram-login token, which graph.facebook.com rejects with a 401 every time.
+LOOKUP_HOSTS = ("graph.instagram.com",)
+
 def extract_reel_urls_from_text(text: str) -> List[str]:
     """Find all Instagram reel / post URLs in a given text message."""
     pattern = r"https?://(?:www\.)?instagram\.com/(?:reel|reels|p|share/reel)/[A-Za-z0-9_-]+/?(?:\?[^\s]*)?"
@@ -86,7 +90,7 @@ def fetch_instagram_username(sender_id: str) -> Optional[str]:
         return None
     headers = {"Authorization": f"Bearer {settings.INSTAGRAM_PAGE_ACCESS_TOKEN}"}
     with httpx.Client() as client:
-        for base in ("https://graph.instagram.com/v21.0", "https://graph.facebook.com/v21.0"):
+        for base in (f"https://{host}/v21.0" for host in LOOKUP_HOSTS):
             try:
                 resp = client.get(f"{base}/{sender_id}", params={"fields": "username"}, headers=headers, timeout=8.0)
                 if resp.status_code == 200:
@@ -106,7 +110,7 @@ async def resolve_shared_post(media_id: str) -> Optional[str]:
     if not token or not re.fullmatch(r"[0-9]{1,20}", media_id):
         return None
     async with httpx.AsyncClient(timeout=3.0) as client:
-        for host in ("graph.instagram.com", "graph.facebook.com"):
+        for host in LOOKUP_HOSTS:
             try:
                 response = await client.get(
                     f"https://{host}/v21.0/{media_id}", params={"fields": "permalink"},
@@ -116,8 +120,11 @@ async def resolve_shared_post(media_id: str) -> Optional[str]:
                     urls = extract_reel_urls_from_text(response.json().get("permalink") or "")
                     if urls:
                         return urls[0]
-            except (httpx.HTTPError, ValueError):
-                continue
+                    print(f"[Carousel] Media lookup via {host}: no permalink")
+                else:
+                    print(f"[Carousel] Media lookup via {host}: HTTP {response.status_code}")
+            except (httpx.HTTPError, ValueError) as error:
+                print(f"[Carousel] Media lookup via {host}: {type(error).__name__}")
     return None
 
 
@@ -127,7 +134,7 @@ async def shared_message_links(message_id: str) -> List[str]:
     if not token or not isinstance(message_id, str) or not message_id or len(message_id) > 2000:
         return []
     async with httpx.AsyncClient(timeout=3.0) as client:
-        for host in ("graph.instagram.com", "graph.facebook.com"):
+        for host in LOOKUP_HOSTS:
             try:
                 response = await client.get(
                     f"https://{host}/v21.0/{quote(message_id, safe='')}",
@@ -214,6 +221,10 @@ def parse_webhook_payload(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                     # Fallback if URL is missing
                     reel_urls.append(f"https://www.instagram.com/reel/{att_payload.get('reel_video_id')}/")
                 if len(reel_urls) == url_count and isinstance(att_payload, dict):
+                    # What a linkless share carries: field names and the preview's host only
+                    # (no ids, signed URLs or text), so the logs show which fallback can work
+                    host = urlsplit(payload_url).hostname if isinstance(payload_url, str) else None
+                    print(f"[Carousel] Shared '{att_type}' without a link: fields={sorted(att_payload)} preview_host={host}")
                     post_id = str(att_payload.get("ig_post_media_id", ""))
                     if re.fullmatch(r"[0-9]{1,20}", post_id):
                         shared_post = True

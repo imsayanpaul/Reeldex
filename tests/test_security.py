@@ -244,6 +244,151 @@ def test_carousel_share_with_only_media_id_saves_post(client, db, monkeypatch):
     assert started == [{"preview": "https://lookaside.fbsbx.com/ig_messaging_cdn/"}]
 
 
+def _linkless_share(sender, mid, preview_url, title=None):
+    payload = {"ig_post_media_id": "55500011", "url": preview_url}
+    if title:
+        payload["title"] = title
+    event = {"sender": {"id": sender}, "message": {"mid": mid, "attachments": [{"type": "share", "payload": payload}]}}
+    return json.dumps({"entry": [{"id": "bot", "messaging": [event]}]}).encode()
+
+
+def _no_links_from_instagram(monkeypatch):
+    import backend.routes as routes
+
+    async def no_permalink(media_id):
+        return None
+
+    async def no_message_links(message_id):
+        return []
+
+    monkeypatch.setattr(routes, "resolve_shared_post", no_permalink)
+    monkeypatch.setattr(routes, "shared_message_links", no_message_links)
+    monkeypatch.setattr(routes, "fill_instagram_username", lambda *args: None)
+
+
+def test_linkless_share_is_saved_from_its_dm_preview(client, db, monkeypatch):
+    import backend.routes as routes
+    from backend.models import User
+    _no_links_from_instagram(monkeypatch)
+    started, sent = [], []
+    monkeypatch.setattr(routes, "process_reel_pipeline", lambda *args, **kwargs: started.append((args, kwargs)))
+    monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda *args: sent.append(args))
+    cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=7"
+    payload = _linkless_share("561", "linkless-mid", cover, title="Want to sound more confident?")
+    assert client.post("/api/webhook/instagram", content=payload, headers=signed(payload)).status_code == 200
+
+    saved = db.query(ReelItem).filter_by(sender_id="561").one()
+    assert saved.reel_url == "instagram-media:55500011" and saved.shortcode is None
+    assert saved.shared_media_id == "55500011"
+    assert saved.caption == "Want to sound more confident?"
+    assert started == [((saved.id, "instagram-media:55500011", "561", "instagram_dm", saved.user_id), {"preview": cover})]
+    assert sent == []  # no "please copy the link" reply
+
+    # The placeholder never reaches the page as a link
+    token = db.get(User, saved.user_id).auth_token
+    assert client.get(f"/api/reels/{saved.id}", headers=bearer(token)).json()["reel_url"] == ""
+
+
+def test_linkless_share_without_a_usable_preview_still_asks_for_the_link(client, db, monkeypatch):
+    import backend.routes as routes
+    _no_links_from_instagram(monkeypatch)
+    sent = []
+    monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda *args: sent.append(args))
+    payload = _linkless_share("562", "linkless-mid-2", "https://evil.example/ig_messaging_cdn/")
+    client.post("/api/webhook/instagram", content=payload, headers=signed(payload))
+    assert db.query(ReelItem).filter_by(sender_id="562").count() == 0
+    assert sent and "copy the Instagram post link" in sent[0][1]
+
+
+def test_linkless_reel_reads_only_the_preview_and_says_so(db, monkeypatch):
+    import backend.routes as routes
+    read, sent = [], []
+    real_reply = routes.reply_in_dm  # the slide stubs replace it
+    _stub_slide_steps(monkeypatch, read)
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: [])
+
+    def must_not_run(*args):
+        raise AssertionError("there is no post page to read or download")
+
+    monkeypatch.setattr(routes, "post_images", must_not_run)
+    monkeypatch.setattr(routes, "download_audio_from_reel", must_not_run)
+    cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=8"
+    reel = ReelItem(reel_url="instagram-media:55500012", source="instagram_dm", status="processing",
+                    shared_media_id="55500012")
+    db.add(reel)
+    db.commit()
+    routes.real_process_reel_pipeline(reel.id, reel.reel_url, preview=cover)
+    assert read == [[cover]]
+    db.expire_all()
+    done = db.get(ReelItem, reel.id)
+    assert done.status == "completed"
+    assert all(s.get("cover_only") for s in done.slides)
+
+    # The DM reply tells them only the first slide was read
+    monkeypatch.setattr(routes.settings, "INSTAGRAM_PAGE_ACCESS_TOKEN", "test-token")
+    monkeypatch.setattr(routes, "send_instagram_dm_sync", lambda sender, msg: sent.append(msg) or True)
+    done.dm_replied = False
+    real_reply(db, done, "563", "instagram_dm")
+    assert sent and "only let me see the first slide" in sent[0]
+
+
+def test_linkless_reel_retry_without_preview_fails_with_advice(db, monkeypatch):
+    import backend.routes as routes
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: [])
+    reel = ReelItem(reel_url="instagram-media:55500013", source="web_ui", status="processing",
+                    shared_media_id="55500013")
+    db.add(reel)
+    db.commit()
+    routes.real_process_reel_pipeline(reel.id, reel.reel_url)  # a vault retry: the DM preview is gone
+    db.expire_all()
+    failed = db.get(ReelItem, reel.id)
+    assert failed.status == "failed" and "Send the post link" in (failed.error_message or "")
+    assert read == []
+
+
+def test_lookups_only_use_graph_instagram(monkeypatch):
+    import asyncio
+    import httpx
+    import backend.instagram_bot as bot
+    hosts = []
+
+    def refuse(request):
+        hosts.append(request.url.host)
+        return httpx.Response(404, json={})
+
+    original_async, original_sync = httpx.AsyncClient, httpx.Client
+    monkeypatch.setattr(bot.settings, "INSTAGRAM_PAGE_ACCESS_TOKEN", "test-token")
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: original_async(transport=httpx.MockTransport(refuse), **kw))
+    monkeypatch.setattr(httpx, "Client", lambda **kw: original_sync(transport=httpx.MockTransport(refuse), **kw))
+    assert asyncio.run(bot.resolve_shared_post("123")) is None
+    assert asyncio.run(bot.shared_message_links("mid-1")) == []
+    assert bot.fetch_instagram_username("456") is None
+    assert hosts and set(hosts) == {"graph.instagram.com"}
+
+
+def test_failed_username_lookup_is_not_retried_for_a_week(db, monkeypatch):
+    import datetime as dt
+    import backend.routes as routes
+    from backend.models import User
+    calls = []
+    monkeypatch.setattr(routes, "fetch_instagram_username", lambda sender_id: calls.append(sender_id))
+    user = User(display_name="Instagram @9001", auth_token="rm_no_username", instagram_sender_id="99009001")
+    db.add(user)
+    db.commit()
+    routes.fill_instagram_username(user.id, "99009001")
+    routes.fill_instagram_username(user.id, "99009001")
+    assert calls == ["99009001"]  # the second visit didn't ask Instagram again
+    db.expire_all()
+    stored = db.get(User, user.id)
+    assert stored.username_lookup_failed_at is not None
+    stored.username_lookup_failed_at -= dt.timedelta(days=8)
+    db.commit()
+    routes.fill_instagram_username(user.id, "99009001")
+    assert calls == ["99009001", "99009001"]  # tried again after a week
+
+
 def _carousel_reel(db, shortcode, media_id=None):
     reel = ReelItem(reel_url=f"https://www.instagram.com/p/{shortcode}/", shortcode=shortcode,
                     source="instagram_dm", status="processing", shared_media_id=media_id)

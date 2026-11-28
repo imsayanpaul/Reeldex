@@ -17,7 +17,10 @@ from sqlalchemy.exc import IntegrityError
 from backend.database import get_db
 from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback, ActivityDay
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
-from backend.carousel import post_images, extract_slides, slide_insights, shared_album_images, preview_url
+from backend.carousel import (
+    post_images, extract_slides, slide_insights, shared_album_images, preview_url,
+    MEDIA_PREFIX, media_placeholder, public_reel_url,
+)
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
     extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
@@ -103,7 +106,7 @@ def reel_card(r: ReelItem) -> Dict[str, Any]:
     t = r.transcript
     return {
         "id": r.id,
-        "reel_url": r.reel_url,
+        "reel_url": public_reel_url(r.reel_url),
         "shortcode": r.shortcode,
         "title": r.title or (f"Reel {r.shortcode}" if r.shortcode else f"Reel #{r.id}"),
         "author": r.author,
@@ -130,6 +133,9 @@ def reel_card(r: ReelItem) -> Dict[str, Any]:
     }
 
 
+USERNAME_RETRY_AFTER = datetime.timedelta(days=7)
+
+
 def fill_instagram_username(user_id: int, sender_id: str) -> None:
     """Background task: look up and store the @username for a linked user who has none yet."""
     from backend.database import SessionLocal
@@ -138,12 +144,18 @@ def fill_instagram_username(user_id: int, sender_id: str) -> None:
         user = db.query(User).filter(User.id == user_id).first()
         if not user or user.instagram_username or user.instagram_sender_id != sender_id:
             return
+        failed = user.username_lookup_failed_at
+        if failed and datetime.datetime.utcnow() - failed < USERNAME_RETRY_AFTER:
+            return  # Instagram had no @username for this account recently; don't ask again yet
         username = fetch_instagram_username(sender_id)
         if username:
             user.instagram_username = username
+            user.username_lookup_failed_at = None
             if not user.display_name or user.display_name.startswith(("Instagram @", "ReelDex Explorer", "ReelMind Explorer")):
                 user.display_name = username
-            db.commit()
+        else:
+            user.username_lookup_failed_at = datetime.datetime.utcnow()
+        db.commit()
     except Exception as e:
         print(f"[Username] Lookup failed for user #{user_id}: {e}")
         db.rollback()
@@ -175,7 +187,13 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     flags = speech_flags(reel)
     head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
     link = vault_link(user, reel.id)
-    if reel.slides:
+    if reel.slides and any(s.get("cover_only") for s in reel.slides):
+        msg = (
+            f"{head}\nInstagram only let me see the first slide of this post, so I saved that one.\n\n"
+            "To read every slide, copy the post link and send it here.\n\n"
+            f"🔗 View it:\n{link}"
+        )
+    elif reel.slides:
         count = sum(1 for s in reel.slides if s["text"])
         msg = f"{head}\nRead {count} of {len(reel.slides)} slides. Open the slide text and summary:\n{link}"
     elif flags["audio_missing"]:
@@ -240,8 +258,13 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
         usage.for_user(user_id or reel.user_id)
 
         video_download = None
-        if "/p/" in reel_url:
+        # A DM share Instagram gave no link for: there is no post page to read or download
+        no_link = reel_url.startswith(MEDIA_PREFIX)
+        cover_only = False
+        if "/p/" in reel_url or no_link:
             try:
+                if no_link:
+                    raise ValueError("Instagram did not share this post's link")
                 post = post_images(reel.shortcode)
             except Exception as metadata_error:
                 post = None
@@ -253,20 +276,25 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 else:
                     # 2. Some video posts are available through the existing downloader only.
                     download_error = None
-                    try:
-                        video_download = download_audio_from_reel(reel_url)
-                    except Exception as error:
-                        video_download, download_error = {}, error
+                    video_download = {}
+                    if not no_link:
+                        try:
+                            video_download = download_audio_from_reel(reel_url)
+                        except Exception as error:
+                            video_download, download_error = {}, error
                     audio_path = video_download.get("audio_path")
                     if not audio_path:
                         # 3. Last resort: the preview image from the DM, which shows the cover slide only
                         cover = preview_url(preview)
                         if not cover:
+                            if no_link:
+                                raise ValueError("Instagram didn't share this post's link. Send the post link to @reeldex.io instead.") from metadata_error
                             if download_error:
                                 raise download_error
                             raise ValueError("Could not retrieve the post pages from Instagram. Retry from the vault.") from metadata_error
                         print("[Carousel] Post read blocked; reading the DM preview (cover slide only)")
                         video_download = None
+                        cover_only = True
                         post = ([cover], reel.caption or "", reel.author)
             if post is not None:
                 images, caption, author = post
@@ -281,6 +309,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                     db.commit()
 
                 slides = extract_slides(images, previous, save_progress)
+                if cover_only:
+                    # Only the DM preview was readable: tell the reply and the page it's partial
+                    slides = [dict(s, cover_only=True) for s in slides]
                 reel.slides = slides
                 first_text = next((s["text"] for s in slides if s["text"]), "")
                 reel.title = (first_text or caption or "Instagram post").splitlines()[0][:300]
@@ -998,7 +1029,7 @@ def ask_chat_endpoint(req: AskChatRequest, header_token: Optional[str] = Depends
             "title": r.title or f"Reel #{r.id}",
             "author": r.author or r.sender_username,
             "shortcode": r.shortcode,
-            "reel_url": r.reel_url or (f"https://www.instagram.com/reel/{r.shortcode}/" if r.shortcode else ""),
+            "reel_url": public_reel_url(r.reel_url) or (f"https://www.instagram.com/reel/{r.shortcode}/" if r.shortcode else ""),
             "category": r.category,
             "tags": r.tags or [],
             "action_items": r.action_items or [],
@@ -1127,6 +1158,15 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                 if len(post_ids) == 1 and len(reel_urls) == 1:
                     media_for_url[reel_urls[0]] = post_ids[0]
             previews = item.get("post_previews") or {}
+            if item.get("shared_post") and not reel_urls and len(post_ids) == 1:
+                # Instagram gave no link (usually another creator's post), but the DM has a
+                # preview image: save the post from that instead of asking for the link
+                only_id = post_ids[0]
+                if preview_url((previews.get(only_id) or {}).get("url")):
+                    placeholder = media_placeholder(only_id)
+                    print("[Carousel] No post link from Instagram; saving the share from its DM preview")
+                    reel_urls.append(placeholder)
+                    media_for_url[placeholder] = only_id
             message_text = (item.get("message_text") or "").strip()
 
             # 1. Pairing code (exact match on the generated MIND-XXXXXX code)
@@ -1193,10 +1233,13 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         db.commit()
                         background_tasks.add_task(process_reel_pipeline, existing.id, clean_url, sender_id, "instagram_dm", user.id, preview=preview)
                         continue
+                    title = (previews.get(media_id) or {}).get("title") if media_id else None
                     reel = ReelItem(
                         user_id=user.id, reel_url=clean_url, shortcode=shortcode, source="instagram_dm",
                         sender_id=sender_id, sender_username=f"User #{sender_id[-4:]}", status="processing",
                         shared_media_id=media_id,
+                        # The share's own text (often the caption) helps when only the cover is readable
+                        caption=title[:2000] if isinstance(title, str) and title.strip() else None,
                     )
                     db.add(reel)
                     db.commit()
