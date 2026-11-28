@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { api } from '../lib/api';
 import { copyText, downloadFile, fileSafe, formatDate, isInstagramUrl, openInstagramUrl, sanitizeMarkdown, toMarkdown, toWhatsApp } from '../lib/format';
 import { Dialog } from './Dialog';
+import { prefetchReel } from '../lib/reelCache';
 
 const SUGGESTIONS = [
   'What AI & design tools were mentioned?',
@@ -54,6 +55,9 @@ function Answer({ msg, question, onOpen, onMore, busy }) {
               <button
                 key={`${c.reel_id || c.id}-${i}`}
                 type="button"
+                // Cited reels are finished ones, so their details can load before the click
+                onPointerEnter={() => prefetchReel({ id: c.reel_id || c.id, status: 'completed' })}
+                onPointerDown={() => prefetchReel({ id: c.reel_id || c.id, status: 'completed' })}
                 onClick={() => onOpen(c.reel_id || c.id, c.slide)}
                 className={`rd-card shrink-0 w-[220px] !min-h-0 !p-3 ${['is-white', 'is-blue', 'is-gray'][i % 3]}`}
               >

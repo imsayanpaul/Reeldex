@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { AlertTriangle, ArrowUpRight, Check, FolderInput, Loader2, RotateCw } from 'lucide-react';
 import { reelThumb } from '../lib/api';
 import { formatDate, isPending, STATUS_LABEL, summaryText } from '../lib/format';
+import { prefetchReel } from '../lib/reelCache';
 
 const TONES = ['is-white', 'is-blue', 'is-gray'];
 
@@ -33,6 +34,10 @@ function ReelCardBase({ reel, index, selecting, selected, onOpen, onToggle, onMo
       tabIndex={0}
       aria-pressed={selecting ? selected : undefined}
       onClick={activate}
+      // Start loading the full reel before the click lands, so it opens instantly
+      onPointerEnter={() => prefetchReel(reel)}
+      onPointerDown={() => prefetchReel(reel)}
+      onFocus={() => prefetchReel(reel)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } }}
       className={`rd-card ${tone}${selected ? ' is-selected' : ''}${pending ? ' is-pending' : ''}`}
     >
