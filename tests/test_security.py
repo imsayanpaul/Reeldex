@@ -973,6 +973,30 @@ def test_admin_sees_users_and_summary(client, user_a, monkeypatch):
     assert "auth_token" not in r.text  # never expose session tokens
 
 
+def test_empty_guests_are_not_counted_as_active(client, db, user_a, monkeypatch):
+    import datetime as dt
+    from backend.config import settings
+    from backend.models import User
+    me = _user_id(client, user_a)
+    monkeypatch.setattr(settings, "ADMIN_USER_IDS", str(me))
+    now = dt.datetime.utcnow()
+    db.add_all([
+        User(display_name="crawler guest", auth_token="rm_active_empty_guest", last_seen_at=now),
+        User(display_name="linked, no reels yet", auth_token="rm_active_linked", instagram_sender_id="88001", last_seen_at=now),
+    ])
+    db.commit()
+    body = client.get("/api/admin/users", headers=bearer(user_a)).json()
+    rows = {u["name"]: u for u in body["users"]}
+    assert rows["crawler guest"]["real"] is False
+    assert rows["linked, no reels yet"]["real"] is True
+    real_recent = sum(1 for u in body["users"] if u["real"] and u["lastActiveAt"]
+                      and now - dt.datetime.fromisoformat(u["lastActiveAt"].rstrip("Z")) <= dt.timedelta(days=7))
+    s = body["summary"]
+    assert s["activeLast7Days"] == real_recent  # only real users count
+    assert s["emptyGuestsLast7Days"] >= 1
+    assert s["realUsers"] == sum(1 for u in body["users"] if u["real"])
+
+
 def test_ai_usage_is_recorded_per_user(client, user_a, monkeypatch):
     from types import SimpleNamespace
     from backend import usage

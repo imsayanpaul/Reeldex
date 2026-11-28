@@ -137,6 +137,10 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "activeSeconds": int(time_spent[u.id].total or 0) if u.id in time_spent else 0,
             "activeSeconds7d": int(time_spent[u.id].week or 0) if u.id in time_spent else 0,
         })
+        row = users[-1]
+        # A real user has done something: linked Instagram, saved a reel, or kept a collection or chat.
+        # Empty guests (link previews, crawlers, one-off visits) are left out of the active counts.
+        row["real"] = bool(row["linked"] or row["reels"] or row["collections"] or row["savedChats"])
 
     now = datetime.datetime.utcnow()
 
@@ -162,8 +166,10 @@ def admin_users(background_tasks: BackgroundTasks, admin: User = Depends(require
             "linkedInstagram": sum(1 for u in users if u["linked"]),
             "withReels": sum(1 for u in users if u["reels"]),
             "newLast7Days": sum(1 for u in users if within(u["joinedAt"], 7)),
-            "activeLast7Days": sum(1 for u in users if within(u["lastActiveAt"], 7)),
-            "activeLast30Days": sum(1 for u in users if within(u["lastActiveAt"], 30)),
+            "realUsers": sum(1 for u in users if u["real"]),
+            "activeLast7Days": sum(1 for u in users if u["real"] and within(u["lastActiveAt"], 7)),
+            "activeLast30Days": sum(1 for u in users if u["real"] and within(u["lastActiveAt"], 30)),
+            "emptyGuestsLast7Days": sum(1 for u in users if not u["real"] and within(u["lastActiveAt"], 7)),
             "totalReels": total_reels,
             "reelsLast7Days": reels_7d,
             "failedReels": failed,
