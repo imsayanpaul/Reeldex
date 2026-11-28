@@ -42,6 +42,12 @@ def shortcode_from_media_id(media_id):
     return code or None
 
 
+def looks_like_post_id(media_id):
+    """Instagram's own post ids are 18-19 digits. DM shares carry Graph API ids instead
+    (17 digits, like 18106657262648081), which don't convert to a shortcode."""
+    return isinstance(media_id, str) and media_id.isascii() and media_id.isdigit() and len(media_id) >= 18
+
+
 def _words(text):
     return " ".join(str(text or "").lower().replace("…", " ").replace("...", " ").split())
 

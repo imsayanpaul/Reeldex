@@ -22,6 +22,7 @@ from backend.downloader import download_audio_from_reel, normalize_instagram_url
 from backend.carousel import (
     post_images, extract_slides, slide_insights, shared_album_images, preview_url,
     MEDIA_PREFIX, media_placeholder, public_reel_url, shortcode_from_media_id, caption_matches,
+    looks_like_post_id,
 )
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
@@ -268,7 +269,9 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 if no_link:
                     # The shared media id may be Instagram's own post id, which converts to the
                     # post's shortcode. Only trust the guess if its caption matches the share's.
-                    guess = shortcode_from_media_id(reel.shared_media_id) if reel.caption else None
+                    # Graph API ids (what DM shares carry today) never convert, so don't ask Instagram.
+                    guess = (shortcode_from_media_id(reel.shared_media_id)
+                             if reel.caption and looks_like_post_id(reel.shared_media_id) else None)
                     if not guess:
                         raise ValueError("Instagram did not share this post's link")
                     found = post_images(guess)

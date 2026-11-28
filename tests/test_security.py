@@ -464,17 +464,38 @@ def test_wrong_post_from_media_id_is_not_used(db, monkeypatch):
     monkeypatch.setattr(routes, "post_images", lambda code: (["https://scontent.cdninstagram.com/x.jpg"], "Ten pasta recipes for busy weeknights", "chef"))
     monkeypatch.setattr(routes, "save_cover_thumbnail", lambda media_id, url: thumbs.append((media_id, url)) or f"/api/thumbnail/m{media_id}")
     cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=10"
-    reel_id = _linkless_reel(db, "17841400000000001", "Want to sound more confident and impressive while speaking in public?")
-    routes.real_process_reel_pipeline(reel_id, "instagram-media:17841400000000001", preview=cover)
+    reel_id = _linkless_reel(db, "3123456789012340001", "Want to sound more confident and impressive while speaking in public?")
+    routes.real_process_reel_pipeline(reel_id, "instagram-media:3123456789012340001", preview=cover)
     assert read == [[cover]]  # the guessed post's caption didn't match, so only the cover
     db.expire_all()
     done = db.get(ReelItem, reel_id)
-    assert done.shortcode is None and done.reel_url == "instagram-media:17841400000000001"
+    assert done.shortcode is None and done.reel_url == "instagram-media:3123456789012340001"
     assert all(s.get("cover_only") for s in done.slides)
     # The cover is kept as the thumbnail
-    assert thumbs == [("17841400000000001", cover)]
-    assert done.thumbnail_url == "/api/thumbnail/m17841400000000001"
+    assert thumbs == [("3123456789012340001", cover)]
+    assert done.thumbnail_url == "/api/thumbnail/m3123456789012340001"
 
+
+
+def test_graph_api_id_from_a_share_is_not_guessed(db, monkeypatch):
+    import backend.routes as routes
+    from backend.carousel import looks_like_post_id
+    assert not looks_like_post_id("18106657262648081")  # a Graph API id, as DM shares carry
+    assert looks_like_post_id("3123456789012345678")    # an Instagram post id
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: [])
+
+    def must_not_run(code):
+        raise AssertionError("a Graph API id doesn't convert to a shortcode, so Instagram isn't asked")
+
+    monkeypatch.setattr(routes, "post_images", must_not_run)
+    cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=11"
+    reel_id = _linkless_reel(db, "18106657262648081", "Want to sound more confident and impressive while speaking in public?")
+    routes.real_process_reel_pipeline(reel_id, "instagram-media:18106657262648081", preview=cover)
+    assert read == [[cover]]
+    db.expire_all()
+    assert db.get(ReelItem, reel_id).status == "completed"
 
 def test_cover_only_summary_uses_the_caption_and_is_told_not_to_invent(monkeypatch):
     import backend.carousel as carousel
