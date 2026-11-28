@@ -56,9 +56,22 @@ def admin_ids() -> set:
     return {int(x) for x in (settings.ADMIN_USER_IDS or "").replace(" ", "").split(",") if x.isdigit()}
 
 
+def admin_usernames() -> set:
+    raw = (settings.ADMIN_INSTAGRAM_USERNAMES or "").replace(" ", "").lower()
+    return {name.lstrip("@") for name in raw.split(",") if name.lstrip("@")}
+
+
+def is_admin(user: User) -> bool:
+    if user.id in admin_ids():
+        return True
+    # Only an account linked to Instagram counts: the username comes from Instagram itself
+    username = (user.instagram_username or "").strip().lstrip("@").lower()
+    return bool(user.instagram_sender_id and username and username in admin_usernames())
+
+
 def require_admin(user: User = Depends(require_user)) -> User:
-    """Only user ids in ADMIN_USER_IDS. Everyone else gets 404, so the endpoint stays hidden."""
-    if user.id not in admin_ids():
+    """Only ADMIN_USER_IDS or a linked ADMIN_INSTAGRAM_USERNAMES account. Everyone else gets 404."""
+    if not is_admin(user):
         raise HTTPException(status_code=404, detail="Not found")
     return user
 

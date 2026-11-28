@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "*"
     # Comma-separated ReelDex user ids allowed to open the admin view (empty = nobody)
     ADMIN_USER_IDS: str = ""
+    # Comma-separated Instagram usernames whose linked ReelDex account is an admin.
+    # The username is only ever filled in from Instagram after DM pairing, so it can't be typed in.
+    ADMIN_INSTAGRAM_USERNAMES: str = "imsayanpaul"
     # Helper in Vercel's Mumbai region for reels whose sound Instagram withholds from the
     # server's region (frontend/api/reel_audio.py). Off unless the secret is set on both sides.
     REEL_HELPER_SECRET: Optional[str] = None
