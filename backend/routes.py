@@ -191,9 +191,17 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
     head = f"✨ Saved to your ReelDex!\n\n🎬 {reel.title or 'Instagram Reel'}{creator}\n"
     link = vault_link(user, reel.id)
     if reel.slides and any(s.get("cover_only") for s in reel.slides):
+        # Instagram doesn't say how many slides a shared post has, so this goes to every
+        # shared post: the cover is saved either way, and the link gets the rest
         msg = (
-            f"{head}\nInstagram only let me see the first slide of this post, so I saved that one.\n\n"
-            "To read every slide, copy the post link and send it here.\n\n"
+            f"{head}\n📌 I saved the first slide.\n\n"
+            "Has this post got more than one slide? When you share a post, Instagram only sends me the first one. "
+            "To save every slide, send me the link instead:\n\n"
+            "1️⃣ Open the post on Instagram\n"
+            "2️⃣ Tap ✈️ (share) or ⋯\n"
+            "3️⃣ Tap \"Copy link\"\n"
+            "4️⃣ Paste the link here\n\n"
+            "I'll read every slide and replace this copy, so you'll still have just one.\n\n"
             f"🔗 View it:\n{link}"
         )
     elif reel.slides:
