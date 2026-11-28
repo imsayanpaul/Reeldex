@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.database import get_db
 from backend.models import ReelItem, Transcript, User, PairingCode, Collection, SavedChat, WebhookEvent, Feedback, ActivityDay
 from backend.downloader import download_audio_from_reel, normalize_instagram_url, extract_shortcode
-from backend.carousel import post_images, extract_slides, slide_insights
+from backend.carousel import post_images, extract_slides, slide_insights, shared_album_images, preview_url
 from backend.transcriber import transcribe_audio_file
 from backend.summarizer import (
     extract_reel_insights, clean_caption, caption_is_useful, has_real_speech, readable_title, CATEGORIES,
@@ -220,7 +220,7 @@ def reply_failed_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], so
 
 
 # --- Background Processing Worker ---
-def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None):
+def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] = None, source: str = "web_ui", user_id: Optional[int] = None, preview: Optional[str] = None):
     """
     1. Global cache: if anyone already processed this reel, reuse it (0 tokens).
     2. In-flight lock: if another worker is processing it, wait and reuse.
@@ -244,12 +244,30 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
             try:
                 post = post_images(reel.shortcode)
             except Exception as metadata_error:
-                # Some video posts are available through the existing downloader only.
-                video_download = download_audio_from_reel(reel_url)
-                audio_path = video_download.get("audio_path")
-                if not audio_path:
-                    raise ValueError("Could not retrieve the post pages from Instagram. Retry from the vault.") from metadata_error
                 post = None
+                # 1. A post shared by DM has a media ID: ask the Graph API for the album
+                album = shared_album_images(reel.shared_media_id) if reel.shared_media_id else []
+                if album:
+                    print(f"[Carousel] Post read blocked; {len(album)} slides came from the Graph API")
+                    post = (album, reel.caption or "", reel.author)
+                else:
+                    # 2. Some video posts are available through the existing downloader only.
+                    download_error = None
+                    try:
+                        video_download = download_audio_from_reel(reel_url)
+                    except Exception as error:
+                        video_download, download_error = {}, error
+                    audio_path = video_download.get("audio_path")
+                    if not audio_path:
+                        # 3. Last resort: the preview image from the DM, which shows the cover slide only
+                        cover = preview_url(preview)
+                        if not cover:
+                            if download_error:
+                                raise download_error
+                            raise ValueError("Could not retrieve the post pages from Instagram. Retry from the vault.") from metadata_error
+                        print("[Carousel] Post read blocked; reading the DM preview (cover slide only)")
+                        video_download = None
+                        post = ([cover], reel.caption or "", reel.author)
             if post is not None:
                 images, caption, author = post
                 reel.caption, reel.author, reel.reel_url = caption, author, reel_url
@@ -1093,13 +1111,22 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
 
             sender_id = item["sender_id"]
             reel_urls = item.get("reel_urls", [])
-            for post_id in item.get("post_ids", []):
+            post_ids = item.get("post_ids", [])
+            # Which shared media ID a post link came from, so the pipeline can ask
+            # the Graph API for the album if Instagram blocks the normal read
+            media_for_url = {}
+            for post_id in post_ids:
                 permalink = await resolve_shared_post(post_id)
                 if permalink and permalink not in reel_urls:
                     reel_urls.append(permalink)
+                if permalink:
+                    media_for_url[permalink] = post_id
             if item.get("shared_post") and not reel_urls:
-                print(f"[Carousel] Looking up DM share; media IDs supplied: {len(item.get('post_ids', []))}")
+                print(f"[Carousel] Looking up DM share; media IDs supplied: {len(post_ids)}")
                 reel_urls.extend(await shared_message_links(item.get("message_id")))
+                if len(post_ids) == 1 and len(reel_urls) == 1:
+                    media_for_url[reel_urls[0]] = post_ids[0]
+            previews = item.get("post_previews") or {}
             message_text = (item.get("message_text") or "").strip()
 
             # 1. Pairing code (exact match on the generated MIND-XXXXXX code)
@@ -1141,6 +1168,9 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                 for r_url in reel_urls:
                     clean_url = normalize_instagram_url(r_url)
                     shortcode = extract_shortcode(clean_url)
+                    media_id = media_for_url.get(r_url)
+                    # The DM's own preview image: a last resort if neither read works
+                    preview = preview_url((previews.get(media_id) or {}).get("url")) if media_id else None
                     match = (ReelItem.shortcode == shortcode) | (ReelItem.reel_url == clean_url) if shortcode else (ReelItem.reel_url == clean_url)
                     # The same reel arriving twice within 2 minutes (two copies, two message ids) is one save
                     if not claim_message(db, f"reel:{user.id}:{shortcode or clean_url}", window=datetime.timedelta(minutes=2)):
@@ -1158,17 +1188,20 @@ async def receive_instagram_webhook(request: Request, background_tasks: Backgrou
                         existing.error_message = None
                         existing.created_at = datetime.datetime.utcnow()
                         existing.dm_replied = False  # they sent it again, so they get a fresh reply
+                        if media_id:
+                            existing.shared_media_id = media_id
                         db.commit()
-                        background_tasks.add_task(process_reel_pipeline, existing.id, clean_url, sender_id, "instagram_dm", user.id)
+                        background_tasks.add_task(process_reel_pipeline, existing.id, clean_url, sender_id, "instagram_dm", user.id, preview=preview)
                         continue
                     reel = ReelItem(
                         user_id=user.id, reel_url=clean_url, shortcode=shortcode, source="instagram_dm",
                         sender_id=sender_id, sender_username=f"User #{sender_id[-4:]}", status="processing",
+                        shared_media_id=media_id,
                     )
                     db.add(reel)
                     db.commit()
                     db.refresh(reel)
-                    background_tasks.add_task(process_reel_pipeline, reel.id, clean_url, sender_id, "instagram_dm", user.id)
+                    background_tasks.add_task(process_reel_pipeline, reel.id, clean_url, sender_id, "instagram_dm", user.id, preview=preview)
 
             elif item.get("shared_post"):
                 background_tasks.add_task(send_instagram_dm_sync, sender_id, "Please copy the Instagram post link and send it here so I can read the slides.")

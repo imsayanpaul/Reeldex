@@ -1,10 +1,63 @@
 """Read ordered Instagram post images and retain their text individually."""
 import subprocess
+from urllib.parse import urlsplit
 
 import httpx
 
 from backend.downloader import _instagram_media_host
 from backend.summarizer import extract_reel_insights
+from backend.config import settings
+
+
+def preview_url(url):
+    if not isinstance(url, str) or len(url) > 1000:
+        return None
+    parts = urlsplit(url)
+    if _instagram_media_host(url) or (
+        parts.scheme == "https" and parts.netloc == "lookaside.fbsbx.com"
+        and parts.path.rstrip("/") == "/ig_messaging_cdn"
+    ):
+        return url
+    return None
+
+
+def shared_album_images(media_id):
+    """Read album children in order. A partial page set is not a complete album."""
+    token = settings.INSTAGRAM_PAGE_ACCESS_TOKEN
+    if not token or not media_id.isascii() or not media_id.isdigit():
+        return []
+    with httpx.Client(timeout=5) as client:
+        for host in ("graph.instagram.com", "graph.facebook.com"):
+            params = {"fields": "media_type,media_url", "limit": 50}
+            images, cursors = [], set()
+            try:
+                while True:
+                    response = client.get(f"https://{host}/v21.0/{media_id}/children",
+                                          headers={"Authorization": f"Bearer {token}"}, params=params)
+                    if not response.is_success:
+                        print(f"[Carousel] Album children via {host}: HTTP {response.status_code}")
+                        break
+                    page = response.json()
+                    for child in page.get("data", []):
+                        if child.get("media_type") == "VIDEO":
+                            images.append(None)
+                        elif child.get("media_type") == "IMAGE" and _instagram_media_host(child.get("media_url")):
+                            images.append(child["media_url"])
+                        else:
+                            raise ValueError("Missing album image")
+                    paging = page.get("paging", {})
+                    if not paging.get("next"):
+                        if images:
+                            return images
+                        break
+                    cursor = paging.get("cursors", {}).get("after")
+                    if not cursor or cursor in cursors or len(cursors) >= 20:
+                        break
+                    cursors.add(cursor)
+                    params["after"] = cursor
+            except (httpx.HTTPError, ValueError):
+                continue
+    return []
 
 
 def post_images(shortcode):
@@ -29,7 +82,7 @@ def post_images(shortcode):
 
 
 def read_slide(url):
-    if not _instagram_media_host(url):
+    if not _instagram_media_host(url) and not preview_url(url):
         raise ValueError("Unexpected image host")
     image = bytearray()
     with httpx.stream("GET", url, timeout=20) as response:

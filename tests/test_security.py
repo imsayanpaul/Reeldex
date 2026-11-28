@@ -233,11 +233,91 @@ def test_carousel_share_with_only_media_id_saves_post(client, db, monkeypatch):
     }}
     event = {"sender": {"id": "559"}, "message": {"mid": "carousel-mid", "attachments": [attachment]}}
     payload = json.dumps({"entry": [{"id": "bot", "messaging": [event]}]}).encode()
+    started = []
+    monkeypatch.setattr(routes, "process_reel_pipeline", lambda *args, **kwargs: started.append(kwargs))
     response = client.post("/api/webhook/instagram", content=payload, headers=signed(payload))
     assert response.status_code == 200
-    assert db.query(ReelItem).filter_by(sender_id="559", shortcode="CarouselTest").one().reel_url == (
-        "https://www.instagram.com/p/CarouselTest/"
-    )
+    saved = db.query(ReelItem).filter_by(sender_id="559", shortcode="CarouselTest").one()
+    assert saved.reel_url == "https://www.instagram.com/p/CarouselTest/"
+    # Kept for the album fallback, and the DM preview is handed to the pipeline
+    assert saved.shared_media_id == "123456789"
+    assert started == [{"preview": "https://lookaside.fbsbx.com/ig_messaging_cdn/"}]
+
+
+def _carousel_reel(db, shortcode, media_id=None):
+    reel = ReelItem(reel_url=f"https://www.instagram.com/p/{shortcode}/", shortcode=shortcode,
+                    source="instagram_dm", status="processing", shared_media_id=media_id)
+    db.add(reel)
+    db.commit()
+    return reel.id
+
+
+def _stub_slide_steps(monkeypatch, read):
+    import backend.routes as routes
+
+    def blocked(shortcode):
+        raise ConnectionError("Instagram refused the post read")
+
+    def extract(images, previous, save_progress):
+        read.append(images)
+        return [{"number": 1, "text": "Five tools for designers", "status": "read"}]
+
+    monkeypatch.setattr(routes, "post_images", blocked)
+    monkeypatch.setattr(routes, "extract_slides", extract)
+    monkeypatch.setattr(routes, "slide_insights", lambda slides, title: (
+        "Slide 1\nFive tools for designers", {"summary": "Design tools", "category": "Design"}))
+    monkeypatch.setattr(routes, "reply_in_dm", lambda *args: None)
+
+
+def _status(db, reel_id):
+    db.expire_all()
+    return db.get(ReelItem, reel_id).status
+
+
+def test_blocked_post_read_uses_graph_api_album(db, monkeypatch):
+    import backend.routes as routes
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+    album = ["https://scontent.cdninstagram.com/one.jpg", None]
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: album if media_id == "987" else [])
+
+    def no_download(url):
+        raise AssertionError("the audio downloader must not run when the album was found")
+
+    monkeypatch.setattr(routes, "download_audio_from_reel", no_download)
+    reel_id = _carousel_reel(db, "AlbumFallback", media_id="987")
+    routes.real_process_reel_pipeline(reel_id, "https://www.instagram.com/p/AlbumFallback/")
+    assert read == [album]
+    assert _status(db, reel_id) == "completed"
+
+
+def test_blocked_post_read_falls_back_to_dm_preview(db, monkeypatch):
+    import backend.routes as routes
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+    monkeypatch.setattr(routes, "shared_album_images", lambda media_id: [])
+    monkeypatch.setattr(routes, "download_audio_from_reel", lambda url: {})  # not a video post either
+    cover = "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=1"
+    reel_id = _carousel_reel(db, "PreviewFallback", media_id="988")
+    routes.real_process_reel_pipeline(reel_id, "https://www.instagram.com/p/PreviewFallback/", preview=cover)
+    assert read == [[cover]]
+    assert _status(db, reel_id) == "completed"
+
+
+def test_preview_from_another_host_is_never_read(db, monkeypatch):
+    import backend.routes as routes
+    read = []
+    _stub_slide_steps(monkeypatch, read)
+
+    def download_fails(url):
+        raise RuntimeError("no audio")
+
+    monkeypatch.setattr(routes, "download_audio_from_reel", download_fails)
+    reel_id = _carousel_reel(db, "NoFallback")
+    routes.real_process_reel_pipeline(reel_id, "https://www.instagram.com/p/NoFallback/",
+                                      preview="https://evil.example/ig_messaging_cdn/")
+    assert read == []
+    assert _status(db, reel_id) == "failed"
 
 
 def test_carousel_preview_recovers_permalink_from_dm(client, db, monkeypatch):
