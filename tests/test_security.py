@@ -411,7 +411,7 @@ def _stub_slide_steps(monkeypatch, read):
     monkeypatch.setattr(routes, "extract_slides", extract)
     monkeypatch.setattr(routes, "slide_insights", lambda slides, title, caption=None: (
         "Slide 1\nFive tools for designers", {"summary": "Design tools", "category": "Design"}))
-    monkeypatch.setattr(routes, "reply_in_dm", lambda *args: None)
+    monkeypatch.setattr(routes, "reply_in_dm", lambda *args, **kwargs: None)
     monkeypatch.setattr(routes, "save_cover_thumbnail", lambda media_id, url: None)
 
 
@@ -475,6 +475,75 @@ def test_wrong_post_from_media_id_is_not_used(db, monkeypatch):
     assert thumbs == [("3123456789012340001", cover)]
     assert done.thumbnail_url == "/api/thumbnail/m3123456789012340001"
 
+
+
+SHARE_TEXT = "Want to sound more confident and impressive while speaking in public?"
+FULL_CAPTION = SHARE_TEXT + " Your opening lines decide whether people listen. Save this for later!"
+
+
+def _owner_with_cover_copy(db, token, sender, collection_name=None):
+    from backend.models import User, Collection
+    owner = User(display_name="owner", auth_token=token, instagram_sender_id=sender)
+    db.add(owner)
+    db.commit()
+    collection_id = None
+    if collection_name:
+        collection = Collection(user_id=owner.id, name=collection_name)
+        db.add(collection)
+        db.commit()
+        collection_id = collection.id
+    cover = ReelItem(user_id=owner.id, sender_id=sender, reel_url=f"instagram-media:181066572626{sender}",
+                     source="instagram_dm", status="completed", caption=SHARE_TEXT, collection_id=collection_id,
+                     slides=[{"number": 1, "text": "Powerful Phrases", "status": "read", "cover_only": True}])
+    db.add(cover)
+    db.commit()
+    return owner, cover.id, collection_id
+
+
+def _read_full_post(db, monkeypatch, owner, sender, shortcode, caption):
+    import backend.routes as routes
+    read, replies = [], []
+    _stub_slide_steps(monkeypatch, read)
+    slides = [f"https://scontent.cdninstagram.com/{shortcode}-{n}.jpg" for n in range(10)]
+    monkeypatch.setattr(routes, "post_images", lambda code: (slides, caption, "passionatelearners"))
+    monkeypatch.setattr(routes, "extract_slides", lambda images, previous, save: [
+        {"number": n + 1, "text": f"Phrase {n + 1}", "status": "read"} for n in range(len(images))])
+    monkeypatch.setattr(routes, "reply_in_dm", lambda db_, reel, sender_id, source, replaced=0: replies.append(replaced))
+    full = ReelItem(user_id=owner.id, sender_id=sender, reel_url=f"https://www.instagram.com/p/{shortcode}/",
+                    shortcode=shortcode, source="instagram_dm", status="processing")
+    db.add(full)
+    db.commit()
+    routes.real_process_reel_pipeline(full.id, full.reel_url, sender, "instagram_dm", owner.id)
+    db.expire_all()
+    return full.id, replies
+
+
+def test_link_after_a_share_replaces_the_cover_only_copy(db, monkeypatch):
+    owner, cover_id, collection_id = _owner_with_cover_copy(db, "rm_upgrade_owner", "71001", "Speaking")
+    full_id, replies = _read_full_post(db, monkeypatch, owner, "71001", "UpgradeTest", FULL_CAPTION)
+    assert db.get(ReelItem, cover_id) is None  # the cover-only copy is gone
+    full = db.get(ReelItem, full_id)
+    assert full.status == "completed" and len(full.slides) == 10
+    assert full.collection_id == collection_id  # it took the copy's collection
+    assert replies == [1]  # the DM says it replaced the earlier version
+
+
+def test_link_for_a_different_post_keeps_the_cover_only_copy(db, monkeypatch):
+    owner, cover_id, _ = _owner_with_cover_copy(db, "rm_upgrade_other_post", "71002")
+    _, replies = _read_full_post(db, monkeypatch, owner, "71002", "OtherPostTest", "Ten pasta recipes for busy weeknights")
+    assert db.get(ReelItem, cover_id) is not None
+    assert replies == [0]
+
+
+def test_link_never_removes_someone_elses_cover_copy(db, monkeypatch):
+    from backend.models import User
+    _, cover_id, _ = _owner_with_cover_copy(db, "rm_upgrade_victim", "71003")
+    stranger = User(display_name="stranger", auth_token="rm_upgrade_stranger", instagram_sender_id="71004")
+    db.add(stranger)
+    db.commit()
+    _, replies = _read_full_post(db, monkeypatch, stranger, "71004", "StrangerTest", FULL_CAPTION)
+    assert db.get(ReelItem, cover_id) is not None
+    assert replies == [0]
 
 
 def test_graph_api_id_from_a_share_is_not_guessed(db, monkeypatch):

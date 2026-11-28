@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, R
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from sqlalchemy.exc import IntegrityError
 
 from backend.database import get_db
@@ -181,7 +181,7 @@ def already_saved_message(user: Optional[User], reel: ReelItem) -> str:
     return f"📌 You've already saved this one{saved}!\n\n🎬 {title}\n\n🔗 Open it in your vault:\n{vault_link(user, reel.id)}"
 
 
-def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: str):
+def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: str, replaced: int = 0):
     """Sends the 'saved to your ReelDex' DM once per reel."""
     if source != "instagram_dm" or not sender_id or not settings.INSTAGRAM_PAGE_ACCESS_TOKEN or reel.dm_replied:
         return
@@ -198,7 +198,8 @@ def reply_in_dm(db: Session, reel: ReelItem, sender_id: Optional[str], source: s
         )
     elif reel.slides:
         count = sum(1 for s in reel.slides if s["text"])
-        msg = f"{head}\nRead {count} of {len(reel.slides)} slides. Open the slide text and summary:\n{link}"
+        upgraded = "\nThis replaces the cover-only version you shared earlier.\n" if replaced else ""
+        msg = f"{head}\nRead {count} of {len(reel.slides)} slides. Open the slide text and summary:\n{link}{upgraded}"
     elif flags["audio_missing"]:
         summary_note = "so I summarised it from the caption instead" if flags["from_caption"] else "so I couldn't summarise it"
         msg = (
@@ -348,7 +349,8 @@ def process_reel_pipeline(reel_id: int, reel_url: str, sender_id: Optional[str] 
                 reel.status, reel.error_message = "completed", None
                 db.add(transcript)
                 db.commit()
-                reply_in_dm(db, reel, sender_id, source)
+                replaced = replace_cover_only_copies(db, reel)
+                reply_in_dm(db, reel, sender_id, source, replaced=replaced)
                 return
 
         # STEP 0: global cache (0 tokens)
@@ -671,6 +673,35 @@ def _delete_reels(db: Session, ids: List[int]):
     db.query(Transcript).filter(Transcript.reel_id.in_(ids)).delete(synchronize_session=False)
     db.query(ReelItem).filter(ReelItem.id.in_(ids)).delete(synchronize_session=False)
     db.commit()
+
+
+def replace_cover_only_copies(db: Session, reel: ReelItem) -> int:
+    """After a post is read in full, remove the owner's cover-only copies of the same post.
+
+    A carousel shared by DM only gives its cover; when the owner then sends its link, the
+    full read takes that copy's place (and its collection) instead of leaving two items.
+    """
+    if not reel.caption or not reel.slides or any(s.get("cover_only") for s in reel.slides):
+        return 0
+    owners = []
+    if reel.user_id:
+        owners.append(ReelItem.user_id == reel.user_id)
+    if reel.sender_id:
+        owners.append(ReelItem.sender_id == reel.sender_id)
+    if not owners:
+        return 0
+    candidates = db.query(ReelItem).filter(
+        ReelItem.id != reel.id, ReelItem.reel_url.like(f"{MEDIA_PREFIX}%"), or_(*owners),
+    ).all()
+    copies = [c for c in candidates if caption_matches(c.caption, reel.caption)]
+    if not copies:
+        return 0
+    if not reel.collection_id:
+        reel.collection_id = next((c.collection_id for c in copies if c.collection_id), None)
+        db.commit()
+    _delete_reels(db, [c.id for c in copies])
+    print(f"[Carousel] The full post replaced {len(copies)} cover-only copy")
+    return len(copies)
 
 
 @router.post("/reels/batch/delete")
